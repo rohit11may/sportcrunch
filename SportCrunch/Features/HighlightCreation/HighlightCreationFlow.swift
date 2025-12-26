@@ -234,13 +234,67 @@ final class HighlightCreationViewModel {
     
     // MARK: - Video Selection
     
-    /// Just stores the video reference and moves forward - no heavy loading yet
+    /// Stores the video reference, loads a quick thumbnail, and moves forward
     func selectVideo(_ item: PhotosPickerItem) {
         selectedVideoItem = item
         
         // Move to sport selection immediately
         withAnimation(.spring(response: 0.4)) {
             currentStep = .selectSport
+        }
+        
+        // Load thumbnail in background for sport selection view
+        Task {
+            await loadQuickThumbnail(for: item)
+        }
+    }
+    
+    /// Loads just the thumbnail quickly for the sport selection view
+    private func loadQuickThumbnail(for item: PhotosPickerItem) async {
+        guard let assetIdentifier = item.itemIdentifier else { return }
+        
+        let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [assetIdentifier], options: nil)
+        guard let asset = fetchResult.firstObject else { return }
+        
+        // Store creation date
+        await MainActor.run {
+            self.videoCreationDate = asset.creationDate
+        }
+        
+        // Request video asset to get duration and generate thumbnail
+        let options = PHVideoRequestOptions()
+        options.version = .current
+        options.deliveryMode = .fastFormat // Fast for quick preview
+        options.isNetworkAccessAllowed = true
+        
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            PHImageManager.default().requestAVAsset(forVideo: asset, options: options) { avAsset, _, _ in
+                guard let avAsset = avAsset else {
+                    continuation.resume()
+                    return
+                }
+                
+                Task { @MainActor in
+                    // Get duration
+                    if let duration = try? await avAsset.load(.duration) {
+                        self.videoDuration = CMTimeGetSeconds(duration)
+                    }
+                    
+                    // Generate thumbnail from middle of video
+                    let imageGenerator = AVAssetImageGenerator(asset: avAsset)
+                    imageGenerator.appliesPreferredTrackTransform = true
+                    imageGenerator.maximumSize = CGSize(width: 400, height: 400)
+                    
+                    // Use middle of video for thumbnail
+                    let middleTime = CMTime(seconds: self.videoDuration / 2, preferredTimescale: 600)
+                    
+                    if let cgImage = try? imageGenerator.copyCGImage(at: middleTime, actualTime: nil) {
+                        self.videoThumbnail = UIImage(cgImage: cgImage)
+                    }
+                    
+                    continuation.resume()
+                }
+            }
         }
     }
     
@@ -385,15 +439,17 @@ final class HighlightCreationViewModel {
             logger.pipeline("Video duration: \(mins):\(String(format: "%02d", secs))")
         }
         
-        // Generate thumbnail
+        // Generate thumbnail from middle of video
         let imageGenerator = AVAssetImageGenerator(asset: asset)
         imageGenerator.appliesPreferredTrackTransform = true
         imageGenerator.maximumSize = CGSize(width: 400, height: 400)
         
-        let cgImage = try imageGenerator.copyCGImage(at: .zero, actualTime: nil)
+        // Use middle of video for thumbnail
+        let middleTime = CMTime(seconds: videoDuration / 2, preferredTimescale: 600)
+        let cgImage = try imageGenerator.copyCGImage(at: middleTime, actualTime: nil)
         videoThumbnail = UIImage(cgImage: cgImage)
         
-        print("SportCrunch: Thumbnail generated")
+        print("SportCrunch: Thumbnail generated from middle of video")
     }
     
     // MARK: - Sport Selection

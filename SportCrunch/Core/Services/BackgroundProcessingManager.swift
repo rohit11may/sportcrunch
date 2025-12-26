@@ -203,7 +203,7 @@ final class BackgroundProcessingManager: ObservableObject {
     
     // MARK: - Thumbnail Generation
     
-    /// Generates a thumbnail image from a video URL
+    /// Generates a thumbnail image from the middle of a video
     /// - Parameter videoURL: URL to the video file
     /// - Returns: JPEG data of the thumbnail, or nil if generation fails
     private func generateThumbnail(from videoURL: URL) async -> Data? {
@@ -212,12 +212,19 @@ final class BackgroundProcessingManager: ObservableObject {
         imageGenerator.appliesPreferredTrackTransform = true
         imageGenerator.maximumSize = CGSize(width: 400, height: 400) // Limit size for storage
         
-        // Try to get a frame from 1 second into the video
-        let time = CMTime(seconds: 1, preferredTimescale: 600)
+        // Get video duration to find the middle
+        guard let duration = try? await asset.load(.duration) else {
+            print("⚙️ [BackgroundProcessingManager] Failed to load video duration for thumbnail")
+            return nil
+        }
+        
+        // Use the middle of the video for the thumbnail
+        let middleTime = CMTime(seconds: CMTimeGetSeconds(duration) / 2, preferredTimescale: 600)
         
         do {
-            let cgImage = try await imageGenerator.image(at: time).image
+            let cgImage = try await imageGenerator.image(at: middleTime).image
             let uiImage = UIImage(cgImage: cgImage)
+            print("⚙️ [BackgroundProcessingManager] Thumbnail generated from middle of highlight video")
             return uiImage.jpegData(compressionQuality: 0.7)
         } catch {
             print("⚙️ [BackgroundProcessingManager] Failed to generate thumbnail: \(error.localizedDescription)")
