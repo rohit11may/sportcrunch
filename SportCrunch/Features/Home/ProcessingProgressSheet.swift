@@ -14,6 +14,10 @@ struct ProcessingProgressSheet: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var logger = ProcessingLogger.shared
     
+    // Observe the background manager directly for updates
+    @State private var currentProgress: Double = 0
+    @State private var currentStatus: ProcessingStatus = .pending
+    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -92,16 +96,21 @@ struct ProcessingProgressSheet: View {
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
-    }
-    
-    // MARK: - Computed Properties
-    
-    private var currentProgress: Double {
-        appState.backgroundProcessingManager.progress(for: project.id)
-    }
-    
-    private var currentStatus: ProcessingStatus {
-        appState.backgroundProcessingManager.status(for: project.id)
+        .onAppear {
+            // Initialize with current values
+            currentProgress = appState.backgroundProcessingManager.progress(for: project.id)
+            currentStatus = appState.backgroundProcessingManager.status(for: project.id)
+        }
+        .onReceive(appState.backgroundProcessingManager.$progressByProject) { progressDict in
+            if let progress = progressDict[project.id] {
+                currentProgress = progress
+            }
+        }
+        .onReceive(appState.backgroundProcessingManager.$statusByProject) { statusDict in
+            if let status = statusDict[project.id] {
+                currentStatus = status
+            }
+        }
     }
     
     // MARK: - Progress Bar

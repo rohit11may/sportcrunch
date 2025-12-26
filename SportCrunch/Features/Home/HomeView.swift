@@ -13,7 +13,9 @@ struct HomeView: View {
     @State private var viewModel = HomeViewModel()
     @State private var showCreateFlow = false
     @State private var showProgressSheet = false
+    @State private var showCompletedSheet = false
     @State private var selectedProcessingProject: Project?
+    @State private var selectedCompletedProject: Project?
     
     var body: some View {
         NavigationStack {
@@ -48,6 +50,11 @@ struct HomeView: View {
                 if let project = selectedProcessingProject {
                     ProcessingProgressSheet(project: project)
                         .environmentObject(appState)
+                }
+            }
+            .sheet(isPresented: $showCompletedSheet) {
+                if let project = selectedCompletedProject {
+                    CompletedProjectSheet(project: project)
                 }
             }
             .onAppear {
@@ -205,8 +212,9 @@ struct HomeView: View {
             selectedProcessingProject = project
             showProgressSheet = true
         } else if project.status == .completed {
-            // Show completed project (preview/export flow)
-            viewModel.selectedProject = project
+            // Show completed project sheet
+            selectedCompletedProject = project
+            showCompletedSheet = true
         } else {
             // Failed or other status - could show details or retry option
             viewModel.selectedProject = project
