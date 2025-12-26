@@ -54,9 +54,7 @@ struct VideoSelectionView: View {
             }
             .onChange(of: viewModel.selectedVideoItem) { _, newItem in
                 if let item = newItem {
-                    Task {
-                        await viewModel.processSelectedVideo(item)
-                    }
+                    viewModel.selectVideo(item)
                 }
             }
             

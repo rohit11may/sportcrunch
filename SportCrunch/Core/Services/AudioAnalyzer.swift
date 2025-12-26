@@ -45,22 +45,17 @@ enum AudioAnalyzerError: Error, LocalizedError {
 /// Analyzes audio to detect sports action sounds (racket hits, bat contacts).
 ///
 /// Pipeline:
-/// 1. Extract audio at 16kHz mono
+/// 1. Extract audio at target sample rate (mono)
 /// 2. Apply bandpass filter to isolate hit frequencies
 /// 3. Compute onset strength (spectral flux)
 /// 4. Apply adaptive threshold to find peaks
 /// 5. Cluster peaks into action intervals
 actor AudioAnalyzer {
     
-    // MARK: - Constants
+    // MARK: - Fixed Constants (not sport-specific)
     
-    private let targetSampleRate: Double = 16000
     private let hopLength: Int = 512
     private let fftSize: Int = 1024
-    private let onsetThresholdLambda: Float = 2.0
-    private let peakMinDistanceSec: Double = 0.5
-    private let paddingPreSec: Double = 2.0
-    private let paddingPostSec: Double = 2.0
     
     // MARK: - Public API
     
@@ -68,43 +63,118 @@ actor AudioAnalyzer {
     /// - Parameters:
     ///   - videoURL: URL to the video file
     ///   - sport: Sport type for detection tuning
+    ///   - sportMode: Optional sport-specific mode (e.g., TennisMode.rally)
     /// - Returns: Analysis result with detected peaks and candidate intervals
-    func analyze(videoURL: URL, sport: Sport) async throws -> AudioAnalysisResult {
+    func analyze(videoURL: URL, sport: Sport, sportMode: SportMode? = nil) async throws -> AudioAnalysisResult {
+        let preset = sport.preset(for: sportMode)
+        let startTime = Date()
+        let logger = ProcessingLogger.shared
+        let modeDescription = (sportMode as? TennisMode)?.displayName ?? "Default"
+        
+        print("🎵 [AudioAnalyzer] ═══════════════════════════════════════════")
+        print("🎵 [AudioAnalyzer] Starting audio analysis for \(sport.displayName) (\(modeDescription))")
+        print("🎵 [AudioAnalyzer] Source: \(videoURL.lastPathComponent)")
+        print("🎵 [AudioAnalyzer] ───────────────────────────────────────────")
+        print("🎵 [AudioAnalyzer] Preset Configuration:")
+        print("🎵 [AudioAnalyzer]   • Sample rate: \(Int(preset.sampleRate)) Hz")
+        print("🎵 [AudioAnalyzer]   • Bandpass: \(Int(preset.bandpassLow))-\(Int(preset.bandpassHigh)) Hz")
+        print("🎵 [AudioAnalyzer]   • Threshold λ: \(preset.onsetThresholdLambda) (lower = more sensitive)")
+        print("🎵 [AudioAnalyzer]   • Min peak distance: \(preset.peakMinDistanceSec)s")
+        print("🎵 [AudioAnalyzer]   • Cluster max gap: \(preset.clusterMaxGapSec)s")
+        print("🎵 [AudioAnalyzer]   • Cluster min hits: \(preset.clusterMinHits)")
+        print("🎵 [AudioAnalyzer]   • Padding: \(preset.paddingPreSec)s before, \(preset.paddingPostSec)s after")
+        print("🎵 [AudioAnalyzer] ───────────────────────────────────────────")
+        
+        logger.audioAsync("Starting audio analysis for \(sport.displayName) (\(modeDescription))...")
+        
         // Step 1: Extract audio samples
-        let (samples, duration) = try await extractAudio(from: videoURL)
+        print("🎵 [AudioAnalyzer] Step 1/5: Extracting audio at \(Int(preset.sampleRate)) Hz...")
+        logger.audioAsync("Extracting audio at \(Int(preset.sampleRate)) Hz...")
+        let (samples, duration) = try await extractAudio(from: videoURL, sampleRate: preset.sampleRate)
         
         guard !samples.isEmpty else {
+            print("🎵 [AudioAnalyzer] ❌ ERROR: No audio samples extracted")
+            logger.errorAsync("No audio samples extracted")
             throw AudioAnalyzerError.audioExtractionFailed
         }
         
+        let sampleCount = samples.count
+        print("🎵 [AudioAnalyzer] ✓ Extracted \(formatNumber(sampleCount)) samples")
+        print("🎵 [AudioAnalyzer] ✓ Duration: \(formatTime(duration))")
+        logger.audioAsync("Extracted \(formatNumber(sampleCount)) samples (\(formatTime(duration)))")
+        
         // Step 2: Apply bandpass filter
+        print("🎵 [AudioAnalyzer] Step 2/5: Applying bandpass filter (\(Int(preset.bandpassLow))-\(Int(preset.bandpassHigh)) Hz)...")
+        logger.audioAsync("Applying bandpass filter (\(Int(preset.bandpassLow))-\(Int(preset.bandpassHigh)) Hz)...")
         let filteredSamples = applyBandpassFilter(
             samples,
-            lowCutoff: Float(sport.audioLowCutoff),
-            highCutoff: Float(sport.audioHighCutoff),
-            sampleRate: Float(targetSampleRate)
+            lowCutoff: Float(preset.bandpassLow),
+            highCutoff: Float(preset.bandpassHigh),
+            sampleRate: Float(preset.sampleRate)
         )
+        print("🎵 [AudioAnalyzer] ✓ Bandpass filter applied")
         
         // Step 3: Compute onset strength (spectral flux)
+        print("🎵 [AudioAnalyzer] Step 3/5: Computing spectral flux (FFT)...")
+        logger.audioAsync("Computing spectral flux (FFT analysis)...")
         let onsetStrength = computeOnsetStrength(filteredSamples)
+        print("🎵 [AudioAnalyzer] ✓ Computed \(formatNumber(onsetStrength.count)) onset frames")
+        
+        // Log some stats about onset strength for debugging
+        if !onsetStrength.isEmpty {
+            let maxOnset = onsetStrength.max() ?? 0
+            let avgOnset = onsetStrength.reduce(0, +) / Float(onsetStrength.count)
+            print("🎵 [AudioAnalyzer]   Onset stats - Max: \(String(format: "%.1f", maxOnset)), Avg: \(String(format: "%.1f", avgOnset))")
+        }
         
         // Step 4: Compute adaptive threshold and find peaks
+        print("🎵 [AudioAnalyzer] Step 4/5: Finding peaks with adaptive threshold (λ=\(preset.onsetThresholdLambda))...")
+        logger.audioAsync("Detecting impact sounds...")
         let peakIndices = findPeaks(
             onsetStrength: onsetStrength,
-            sampleRate: targetSampleRate
+            sampleRate: preset.sampleRate,
+            thresholdLambda: preset.onsetThresholdLambda,
+            minDistanceSec: preset.peakMinDistanceSec
         )
         
         // Convert peak indices to timestamps
-        let framesPerSecond = targetSampleRate / Double(hopLength)
+        let framesPerSecond = preset.sampleRate / Double(hopLength)
         let peakTimes = peakIndices.map { Double($0) / framesPerSecond }
+        print("🎵 [AudioAnalyzer] ✓ Detected \(peakTimes.count) potential hits")
+        logger.audioAsync("Detected \(peakTimes.count) potential \(sport.displayName.lowercased()) hits")
+        
+        if !peakTimes.isEmpty {
+            let firstFew = peakTimes.prefix(5).map { formatTime($0) }.joined(separator: ", ")
+            print("🎵 [AudioAnalyzer]   First hits at: \(firstFew)\(peakTimes.count > 5 ? "..." : "")")
+        }
         
         // Step 5: Cluster peaks into intervals
+        print("🎵 [AudioAnalyzer] Step 5/5: Clustering peaks (max gap: \(preset.clusterMaxGapSec)s, min hits: \(preset.clusterMinHits))...")
+        logger.audioAsync("Clustering hits into action segments...")
         let candidateIntervals = clusterPeaks(
             peakTimes: peakTimes,
-            maxGapSeconds: sport.maxGapSeconds,
-            minHitsPerSegment: sport.minHitsPerSegment,
+            maxGapSeconds: preset.clusterMaxGapSec,
+            minHitsPerSegment: preset.clusterMinHits,
+            paddingPre: preset.paddingPreSec,
+            paddingPost: preset.paddingPostSec,
             videoDuration: duration
         )
+        
+        let elapsed = Date().timeIntervalSince(startTime)
+        print("🎵 [AudioAnalyzer] ═══════════════════════════════════════════")
+        print("🎵 [AudioAnalyzer] ✅ ANALYSIS COMPLETE in \(String(format: "%.2f", elapsed))s")
+        print("🎵 [AudioAnalyzer] 📊 Results:")
+        print("🎵 [AudioAnalyzer]    • Video duration: \(formatTime(duration))")
+        print("🎵 [AudioAnalyzer]    • Hits detected: \(peakTimes.count)")
+        print("🎵 [AudioAnalyzer]    • Candidate segments: \(candidateIntervals.count)")
+        
+        for (i, interval) in candidateIntervals.enumerated() {
+            let segDuration = interval.end - interval.start
+            print("🎵 [AudioAnalyzer]    Segment \(i+1): \(formatTime(interval.start)) → \(formatTime(interval.end)) (\(String(format: "%.1f", segDuration))s)")
+        }
+        print("🎵 [AudioAnalyzer] ═══════════════════════════════════════════")
+        
+        logger.successAsync("Audio analysis complete: \(candidateIntervals.count) segments found in \(String(format: "%.1f", elapsed))s")
         
         return AudioAnalysisResult(
             duration: duration,
@@ -113,9 +183,24 @@ actor AudioAnalyzer {
         )
     }
     
+    // MARK: - Formatting Helpers
+    
+    private func formatTime(_ seconds: TimeInterval) -> String {
+        let mins = Int(seconds) / 60
+        let secs = Int(seconds) % 60
+        let ms = Int((seconds.truncatingRemainder(dividingBy: 1)) * 10)
+        return String(format: "%d:%02d.%d", mins, secs, ms)
+    }
+    
+    private func formatNumber(_ n: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter.string(from: NSNumber(value: n)) ?? "\(n)"
+    }
+    
     // MARK: - Audio Extraction
     
-    private func extractAudio(from videoURL: URL) async throws -> (samples: [Float], duration: TimeInterval) {
+    private func extractAudio(from videoURL: URL, sampleRate: Double) async throws -> (samples: [Float], duration: TimeInterval) {
         let asset = AVURLAsset(url: videoURL)
         
         // Get audio track
@@ -125,10 +210,10 @@ actor AudioAnalyzer {
         
         let duration = try await asset.load(.duration).seconds
         
-        // Configure reader output for 16kHz mono float
+        // Configure reader output for target sample rate mono float
         let outputSettings: [String: Any] = [
             AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: targetSampleRate,
+            AVSampleRateKey: sampleRate,
             AVNumberOfChannelsKey: 1,
             AVLinearPCMBitDepthKey: 32,
             AVLinearPCMIsFloatKey: true,
@@ -157,7 +242,7 @@ actor AudioAnalyzer {
         
         // Read all samples
         var allSamples: [Float] = []
-        allSamples.reserveCapacity(Int(duration * targetSampleRate))
+        allSamples.reserveCapacity(Int(duration * sampleRate))
         
         while let sampleBuffer = output.copyNextSampleBuffer() {
             guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
@@ -396,7 +481,9 @@ actor AudioAnalyzer {
     /// Find peaks in onset strength using adaptive thresholding.
     private func findPeaks(
         onsetStrength: [Float],
-        sampleRate: Double
+        sampleRate: Double,
+        thresholdLambda: Float,
+        minDistanceSec: Double
     ) -> [Int] {
         guard onsetStrength.count > 0 else { return [] }
         
@@ -410,11 +497,11 @@ actor AudioAnalyzer {
         let threshold = computeAdaptiveThreshold(
             onsetStrength,
             windowSize: windowSize,
-            lambda: onsetThresholdLambda
+            lambda: thresholdLambda
         )
         
         // Minimum distance between peaks in frames
-        let minDistance = Int(peakMinDistanceSec * framesPerSecond)
+        let minDistance = Int(minDistanceSec * framesPerSecond)
         
         // Find local maxima above threshold
         var peaks: [Int] = []
@@ -491,6 +578,8 @@ actor AudioAnalyzer {
         peakTimes: [TimeInterval],
         maxGapSeconds: Double,
         minHitsPerSegment: Int,
+        paddingPre: Double,
+        paddingPost: Double,
         videoDuration: TimeInterval
     ) -> [(start: TimeInterval, end: TimeInterval)] {
         guard !peakTimes.isEmpty else { return [] }
@@ -525,8 +614,8 @@ actor AudioAnalyzer {
         for cluster in clusters {
             guard let first = cluster.first, let last = cluster.last else { continue }
             
-            let start = max(0, first - paddingPreSec)
-            let end = min(videoDuration, last + paddingPostSec)
+            let start = max(0, first - paddingPre)
+            let end = min(videoDuration, last + paddingPost)
             
             intervals.append((start: start, end: end))
         }

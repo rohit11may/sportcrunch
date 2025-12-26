@@ -12,6 +12,8 @@ struct HomeView: View {
     @EnvironmentObject private var appState: AppState
     @State private var viewModel = HomeViewModel()
     @State private var showCreateFlow = false
+    @State private var showProgressSheet = false
+    @State private var selectedProcessingProject: Project?
     
     var body: some View {
         NavigationStack {
@@ -42,7 +44,17 @@ struct HomeView: View {
                 HighlightCreationFlow()
                     .environmentObject(appState)
             }
+            .sheet(isPresented: $showProgressSheet) {
+                if let project = selectedProcessingProject {
+                    ProcessingProgressSheet(project: project)
+                        .environmentObject(appState)
+                }
+            }
             .onAppear {
+                viewModel.loadProjects(using: appState.projectStorageService)
+            }
+            .onReceive(appState.backgroundProcessingManager.$statusByProject) { _ in
+                // Reload projects when processing status changes
                 viewModel.loadProjects(using: appState.projectStorageService)
             }
         }
@@ -163,11 +175,41 @@ struct HomeView: View {
             
             LazyVStack(spacing: Spacing.md) {
                 ForEach(viewModel.projects) { project in
-                    ProjectCard(project: project) {
-                        viewModel.selectedProject = project
+                    ProjectCard(
+                        project: projectWithLiveStatus(project),
+                        isProcessing: appState.backgroundProcessingManager.isProcessing(projectId: project.id)
+                    ) {
+                        handleProjectTap(project)
                     }
                 }
             }
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    /// Updates project with live status from background manager if processing
+    private func projectWithLiveStatus(_ project: Project) -> Project {
+        if appState.backgroundProcessingManager.isProcessing(projectId: project.id) {
+            var updatedProject = project
+            updatedProject.status = appState.backgroundProcessingManager.status(for: project.id)
+            return updatedProject
+        }
+        return project
+    }
+    
+    /// Handles tap on a project card
+    private func handleProjectTap(_ project: Project) {
+        // If project is currently processing, show progress sheet
+        if appState.backgroundProcessingManager.isProcessing(projectId: project.id) {
+            selectedProcessingProject = project
+            showProgressSheet = true
+        } else if project.status == .completed {
+            // Show completed project (preview/export flow)
+            viewModel.selectedProject = project
+        } else {
+            // Failed or other status - could show details or retry option
+            viewModel.selectedProject = project
         }
     }
 }
@@ -205,4 +247,5 @@ final class HomeViewModel {
             projectStorageService: MockProjectStorageService(withSampleData: true)
         ))
 }
+
 

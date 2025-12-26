@@ -60,11 +60,21 @@ protocol VideoProcessingServiceProtocol {
     /// - Parameters:
     ///   - sourceURL: URL to the source video file
     ///   - sport: The sport type for detection tuning
+    ///   - sportMode: Optional sport-specific mode (e.g., TennisMode.rally)
     /// - Returns: Processing result with segments and highlight URL
-    func processVideo(sourceURL: URL, sport: Sport) async throws -> ProcessingResult
+    func processVideo(sourceURL: URL, sport: Sport, sportMode: SportMode?) async throws -> ProcessingResult
     
     /// Cancel any ongoing processing
     func cancel()
+}
+
+// MARK: - Protocol Extension for Default Parameter
+
+extension VideoProcessingServiceProtocol {
+    /// Convenience method without sport mode (uses default)
+    func processVideo(sourceURL: URL, sport: Sport) async throws -> ProcessingResult {
+        try await processVideo(sourceURL: sourceURL, sport: sport, sportMode: nil)
+    }
 }
 
 // MARK: - Dummy Implementation
@@ -85,7 +95,7 @@ final class DummyVideoProcessingService: VideoProcessingServiceProtocol {
         progressSubject.eraseToAnyPublisher()
     }
     
-    func processVideo(sourceURL: URL, sport: Sport) async throws -> ProcessingResult {
+    func processVideo(sourceURL: URL, sport: Sport, sportMode: SportMode?) async throws -> ProcessingResult {
         isCancelled = false
         
         // Simulate processing stages
@@ -94,8 +104,8 @@ final class DummyVideoProcessingService: VideoProcessingServiceProtocol {
         try await simulateStage(.creatingClips, duration: 1.5)
         try await simulateStage(.exporting, duration: 1.0)
         
-        // Generate dummy segments
-        let segments = generateDummySegments(sport: sport)
+        // Generate dummy segments based on mode
+        let segments = generateDummySegments(sport: sport, sportMode: sportMode)
         
         // Calculate highlight duration (sum of all segments)
         let highlightDuration = segments.reduce(0) { $0 + $1.duration }
@@ -141,18 +151,25 @@ final class DummyVideoProcessingService: VideoProcessingServiceProtocol {
         }
     }
     
-    private func generateDummySegments(sport: Sport) -> [ActionSegment] {
-        // Generate 8-15 random segments to simulate detected action
-        let segmentCount = Int.random(in: 8...15)
+    private func generateDummySegments(sport: Sport, sportMode: SportMode?) -> [ActionSegment] {
+        // Check if individual mode for tennis - generate more, shorter clips
+        let isIndividualMode = (sportMode as? TennisMode) == .individual
+        
+        // Generate segments based on mode
+        let segmentCount = isIndividualMode ? Int.random(in: 20...40) : Int.random(in: 8...15)
         var segments: [ActionSegment] = []
         var currentTime: TimeInterval = 10 // Start after 10 seconds
         
         for _ in 0..<segmentCount {
-            // Each segment is 15-60 seconds
-            let duration = TimeInterval.random(in: 15...60)
+            // Individual mode: short 1-2s clips; Rally mode: 15-60s clips
+            let duration = isIndividualMode
+                ? TimeInterval.random(in: 1...2)
+                : TimeInterval.random(in: 15...60)
             
-            // Gap between segments is 30-180 seconds (the "dead space")
-            let gap = TimeInterval.random(in: 30...180)
+            // Gap between segments
+            let gap = isIndividualMode
+                ? TimeInterval.random(in: 5...30)  // Shorter gaps in individual mode
+                : TimeInterval.random(in: 30...180)
             
             let segment = ActionSegment(
                 startTime: currentTime,
@@ -196,107 +213,219 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
     
     // MARK: - Processing
     
-    func processVideo(sourceURL: URL, sport: Sport) async throws -> ProcessingResult {
+    func processVideo(sourceURL: URL, sport: Sport, sportMode: SportMode?) async throws -> ProcessingResult {
         isCancelled = false
+        let pipelineStart = Date()
+        let logger = ProcessingLogger.shared
+        
+        // Get the preset for this sport/mode combination
+        let preset = sport.preset(for: sportMode)
+        let modeDescription = (sportMode as? TennisMode)?.displayName ?? "Default"
+        
+        print("")
+        print("⚙️ [VideoProcessor] ╔═══════════════════════════════════════════════════════════╗")
+        print("⚙️ [VideoProcessor] ║       SPORTCRUNCH HIGHLIGHT CREATION STARTED              ║")
+        print("⚙️ [VideoProcessor] ╚═══════════════════════════════════════════════════════════╝")
+        print("⚙️ [VideoProcessor] Sport: \(sport.displayName) \(sport.emoji)")
+        print("⚙️ [VideoProcessor] Mode: \(modeDescription)")
+        print("⚙️ [VideoProcessor] Source: \(sourceURL.lastPathComponent)")
+        print("⚙️ [VideoProcessor] Path: \(sourceURL.path)")
+        print("⚙️ [VideoProcessor] Preset: padding=\(preset.paddingPreSec)s/\(preset.paddingPostSec)s, maxGap=\(preset.clusterMaxGapSec)s")
+        print("")
+        
+        await MainActor.run {
+            logger.pipeline("Starting highlight creation for \(sport.displayName) (\(modeDescription))...")
+        }
         
         // Verify file exists
         guard FileManager.default.fileExists(atPath: sourceURL.path) else {
+            print("⚙️ [VideoProcessor] ❌ ERROR: File does not exist!")
+            await MainActor.run {
+                logger.error("Video file not found")
+            }
             throw ProcessingError.invalidVideoURL
         }
         
+        // Get file size for display
+        if let attrs = try? FileManager.default.attributesOfItem(atPath: sourceURL.path),
+           let fileSize = attrs[.size] as? Int64 {
+            let mb = Double(fileSize) / 1024 / 1024
+            print("⚙️ [VideoProcessor] File size: \(String(format: "%.1f", mb)) MB")
+            await MainActor.run {
+                logger.pipeline("Processing \(String(format: "%.1f", mb)) MB video...")
+            }
+        }
+        print("")
+        
+        // ═══════════════════════════════════════════════════════════════
         // Phase 1: Audio Analysis (0-50% progress)
+        // ═══════════════════════════════════════════════════════════════
+        print("⚙️ [VideoProcessor] ┌─────────────────────────────────────────┐")
+        print("⚙️ [VideoProcessor] │  PHASE 1/3: AUDIO ANALYSIS              │")
+        print("⚙️ [VideoProcessor] └─────────────────────────────────────────┘")
+        
         statusSubject.send(.analyzingAudio)
         progressSubject.send(0.05)
         
         let audioResult: AudioAnalysisResult
         do {
-            audioResult = try await audioAnalyzer.analyze(videoURL: sourceURL, sport: sport)
+            audioResult = try await audioAnalyzer.analyze(videoURL: sourceURL, sport: sport, sportMode: sportMode)
         } catch {
+            print("⚙️ [VideoProcessor] ❌ Audio analysis failed: \(error.localizedDescription)")
+            await MainActor.run {
+                logger.error("Audio analysis failed: \(error.localizedDescription)")
+            }
             throw ProcessingError.audioExtractionFailed
         }
         
-        guard !isCancelled else { throw ProcessingError.cancelled }
+        guard !isCancelled else {
+            print("⚙️ [VideoProcessor] ⚠️ Cancelled during audio analysis")
+            await MainActor.run {
+                logger.warning("Processing cancelled")
+            }
+            throw ProcessingError.cancelled
+        }
         progressSubject.send(0.50)
         
         // Check if any candidates were found
         guard !audioResult.candidateIntervals.isEmpty else {
+            print("⚙️ [VideoProcessor] ❌ No action detected in audio analysis")
+            await MainActor.run {
+                logger.error("No action detected in audio")
+            }
             throw ProcessingError.noActionDetected
         }
         
+        print("")
+        
+        // ═══════════════════════════════════════════════════════════════
         // Phase 2: Visual Validation (50-75% progress)
+        // ═══════════════════════════════════════════════════════════════
+        print("⚙️ [VideoProcessor] ┌─────────────────────────────────────────┐")
+        print("⚙️ [VideoProcessor] │  PHASE 2/3: VISUAL VALIDATION           │")
+        print("⚙️ [VideoProcessor] └─────────────────────────────────────────┘")
+        
         statusSubject.send(.detectingAction)
         progressSubject.send(0.55)
         
-        let validations: [SegmentValidation]
-        do {
-            validations = try await visualValidator.validate(
-                videoURL: sourceURL,
-                candidates: audioResult.candidateIntervals
-            )
-        } catch {
-            // If visual validation fails, fall back to using audio-only results
-            // This is acceptable as audio detection has high recall
-            let segments = audioResult.candidateIntervals.map { interval in
-                ActionSegment(
-                    startTime: interval.start,
-                    endTime: interval.end,
-                    confidence: 0.8
-                )
-            }
-            
-            // Skip to export phase
-            return try await exportSegments(
-                sourceURL: sourceURL,
-                intervals: audioResult.candidateIntervals,
-                segments: segments
-            )
-        }
-        
-        guard !isCancelled else { throw ProcessingError.cancelled }
-        progressSubject.send(0.75)
-        
-        // Filter to only valid (motion-confirmed) segments
-        let validIntervals = validations
-            .filter { $0.isValid }
-            .map { (start: $0.start, end: $0.end) }
-        
-        // If no segments validated, try using all audio candidates with lower confidence
         let finalIntervals: [(start: TimeInterval, end: TimeInterval)]
         let segments: [ActionSegment]
         
-        if validIntervals.isEmpty {
-            // Fall back to audio-only detection
+        // Check if visual validation should be skipped for this sport
+        if sport.preset.skipVisualValidation {
+            print("⚙️ [VideoProcessor] ✓ Skipping visual validation for \(sport.displayName) (audio-only mode)")
+            await MainActor.run {
+                logger.success("Using audio-only mode for \(sport.displayName) (visual validation skipped)")
+            }
+            
+            // Use audio results directly with high confidence
             finalIntervals = audioResult.candidateIntervals
             segments = finalIntervals.map { interval in
                 ActionSegment(
                     startTime: interval.start,
                     endTime: interval.end,
-                    confidence: 0.6  // Lower confidence since not visually validated
+                    confidence: 0.9  // High confidence for audio-only tennis
                 )
             }
+            progressSubject.send(0.75)
         } else {
-            finalIntervals = validIntervals
-            segments = validations.filter { $0.isValid }.map { validation in
-                // Map motion score to confidence (normalize to 0.7-1.0 range)
-                let normalizedScore = min(1.0, validation.motionScore / 2000.0)
-                let confidence = 0.7 + (normalizedScore * 0.3)
-                return ActionSegment(
-                    startTime: validation.start,
-                    endTime: validation.end,
-                    confidence: confidence
+            // Perform visual validation for sports that need it
+            let validations: [SegmentValidation]
+            do {
+                validations = try await visualValidator.validate(
+                    videoURL: sourceURL,
+                    candidates: audioResult.candidateIntervals,
+                    sport: sport
                 )
+            } catch {
+                print("⚙️ [VideoProcessor] ⚠️ Visual validation failed, falling back to audio-only")
+                print("⚙️ [VideoProcessor] Error: \(error.localizedDescription)")
+                await MainActor.run {
+                    logger.warning("Visual validation unavailable, using audio-only")
+                }
+                
+                // If visual validation fails, fall back to using audio-only results
+                let fallbackSegments = audioResult.candidateIntervals.map { interval in
+                    ActionSegment(
+                        startTime: interval.start,
+                        endTime: interval.end,
+                        confidence: 0.8
+                    )
+                }
+                
+                // Skip to export phase
+                return try await exportSegments(
+                    sourceURL: sourceURL,
+                    intervals: audioResult.candidateIntervals,
+                    segments: fallbackSegments,
+                    pipelineStart: pipelineStart
+                )
+            }
+            
+            guard !isCancelled else {
+                print("⚙️ [VideoProcessor] ⚠️ Cancelled during visual validation")
+                await MainActor.run {
+                    logger.warning("Processing cancelled")
+                }
+                throw ProcessingError.cancelled
+            }
+            progressSubject.send(0.75)
+            
+            // Filter to only valid (motion-confirmed) segments
+            let validIntervals = validations
+                .filter { $0.isValid }
+                .map { (start: $0.start, end: $0.end) }
+            
+            // If no segments validated, try using all audio candidates with lower confidence
+            if validIntervals.isEmpty {
+                print("⚙️ [VideoProcessor] ⚠️ No segments passed visual validation, using audio-only results")
+                await MainActor.run {
+                    logger.warning("Low motion detected, using audio-only results")
+                }
+                finalIntervals = audioResult.candidateIntervals
+                segments = audioResult.candidateIntervals.map { interval in
+                    ActionSegment(
+                        startTime: interval.start,
+                        endTime: interval.end,
+                        confidence: 0.6
+                    )
+                }
+            } else {
+                print("⚙️ [VideoProcessor] ✓ \(validIntervals.count) segments validated with motion")
+                await MainActor.run {
+                    logger.success("\(validIntervals.count) segments verified with motion")
+                }
+                finalIntervals = validIntervals
+                segments = validations.filter { $0.isValid }.map { validation in
+                    let normalizedScore = min(1.0, validation.motionScore / 2000.0)
+                    let confidence = 0.7 + (normalizedScore * 0.3)
+                    return ActionSegment(
+                        startTime: validation.start,
+                        endTime: validation.end,
+                        confidence: confidence
+                    )
+                }
             }
         }
         
         guard !finalIntervals.isEmpty else {
+            print("⚙️ [VideoProcessor] ❌ No action detected after validation")
+            await MainActor.run {
+                logger.error("No action detected after validation")
+            }
             throw ProcessingError.noActionDetected
         }
         
+        print("")
+        
+        // ═══════════════════════════════════════════════════════════════
         // Phase 3: Export (75-100% progress)
+        // ═══════════════════════════════════════════════════════════════
         return try await exportSegments(
             sourceURL: sourceURL,
             intervals: finalIntervals,
-            segments: segments
+            segments: segments,
+            pipelineStart: pipelineStart
         )
     }
     
@@ -305,12 +434,25 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
     private func exportSegments(
         sourceURL: URL,
         intervals: [(start: TimeInterval, end: TimeInterval)],
-        segments: [ActionSegment]
+        segments: [ActionSegment],
+        pipelineStart: Date
     ) async throws -> ProcessingResult {
+        let logger = ProcessingLogger.shared
+        
+        print("⚙️ [VideoProcessor] ┌─────────────────────────────────────────┐")
+        print("⚙️ [VideoProcessor] │  PHASE 3/3: VIDEO EXPORT                │")
+        print("⚙️ [VideoProcessor] └─────────────────────────────────────────┘")
+        
         statusSubject.send(.creatingClips)
         progressSubject.send(0.80)
         
-        guard !isCancelled else { throw ProcessingError.cancelled }
+        guard !isCancelled else {
+            print("⚙️ [VideoProcessor] ⚠️ Cancelled before export")
+            await MainActor.run {
+                logger.warning("Processing cancelled")
+            }
+            throw ProcessingError.cancelled
+        }
         
         // Create output URL in temp directory
         let outputURL = FileManager.default.temporaryDirectory
@@ -328,11 +470,18 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
                 outputURL: outputURL
             )
         } catch {
+            print("⚙️ [VideoProcessor] ❌ Export failed: \(error.localizedDescription)")
+            await MainActor.run {
+                logger.error("Export failed: \(error.localizedDescription)")
+            }
             throw ProcessingError.exportFailed
         }
         
         guard !isCancelled else {
-            // Clean up exported file if cancelled
+            print("⚙️ [VideoProcessor] ⚠️ Cancelled after export, cleaning up...")
+            await MainActor.run {
+                logger.warning("Cancelled, cleaning up...")
+            }
             try? FileManager.default.removeItem(at: outputURL)
             throw ProcessingError.cancelled
         }
@@ -340,11 +489,38 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         statusSubject.send(.completed)
         progressSubject.send(1.0)
         
+        let totalElapsed = Date().timeIntervalSince(pipelineStart)
+        
+        print("")
+        print("⚙️ [VideoProcessor] ╔═══════════════════════════════════════════════════════════╗")
+        print("⚙️ [VideoProcessor] ║       🎉 HIGHLIGHT CREATION COMPLETE! 🎉                  ║")
+        print("⚙️ [VideoProcessor] ╚═══════════════════════════════════════════════════════════╝")
+        print("⚙️ [VideoProcessor] ⏱️  Total processing time: \(String(format: "%.2f", totalElapsed)) seconds")
+        print("⚙️ [VideoProcessor] 📊 Summary:")
+        print("⚙️ [VideoProcessor]    • Input: \(formatTime(exportResult.inputDuration))")
+        print("⚙️ [VideoProcessor]    • Output: \(formatTime(exportResult.outputDuration))")
+        print("⚙️ [VideoProcessor]    • Reduction: \(String(format: "%.1f", exportResult.compressionRatio))%")
+        print("⚙️ [VideoProcessor]    • Segments: \(segments.count)")
+        print("⚙️ [VideoProcessor] 📁 Output: \(outputURL.lastPathComponent)")
+        print("")
+        
+        await MainActor.run {
+            logger.success("Highlight created! \(formatTime(exportResult.inputDuration)) → \(formatTime(exportResult.outputDuration)) in \(String(format: "%.1f", totalElapsed))s")
+        }
+        
         return ProcessingResult(
             segments: segments,
             highlightURL: exportResult.outputURL,
             highlightDuration: exportResult.outputDuration
         )
+    }
+    
+    // MARK: - Formatting
+    
+    private func formatTime(_ seconds: TimeInterval) -> String {
+        let mins = Int(seconds) / 60
+        let secs = Int(seconds) % 60
+        return String(format: "%d:%02d", mins, secs)
     }
     
     // MARK: - Cancellation

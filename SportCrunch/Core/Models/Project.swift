@@ -37,12 +37,16 @@ struct Project: Identifiable, Codable, Equatable {
     /// Thumbnail image data (stored as base64 for simplicity)
     var thumbnailData: Data?
     
+    /// Sport mode (e.g., Tennis Rally vs Individual)
+    var sportMode: SportModeWrapper?
+    
     init(
         id: UUID = UUID(),
         sport: Sport,
         sourceVideoURL: URL,
         originalDuration: TimeInterval,
-        title: String? = nil
+        title: String? = nil,
+        sportMode: SportModeWrapper? = nil
     ) {
         self.id = id
         self.sport = sport
@@ -52,6 +56,12 @@ struct Project: Identifiable, Codable, Equatable {
         self.status = .pending
         self.segments = []
         self.title = title
+        self.sportMode = sportMode
+    }
+    
+    /// Formatted sport mode display name
+    var formattedSportMode: String? {
+        sportMode?.displayName
     }
     
     // MARK: - Computed Properties
@@ -104,6 +114,7 @@ struct Project: Identifiable, Codable, Equatable {
 
 enum ProcessingStatus: String, Codable, Equatable {
     case pending
+    case loadingVideo
     case analyzingAudio
     case detectingAction
     case creatingClips
@@ -114,6 +125,7 @@ enum ProcessingStatus: String, Codable, Equatable {
     var displayText: String {
         switch self {
         case .pending: return "Waiting..."
+        case .loadingVideo: return "Loading video..."
         case .analyzingAudio: return "Analyzing audio..."
         case .detectingAction: return "Detecting action..."
         case .creatingClips: return "Creating clips..."
@@ -126,6 +138,7 @@ enum ProcessingStatus: String, Codable, Equatable {
     var progress: Double {
         switch self {
         case .pending: return 0.0
+        case .loadingVideo: return 0.10
         case .analyzingAudio: return 0.25
         case .detectingAction: return 0.50
         case .creatingClips: return 0.75
@@ -137,7 +150,7 @@ enum ProcessingStatus: String, Codable, Equatable {
     
     var isProcessing: Bool {
         switch self {
-        case .pending, .analyzingAudio, .detectingAction, .creatingClips, .exporting:
+        case .pending, .loadingVideo, .analyzingAudio, .detectingAction, .creatingClips, .exporting:
             return true
         case .completed, .failed:
             return false

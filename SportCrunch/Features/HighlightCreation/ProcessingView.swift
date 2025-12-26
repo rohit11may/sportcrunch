@@ -9,16 +9,7 @@ import SwiftUI
 
 struct ProcessingView: View {
     var viewModel: HighlightCreationViewModel
-    @State private var currentTipIndex = 0
-    
-    private let tips: [String] = [
-        "Analyzing the audio track for distinctive impact sounds...",
-        "Tennis racket-ball impacts have a unique acoustic signature",
-        "Motion detection helps verify the action segments",
-        "Almost there—creating your highlight clips...",
-        "Fun fact: Professional tennis matches have ~20% actual gameplay",
-        "Your original video remains completely unchanged"
-    ]
+    @StateObject private var logger = ProcessingLogger.shared
     
     var body: some View {
         VStack(spacing: Spacing.xxl) {
@@ -45,14 +36,15 @@ struct ProcessingView: View {
             
             Spacer()
             
-            // Rotating tips
-            tipCard
+            // Live log card
+            logCard
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.bottom, Spacing.xl)
         .background(SportThemedBackground(sport: viewModel.selectedSport ?? .tennis))
         .onAppear {
-            startTipRotation()
+            // Clear previous logs when starting new processing
+            logger.clear()
         }
     }
     
@@ -85,19 +77,23 @@ struct ProcessingView: View {
         .padding(.horizontal, Spacing.xxl)
     }
     
-    // MARK: - Tip Card
+    // MARK: - Log Card
     
-    private var tipCard: some View {
+    private var logCard: some View {
         HStack(spacing: Spacing.sm) {
-            Image(systemName: "lightbulb.fill")
+            // Dynamic icon based on log category
+            Image(systemName: iconForCategory(logger.currentCategory))
                 .font(.system(size: 16))
-                .foregroundStyle(Color.scWarning)
+                .foregroundStyle(colorForCategory(logger.currentCategory))
+                .frame(width: 20)
             
-            Text(tips[currentTipIndex])
+            // Log message with animation
+            Text(logger.currentMessage.isEmpty ? "Preparing..." : logger.currentMessage)
                 .font(AppFont.callout())
                 .foregroundStyle(Color.scTextSecondary)
                 .lineLimit(2)
-                .animation(.easeInOut, value: currentTipIndex)
+                .multilineTextAlignment(.leading)
+                .animation(.easeInOut(duration: 0.2), value: logger.currentMessage)
             
             Spacer()
         }
@@ -106,13 +102,47 @@ struct ProcessingView: View {
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
     }
     
-    // MARK: - Tip Rotation
+    // MARK: - Helper Methods
     
-    private func startTipRotation() {
-        Timer.scheduledTimer(withTimeInterval: 4.0, repeats: true) { _ in
-            withAnimation {
-                currentTipIndex = (currentTipIndex + 1) % tips.count
-            }
+    private func iconForCategory(_ category: ProcessingLogEntry.LogCategory) -> String {
+        switch category {
+        case .audio:
+            return "waveform"
+        case .visual:
+            return "eye"
+        case .export:
+            return "film"
+        case .pipeline:
+            return "gearshape"
+        case .info:
+            return "info.circle"
+        case .success:
+            return "checkmark.circle.fill"
+        case .warning:
+            return "exclamationmark.triangle.fill"
+        case .error:
+            return "xmark.circle.fill"
+        }
+    }
+    
+    private func colorForCategory(_ category: ProcessingLogEntry.LogCategory) -> Color {
+        switch category {
+        case .audio:
+            return Color.scPrimary
+        case .visual:
+            return Color.scSecondary
+        case .export:
+            return Color.scAccent
+        case .pipeline:
+            return Color.scTextSecondary
+        case .info:
+            return Color.scTextSecondary
+        case .success:
+            return Color.scSuccess
+        case .warning:
+            return Color.scWarning
+        case .error:
+            return Color.scError
         }
     }
 }

@@ -54,12 +54,9 @@ enum VisualValidatorError: Error, LocalizedError {
 /// 5. Return true if motion exceeds threshold
 actor VisualValidator {
     
-    // MARK: - Configuration
+    // MARK: - Current Preset (set per validation call)
     
-    private let thumbSize = CGSize(width: 320, height: 180)
-    private let sampleStride: Int = 10  // Frames to skip
-    private let motionPixelThreshold: UInt8 = 25  // Intensity diff to count as motion
-    private let motionAreaThreshold: Double = 500  // Minimum motion pixels for "active"
+    private var currentPreset: AnalysisPreset?
     
     // MARK: - Public API
     
@@ -67,19 +64,48 @@ actor VisualValidator {
     /// - Parameters:
     ///   - videoURL: URL to the video file
     ///   - candidates: List of (start, end) intervals in seconds
+    ///   - sport: Sport type for preset configuration
     /// - Returns: Array of validation results for each segment
     func validate(
         videoURL: URL,
-        candidates: [(start: TimeInterval, end: TimeInterval)]
+        candidates: [(start: TimeInterval, end: TimeInterval)],
+        sport: Sport
     ) async throws -> [SegmentValidation] {
+        let preset = sport.preset
+        currentPreset = preset
+        let logger = ProcessingLogger.shared
+        
+        let thumbSize = CGSize(
+            width: preset.videoThumbSize.width,
+            height: preset.videoThumbSize.height
+        )
+        
+        let startTime = Date()
+        print("👁️ [VisualValidator] ═══════════════════════════════════════════")
+        print("👁️ [VisualValidator] Starting visual validation for \(sport.displayName)")
+        print("👁️ [VisualValidator] Source: \(videoURL.lastPathComponent)")
+        print("👁️ [VisualValidator] Segments to validate: \(candidates.count)")
+        print("👁️ [VisualValidator] ───────────────────────────────────────────")
+        print("👁️ [VisualValidator] Preset Configuration:")
+        print("👁️ [VisualValidator]   • Thumbnail size: \(preset.videoThumbSize.width)x\(preset.videoThumbSize.height)")
+        print("👁️ [VisualValidator]   • Frame stride: every \(preset.videoSampleStride) frames")
+        print("👁️ [VisualValidator]   • Pixel threshold: \(preset.motionPixelThreshold)")
+        print("👁️ [VisualValidator]   • Area threshold: \(Int(preset.motionAreaThreshold)) pixels")
+        print("👁️ [VisualValidator] ───────────────────────────────────────────")
+        
+        logger.visualAsync("Starting motion validation for \(candidates.count) segments...")
+        
         let asset = AVURLAsset(url: videoURL)
         
         // Verify video track exists
         guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
+            print("👁️ [VisualValidator] ❌ ERROR: No video track found")
+            logger.errorAsync("No video track found")
             throw VisualValidatorError.noVideoTrack
         }
         
         let fps = try await videoTrack.load(.nominalFrameRate)
+        print("👁️ [VisualValidator] Video FPS: \(String(format: "%.2f", fps))")
         
         // Create image generator
         let generator = AVAssetImageGenerator(asset: asset)
@@ -90,17 +116,44 @@ actor VisualValidator {
         
         var validations: [SegmentValidation] = []
         
-        for candidate in candidates {
+        for (index, candidate) in candidates.enumerated() {
+            print("👁️ [VisualValidator] Validating segment \(index + 1)/\(candidates.count): \(formatTime(candidate.start)) → \(formatTime(candidate.end))")
+            logger.visualAsync("Validating segment \(index + 1)/\(candidates.count) (\(formatTime(candidate.start)) → \(formatTime(candidate.end)))")
+            
             let validation = try await validateSegment(
                 generator: generator,
                 start: candidate.start,
                 end: candidate.end,
-                fps: Double(fps)
+                fps: Double(fps),
+                preset: preset
             )
             validations.append(validation)
+            
+            let status = validation.isValid ? "✅ VALID" : "⚪️ LOW MOTION"
+            print("👁️ [VisualValidator]   → Motion score: \(Int(validation.motionScore)) \(status)")
         }
         
+        let validCount = validations.filter { $0.isValid }.count
+        let elapsed = Date().timeIntervalSince(startTime)
+        
+        print("👁️ [VisualValidator] ═══════════════════════════════════════════")
+        print("👁️ [VisualValidator] ✅ VALIDATION COMPLETE in \(String(format: "%.2f", elapsed))s")
+        print("👁️ [VisualValidator] 📊 Results:")
+        print("👁️ [VisualValidator]    • Valid segments: \(validCount)/\(candidates.count)")
+        print("👁️ [VisualValidator]    • Rejected (low motion): \(candidates.count - validCount)")
+        print("👁️ [VisualValidator] ═══════════════════════════════════════════")
+        
+        logger.successAsync("Motion validation complete: \(validCount)/\(candidates.count) segments verified in \(String(format: "%.1f", elapsed))s")
+        
         return validations
+    }
+    
+    // MARK: - Formatting Helpers
+    
+    private func formatTime(_ seconds: TimeInterval) -> String {
+        let mins = Int(seconds) / 60
+        let secs = Int(seconds) % 60
+        return String(format: "%d:%02d", mins, secs)
     }
     
     // MARK: - Segment Validation
@@ -109,7 +162,8 @@ actor VisualValidator {
         generator: AVAssetImageGenerator,
         start: TimeInterval,
         end: TimeInterval,
-        fps: Double
+        fps: Double,
+        preset: AnalysisPreset
     ) async throws -> SegmentValidation {
         let startFrame = Int(start * fps)
         let endFrame = Int(end * fps)
@@ -130,7 +184,11 @@ actor VisualValidator {
                 
                 // Compute motion score if we have a previous frame
                 if let prev = previousGrayscale, prev.count == grayscale.count {
-                    let score = computeMotionScore(frameA: prev, frameB: grayscale)
+                    let score = computeMotionScore(
+                        frameA: prev,
+                        frameB: grayscale,
+                        pixelThreshold: preset.motionPixelThreshold
+                    )
                     frameScores.append(score)
                 }
                 
@@ -139,7 +197,7 @@ actor VisualValidator {
                 // Skip frames that can't be extracted
             }
             
-            frameIndex += sampleStride
+            frameIndex += preset.videoSampleStride
         }
         
         // Calculate average motion score
@@ -150,7 +208,7 @@ actor VisualValidator {
             motionScore = frameScores.reduce(0, +) / Double(frameScores.count)
         }
         
-        let isValid = motionScore >= motionAreaThreshold
+        let isValid = motionScore >= preset.motionAreaThreshold
         
         return SegmentValidation(
             start: start,
@@ -192,7 +250,7 @@ actor VisualValidator {
     
     /// Compute motion score between two grayscale frames.
     /// Returns count of pixels with difference above threshold.
-    private func computeMotionScore(frameA: [UInt8], frameB: [UInt8]) -> Double {
+    private func computeMotionScore(frameA: [UInt8], frameB: [UInt8], pixelThreshold: Int) -> Double {
         guard frameA.count == frameB.count, !frameA.isEmpty else { return 0 }
         
         var motionPixels = 0
@@ -211,7 +269,7 @@ actor VisualValidator {
         vDSP_vabs(diff, 1, &diff, 1, vDSP_Length(diff.count))
         
         // Count pixels above threshold
-        let threshold = Float(motionPixelThreshold)
+        let threshold = Float(pixelThreshold)
         for value in diff {
             if value > threshold {
                 motionPixels += 1

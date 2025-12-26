@@ -28,6 +28,16 @@ final class AppState: ObservableObject {
     let videoProcessingService: VideoProcessingServiceProtocol
     let projectStorageService: ProjectStorageServiceProtocol
     
+    /// Background processing manager for non-blocking video processing
+    /// Initialized on first access on the main actor
+    @MainActor
+    private(set) lazy var backgroundProcessingManager: BackgroundProcessingManager = {
+        BackgroundProcessingManager(
+            processingService: videoProcessingService,
+            storageService: projectStorageService
+        )
+    }()
+    
     // MARK: - Constants
     
     private let onboardingKey = "com.sportcrunch.hasCompletedOnboarding"
@@ -35,7 +45,7 @@ final class AppState: ObservableObject {
     // MARK: - Initialization
     
     init(
-        videoProcessingService: VideoProcessingServiceProtocol = DummyVideoProcessingService(),
+        videoProcessingService: VideoProcessingServiceProtocol = RealVideoProcessingService(),
         projectStorageService: ProjectStorageServiceProtocol = UserDefaultsProjectStorageService()
     ) {
         self.videoProcessingService = videoProcessingService

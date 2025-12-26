@@ -9,9 +9,15 @@ import SwiftUI
 
 struct ProjectCard: View {
     let project: Project
+    var isProcessing: Bool = false
     let action: () -> Void
     
     @State private var isPressed = false
+    
+    /// Determines if we should show processing state (from project status or explicit flag)
+    private var showsProcessing: Bool {
+        isProcessing || project.status.isProcessing
+    }
     
     var body: some View {
         Button(action: action) {
@@ -64,7 +70,7 @@ struct ProjectCard: View {
             .padding(Spacing.sm)
             
             // Status indicator for processing
-            if project.status.isProcessing {
+            if showsProcessing {
                 VStack {
                     Spacer()
                     HStack {
@@ -76,8 +82,8 @@ struct ProjectCard: View {
                 .frame(height: 140)
             }
             
-            // Play button for completed
-            if project.status == .completed {
+            // Play button for completed (only if not processing)
+            if project.status == .completed && !showsProcessing {
                 VStack {
                     Spacer()
                     HStack {

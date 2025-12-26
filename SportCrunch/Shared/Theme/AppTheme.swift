@@ -12,6 +12,10 @@ import SwiftUI
 // via ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS
 
 extension Color {
+    // Additional brand colors (scPrimary is auto-generated from Asset Catalog)
+    static let scSecondary = Color(hex: "0066FF") // Electric blue
+    static let scAccent = Color(hex: "F7931E") // Warm amber accent
+    
     // Sport-specific accents
     static let scTennis = Color(hex: "C8E038") // Vibrant tennis ball yellow-green
     static let scCricket = Color(hex: "E63946") // Cricket red
