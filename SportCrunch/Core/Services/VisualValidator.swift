@@ -65,13 +65,15 @@ actor VisualValidator {
     ///   - videoURL: URL to the video file
     ///   - candidates: List of (start, end) intervals in seconds
     ///   - sport: Sport type for preset configuration
+    ///   - sportMode: Optional sport-specific mode (e.g., TennisMode)
     /// - Returns: Array of validation results for each segment
     func validate(
         videoURL: URL,
         candidates: [(start: TimeInterval, end: TimeInterval)],
-        sport: Sport
+        sport: Sport,
+        sportMode: SportMode? = nil
     ) async throws -> [SegmentValidation] {
-        let preset = sport.preset
+        let preset = sport.preset(for: sportMode)
         currentPreset = preset
         let logger = ProcessingLogger.shared
         

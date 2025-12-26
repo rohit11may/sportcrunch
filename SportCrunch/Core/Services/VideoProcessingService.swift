@@ -311,8 +311,8 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         let finalIntervals: [(start: TimeInterval, end: TimeInterval)]
         let segments: [ActionSegment]
         
-        // Check if visual validation should be skipped for this sport
-        if sport.preset.skipVisualValidation {
+        // Check if visual validation should be skipped for this sport/mode
+        if preset.skipVisualValidation {
             print("⚙️ [VideoProcessor] ✓ Skipping visual validation for \(sport.displayName) (audio-only mode)")
             await MainActor.run {
                 logger.success("Using audio-only mode for \(sport.displayName) (visual validation skipped)")
@@ -335,7 +335,8 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
                 validations = try await visualValidator.validate(
                     videoURL: sourceURL,
                     candidates: audioResult.candidateIntervals,
-                    sport: sport
+                    sport: sport,
+                    sportMode: sportMode
                 )
             } catch {
                 print("⚙️ [VideoProcessor] ⚠️ Visual validation failed, falling back to audio-only")

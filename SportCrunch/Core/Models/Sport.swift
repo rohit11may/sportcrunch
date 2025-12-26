@@ -285,8 +285,8 @@ enum Sport: String, CaseIterable, Identifiable, Codable {
                 skipVisualValidation: true,
                 videoSampleStride: 10,
                 videoThumbSize: (width: 320, height: 180),
-                motionPixelThreshold: 25,
-                motionAreaThreshold: 500
+                motionPixelThreshold: 15,
+                motionAreaThreshold: 200
             )
             
         case .individual:
@@ -310,12 +310,12 @@ enum Sport: String, CaseIterable, Identifiable, Codable {
                 paddingPreSec: 0.5,         // 0.5s before hit
                 paddingPostSec: 0.5,        // 0.5s after hit
                 
-                // Video Motion Validation - SKIP for tennis
-                skipVisualValidation: true,
+                // Video Motion Validation - ENABLED for shot mode
+                skipVisualValidation: false,
                 videoSampleStride: 10,
                 videoThumbSize: (width: 320, height: 180),
-                motionPixelThreshold: 25,
-                motionAreaThreshold: 500
+                motionPixelThreshold: 15,
+                motionAreaThreshold: 200
             )
         }
     }
@@ -345,8 +345,8 @@ enum Sport: String, CaseIterable, Identifiable, Codable {
             skipVisualValidation: false,
             videoSampleStride: 10,
             videoThumbSize: (width: 320, height: 180),
-            motionPixelThreshold: 25,
-            motionAreaThreshold: 500
+            motionPixelThreshold: 15,
+            motionAreaThreshold: 200
         )
     }
     
