@@ -1,0 +1,11 @@
+# Core processing
+numpy>=1.24.0
+scipy>=1.11.0
+librosa>=0.10.0
+moviepy>=1.0.3
+opencv-python>=4.8.0
+
+# Visualization
+streamlit>=1.29.0
+plotly>=5.18.0
+

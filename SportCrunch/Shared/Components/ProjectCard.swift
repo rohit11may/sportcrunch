@@ -1,0 +1,191 @@
+//
+//  ProjectCard.swift
+//  SportCrunch
+//
+//  Created by Rohit Prasad on 26/12/2025.
+//
+
+import SwiftUI
+
+struct ProjectCard: View {
+    let project: Project
+    let action: () -> Void
+    
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 0) {
+                // Thumbnail
+                thumbnailView
+                
+                // Info Section
+                infoSection
+            }
+            .background(Color.scSurface)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+            .scaleEffect(isPressed ? 0.98 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+        }
+        .buttonStyle(PressableButtonStyle(isPressed: $isPressed))
+    }
+    
+    // MARK: - Thumbnail View
+    
+    @ViewBuilder
+    private var thumbnailView: some View {
+        ZStack(alignment: .topLeading) {
+            // Placeholder gradient background
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            project.sport.accentColor.opacity(0.3),
+                            project.sport.accentColor.opacity(0.1)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(height: 140)
+            
+            // Sport badge
+            HStack(spacing: Spacing.xxs) {
+                Text(project.sport.emoji)
+                    .font(.system(size: 14))
+                Text(project.sport.displayName)
+                    .font(AppFont.captionBold())
+            }
+            .foregroundStyle(Color.scTextPrimary)
+            .padding(.horizontal, Spacing.xs)
+            .padding(.vertical, Spacing.xxs)
+            .background(Color.black.opacity(0.5))
+            .clipShape(Capsule())
+            .padding(Spacing.sm)
+            
+            // Status indicator for processing
+            if project.status.isProcessing {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        processingIndicator
+                            .padding(Spacing.sm)
+                    }
+                }
+                .frame(height: 140)
+            }
+            
+            // Play button for completed
+            if project.status == .completed {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        playButton
+                        Spacer()
+                    }
+                    Spacer()
+                }
+                .frame(height: 140)
+            }
+        }
+    }
+    
+    private var processingIndicator: some View {
+        HStack(spacing: Spacing.xs) {
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                .scaleEffect(0.8)
+            
+            Text(project.status.displayText)
+                .font(AppFont.caption())
+                .foregroundStyle(Color.scTextPrimary)
+        }
+        .padding(.horizontal, Spacing.sm)
+        .padding(.vertical, Spacing.xs)
+        .background(Color.black.opacity(0.7))
+        .clipShape(Capsule())
+    }
+    
+    private var playButton: some View {
+        Image(systemName: "play.circle.fill")
+            .font(.system(size: 48))
+            .foregroundStyle(.white)
+            .shadow(color: .black.opacity(0.3), radius: 8)
+    }
+    
+    // MARK: - Info Section
+    
+    private var infoSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            // Title
+            Text(project.title ?? "Untitled")
+                .font(AppFont.subheadline())
+                .foregroundStyle(Color.scTextPrimary)
+                .lineLimit(1)
+            
+            // Duration stats
+            HStack(spacing: Spacing.md) {
+                durationStat(
+                    label: "Original",
+                    value: project.formattedOriginalDuration,
+                    color: .scTextSecondary
+                )
+                
+                if let highlightDuration = project.formattedHighlightDuration {
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color.scTextTertiary)
+                    
+                    durationStat(
+                        label: "Highlight",
+                        value: highlightDuration,
+                        color: project.sport.accentColor
+                    )
+                }
+            }
+            
+            // Time saved badge
+            if let timeSaved = project.formattedTimeSaved {
+                Text(timeSaved)
+                    .font(AppFont.captionBold())
+                    .foregroundStyle(Color.scSuccess)
+                    .padding(.top, Spacing.xxs)
+            }
+        }
+        .padding(Spacing.md)
+    }
+    
+    private func durationStat(label: String, value: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(AppFont.caption())
+                .foregroundStyle(Color.scTextTertiary)
+            
+            Text(value)
+                .font(AppFont.callout())
+                .foregroundStyle(color)
+        }
+    }
+}
+
+// MARK: - Previews
+
+#Preview("Project Card - Completed") {
+    ProjectCard(project: .sampleCompleted) {}
+        .frame(width: 280)
+        .padding()
+        .background(Color.scBackground)
+}
+
+#Preview("Project Card - Processing") {
+    var project = Project.sampleTennis
+    project.status = .detectingAction
+    
+    return ProjectCard(project: project) {}
+        .frame(width: 280)
+        .padding()
+        .background(Color.scBackground)
+}
+

@@ -1,0 +1,266 @@
+﻿Algorithmic Strategies for Efficient, On-Device Summarization of Tennis Footage: A Heuristic Approach
+1. Introduction and Problem Space Analysis
+The ubiquity of high-definition video recording on modern mobile devices has fundamentally altered the landscape of amateur and semi-professional sports analysis. Where once broadcast-quality footage was the exclusive domain of major television networks, today any tennis enthusiast can record a three-hour match in 4K resolution using a standard iPhone. However, the accessibility of capture has not been matched by the accessibility of consumption. Tennis, by its structural nature, is a sparse sport; a typical match lasting two to three hours may contain as little as 15% to 20% of actual gameplay. The remainder—the "dead space"—consists of ball retrieval, changeovers, toweling off, and preparation rituals. For a user seeking to analyze their technique or review competitive highlights, the signal-to-noise ratio is frustratingly low, and the friction of manually scrubbing through gigabytes of footage is prohibitively high.
+This report presents a comprehensive research analysis and prototyping roadmap for developing an automated, on-device application capable of removing this dead space. The primary objective is to engineer a system that is fast, battery-efficient, and effective without relying on computationally expensive Deep Learning models or cloud-based processing. The constraints are significant: the solution must process video files ranging from ten minutes to three hours directly on an iPhone, utilizing "best effort" heuristics to identify action segments without requiring user labeling or strict adherence to game rules.
+The analysis prioritizes a "sensor fusion" approach, leveraging the distinct acoustic signature of tennis—specifically the impulsive sound of the racket-ball impact—as a primary, low-latency filter, while utilizing lightweight computer vision techniques for verification. By eschewing heavy Convolutional Neural Networks (CNNs) in favor of Digital Signal Processing (DSP) and compressed-domain video analysis, we can achieve processing speeds orders of magnitude faster than real-time playback, respecting the thermal and energetic limitations of mobile hardware.
+1.1 The Nature of "Dead Space" in Racket Sports
+To design an effective removal algorithm, one must first rigorously characterize the "dead space" we aim to excise. Unlike continuous-flow sports such as soccer or basketball, racket sports are discrete event sequences. A match is a hierarchical assembly of points, games, and sets, but the atomic unit of interest for this application is the rally.
+A rally is defined physically by a period of high-intensity kinetic and acoustic activity. It typically initiates with a serve—a complex motion chain accompanied by a distinct impact sound—and terminates when the ball travels out of bounds or into the net, followed by a cessation of intense player movement. The "dead space," conversely, is characterized by:
+1. Low Kinetic Intensity: Walking, standing, or slow jogging during ball retrieval.
+2. Absence of Specific Acoustic Triggers: While not silent (containing ambient noise, wind, footsteps, and chatter), it lacks the high-energy, broadband impulse of a racket strike.
+3. Visual Repetition: Changeovers often involve static camera shots of players sitting or repetitive motions like bouncing the ball before a serve.
+The challenge in unsupervised summarization is distinguishing "signal" (the rally) from "noise" (everything else) without semantic understanding of the sport's rules. A simple motion detector might trigger on a player aggressively bouncing the ball before a serve, or on trees swaying in the wind behind an outdoor court. Similarly, an audio amplitude thresholder might trigger on a shout or a plane flying overhead. Therefore, the proposed solution relies on a multi-modal heuristic model: Audio Impulse Detection coupled with Visual Motion Validation.
+1.2 Computational Constraints and the "No-ML" Philosophy
+The user requirement to avoid "fancy ML" (Deep Learning) aligns perfectly with the constraint of on-device processing for long-duration video. Deep Learning models, such as YOLO (You Only Look Once) or R-CNN variants, operate by analyzing video frames at the pixel level to detect objects (players, rackets, balls).1 While highly accurate, these models are computationally expensive. Running a complex object detector on every frame of a 3-hour 4K video (approx. 324,000 frames at 30fps) is infeasible for a mobile device's thermal envelope and battery life.
+Instead, this report explores "classical" computer vision and signal processing techniques. These methods are often mathematically simpler—relying on statistics, frequency analysis, and vector math—and can be highly optimized to run on the CPU or DSP, or via lightweight shaders on the GPU. By treating the video file not as a sequence of images to be "understood" but as a signal to be "filtered," we can achieve the goal of fast, efficient, on-device summarization.
+Feature
+	Deep Learning Approach
+	Heuristic/DSP Approach
+	Input Data
+	Raw Pixels (RGB)
+	Audio Spectra, Motion Vectors
+	Computational Cost
+	High (Billions of FLOPs/frame)
+	Low (Thousands of FLOPs/frame)
+	Memory Footprint
+	Large (Model weights + Buffers)
+	Small (Rolling windows)
+	Battery Impact
+	Heavy Drain
+	Efficient
+	Requirement
+	Labeled Training Data
+	Physical Signal Tuning
+	Speed
+	Real-time or Slower
+	10x - 100x Real-time
+	2. Theoretical Foundation: The Physics of Tennis Signals
+Before architecting the software, we must understand the physical properties of the signals we are analyzing. Tennis produces a unique audiovisual footprint that distinguishes it from other activities.
+2.1 Acoustic Signatures
+Audio is the most efficient data stream to process because it is one-dimensional and low-bandwidth. A 3-hour stereo audio file at 44.1kHz is roughly 2-3 GB of uncompressed PCM data, whereas the video is 50-100 GB. Processing the audio first allows us to discard vast swathes of the timeline without ever touching the expensive video data.
+2.1.1 The Racket-Ball Impact (RBI)
+The "crack" of a tennis ball hitting a racket is an impulsive sound event. Acoustically, it is characterized by a near-instantaneous rise in amplitude (attack) followed by a rapid decay.
+* Frequency Content: Research indicates that the sound of a tennis hit is broadband but concentrated. The fundamental frequency of a racket frame vibration typically lies between 100 Hz and 200 Hz.3 The vibration of the strings, which contributes the distinct "ping" or "crack," occurs at higher frequencies, typically 500 Hz to 2 kHz.3
+* Spectral Centroid: The "brightness" of the sound, or spectral centroid, is higher for a racket hit than for a ball bouncing on the court. A ball bounce on clay or hard court is a duller thud, with energy concentrated below 500 Hz.6
+* Duration: The impact event is extremely short, typically lasting less than 50 milliseconds. This temporal compactness helps distinguish it from continuous noises like wind or applause.
+2.1.2 Environmental Noise
+Outdoor tennis courts introduce significant noise pollution.
+* Wind: Wind buffeting a microphone creates high-amplitude, low-frequency energy (typically < 100 Hz). This can saturate simple amplitude detectors.
+* Footsteps: The "squeak" of shoes on a hard court is high-frequency (> 2 kHz) and has a longer duration than a hit.7
+* Voices: Human speech occupies the 300 Hz to 3.4 kHz range but has a harmonic structure distinct from the inharmonic impact of a racket.
+2.2 Visual Motion Signatures
+While audio provides excellent candidate generation, it is prone to false positives (practice swings, net cords, nearby courts). Visual analysis serves as the verification layer.
+2.2.1 Global vs. Local Motion
+In a typical amateur recording, the camera is mounted on a fence or tripod (static), or held by a spectator (handheld).
+* Global Motion: Movement of the entire scene caused by camera shake or panning. This is "noise" for our purposes.
+* Local Motion: Movement of specific objects (players, ball) within a static frame. This is the "signal."
+2.2.2 The Sparsity of Action
+Tennis action is spatially confined. Players generally move within the court boundaries. During a rally, motion is erratic and high-velocity. During dead space, motion is linear (walking) or static.
+* Motion Vectors (MVs): Video compression standards like H.264 encode this motion directly into the bitstream. Instead of storing every pixel, they store vectors describing how blocks of pixels move from one frame to the next. Accessing these pre-calculated vectors allows us to estimate the "kinetic energy" of a scene without decoding the pixels, offering a massive speed advantage.8
+3. Audio-Based Heuristics: The Coarse Filter
+The first stage of our prototyping roadmap focuses on audio. The goal is to ingest the audio track of the video and output a list of time intervals [start, end] that likely contain rallies. This "coarse filter" should aim for high recall (don't miss any shots) even at the expense of some precision (including some non-rally loud noises), as the visual stage will prune the false positives.
+3.1 Digital Signal Processing (DSP) Pipeline
+We can implement this pipeline in Python using the librosa and scipy libraries. The processing chain is as follows:
+3.1.1 Pre-processing and Filtering
+Raw audio is often sampled at 44.1 kHz or 48 kHz. For event detection, we can downsample to 16 kHz to reduce memory usage and processing time without losing the relevant frequency information of the racket hit (which is mostly < 8 kHz).
+To mitigate wind noise and foot squeaks, we apply a Bandpass Filter.
+* Lower Cutoff: 200 Hz. This removes the "rumble" of wind and the low-frequency thud of heavy footsteps or distant traffic.4
+* Upper Cutoff: 3000 Hz. This preserves the "crack" of the racket while attenuating high-frequency hiss and some of the sharper shoe squeaks.7
+* Implementation: A 4th-order Butterworth filter is standard for this application. It provides a flat passband and steep roll-off.
+3.1.2 Feature Extraction: Beyond RMS
+While Root Mean Square (RMS) amplitude is the simplest measure of loudness, it is often insufficient for distinguishing percussive hits from continuous loud noise (like a passing car). We introduce two superior features:
+1. Spectral Flux (Onset Strength): This measures the rate of change of the power spectrum. A racket hit causes a sudden, dramatic increase in energy across many frequency bands simultaneously.
+
+$$\text{Flux}(n) = \sum_{k} \max(0, |X(n, k)| - |X(n-1, k)|)$$
+
+Where $X(n, k)$ is the magnitude of the $k$-th frequency bin at time frame $n$. Spectral flux is robust against steady-state noise because the difference $X(n, k) - X(n-1, k)$ will be near zero for continuous sounds.10
+2. Zero-Crossing Rate (ZCR): This measures how often the signal changes sign. Percussive events often have a distinctive ZCR profile compared to wind or voice. However, given the effectiveness of Spectral Flux for onset detection, ZCR is a secondary feature.
+3.1.3 Peak Picking and Thresholding
+Once we have the Onset Strength envelope (a 1D array representing "percussiveness" over time), we must identify the discrete hits.
+   * Adaptive Thresholding: A fixed threshold will fail if the recording level varies (e.g., auto-gain control on the phone). We use a rolling window to calculate the local median and standard deviation.
+
+$$\text{Threshold}(t) = \text{Median}(t \pm w) + \lambda \cdot \sigma(t \pm w)$$
+
+Where $w$ is the window size (e.g., 5 seconds) and $\lambda$ is a sensitivity multiplier (e.g., 2.0 or 3.0). This ensures we detect hits relative to the local background noise floor.11
+3.2 Temporal Logic and Clustering
+Identifying individual hits is not enough; we must identify rallies. A rally is a temporal cluster of hits.
+      * The "Serve" Heuristic: A rally typically starts with a hit (serve), followed by a gap (travel time), followed by another hit (return).
+      * Clustering Algorithm:
+      1. Let $H = \{t_1, t_2,..., t_n\}$ be the sorted list of detected hit timestamps.
+      2. Iterate through $H$ and calculate inter-arrival times $\Delta t = t_{i+1} - t_i$.
+      3. If $\Delta t < T_{\text{max\_gap}}$ (e.g., 3.0 seconds), group $t_i$ and $t_{i+1}$ into the same cluster.
+      4. If $\Delta t \ge T_{\text{max\_gap}}$, terminate the current cluster and start a new one.
+      * Filtering Clusters:
+      * Minimum Duration/Count: Discard clusters with fewer than $N$ hits (e.g., $N=2$). This removes isolated loud noises (dropped racket, single practice serve). However, keeping clusters of size 2 allows capturing "Ace" serves or "Serve-plus-Error" sequences.
+      * Padding: Once a cluster is defined (e.g., $t_{\text{start}}$ to $t_{\text{end}}$), pad the interval by adding pre-roll ($\delta_{\text{pre}} \approx 2s$) and post-roll ($\delta_{\text{post}} \approx 2s$). This captures the toss before the serve and the ball traveling out of bounds after the last shot.
+3.3 Python Prototype: Audio Engine
+The following narrative describes the implementation of the Audio Engine using librosa.
+First, the audio is loaded and converted to mono. A Short-Time Fourier Transform (STFT) is computed to move to the frequency domain. The librosa.onset.onset_strength function is then applied, focusing on the 200-3000 Hz range. We apply scipy.signal.find_peaks to this onset envelope. The parameters for find_peaks (height, distance) are critical. distance should be set to roughly 0.5 seconds (approximate minimum time between shots in tennis) to preventing double-counting a single loud echoey hit.
+The output of this stage is a list of candidate intervals. For a 3-hour match, this process might take 30-60 seconds on a modern laptop CPU, representing a massive efficiency gain over video processing.
+4. Visual Heuristics: The Verification Layer
+While the audio filter reduces the timeline significantly, it is imperfect. Audio cannot detect if the ball actually went into the court, nor can it distinguish between a rally and two players warming up. Visual analysis verifies that "action" is occurring. To maintain high throughput, we explore Compressed Domain Analysis.
+4.1 Compressed Domain Analysis: Motion Vectors
+Video compression standards like H.264 (AVC) and H.265 (HEVC) work by exploiting temporal redundancy. They divide frames into macroblocks and search for the best matching block in previous frames. The displacement between the current block and the reference block is stored as a Motion Vector (MV).
+      * P-frames and B-frames: These frames primarily contain MVs and residual error data. They make up the vast majority of a video stream (often 90%+).
+      * The Heuristic: High magnitude MVs in the center of the frame correlate strongly with player movement and ball flight. Chaotic MVs (random directions) often indicate noise or complex textures, while coherent MVs (all pointing left) indicate camera pans.
+4.1.1 Extracting Motion Vectors in Python
+This is the most technically challenging part of the Python prototype because standard libraries like OpenCV hide this data. We must use specialized wrappers around FFmpeg.
+      1. mv-extractor: This library 12 is a direct Python binding for extracting MVs. It provides a frame-by-frame iterator that yields the motion vectors as a NumPy array.
+      * Structure: For each frame, it returns an array of shape $(N, M, 2)$ or a list of vector objects containing (source_x, source_y, dx, dy, sad). sad (Sum of Absolute Differences) indicates the prediction error; high SAD means the motion prediction was poor, often occurring during occlusions or extremely fast motion.
+      2. PyAV: This library 13 wraps the FFmpeg libraries. Accessing MVs requires enabling the export_mvs flag in the codec context.
+      * Snippet: codec_context.export_mvs = True. The MVs are then available in the side_data of the decoded frame.
+4.1.2 Motion Heuristics
+Once we have the MVs, we apply the following logic:
+      1. Ego-Motion Compensation: Calculate the median motion vector for the entire frame. Subtract this vector from all other vectors. This effectively cancels out camera shake or panning, leaving only the independent object motion (players/ball).
+      2. Filtering: Ignore MVs at the extreme edges of the frame (often unreliable or irrelevant).
+      3. Activity Score: Sum the magnitudes of the remaining vectors.
+
+$$\text{Activity}(t) = \sum_{i \in \text{ROI}} \sqrt{dx_i^2 + dy_i^2}$$
+      4. Verification: If the Activity(t) during an audio-proposed segment is below a certain threshold, the segment is classified as a "False Positive" (e.g., crowd noise with static players) and removed.
+4.2 Pixel-Domain Fallback: Sparse Frame Differencing
+If extracting MVs proves too unstable across different iOS hardware or file formats (a common issue with HEVC on Apple devices), a simplified pixel-domain approach is the robust fallback.
+         * Sparse Sampling: We do not need to process 30 frames per second. Tennis action is macroscopic. Sampling at 2 FPS or 4 FPS is sufficient to detect players running.
+         * Resolution Reduction: Downscale frames to 256x144 or similar "thumbnail" resolutions. This reduces the pixel count by >99% compared to 4K, making arithmetic operations trivial.
+         * Frame Difference Algorithm:
+         1. Convert Frame $t$ and Frame $t-\delta$ to grayscale.
+         2. Compute absolute difference: $D = |F_t - F_{t-\delta}|$.
+         3. Threshold the difference to binary: $B = D > \text{Threshold}$.
+         4. Count the white pixels (moving pixels).
+         5. If count > $N$, action is present.
+This approach is computationally heavier than MV extraction but lighter than full optical flow. It is highly portable and works on any video format.
+5. Algorithmic Fusion and Prototyping Roadmap
+The integration of audio and visual signals follows a "propose and verify" architecture. This minimizes the compute load by only running video analysis on the small fraction of the timeline suggested by the audio engine.
+5.1 Phase 1: Python Prototype (The Laboratory)
+The user should begin by building a Python script to validate the heuristics on a small dataset of tennis videos.
+Step 1: Environment Setup
+Install the necessary libraries:
+
+
+Bash
+
+
+
+
+pip install numpy scipy librosa moviepy opencv-python av
+
+Step 2: The Audio Class
+Create a class TennisAudioAnalyzer.
+         * Method detect_events(): Load audio, apply bandpass filter (200-3000Hz), compute onset strength, find peaks.
+         * Method cluster_events(): Take peaks, apply the 3-second gap rule, and return candidate start/end times.
+         * Output: A list of tuples [(start1, end1), (start2, end2),...].
+Step 3: The Video Validator
+Create a class VideoMotionValidator.
+         * Method check_motion(start, end): Open the video file, seek to start. Read frames at a stride (e.g., every 10th frame). Resize to 320x180. Compute frame difference metric. Return a boolean is_active.
+         * Optimization: Use cv2.VideoCapture.set(cv2.CAP_PROP_POS_MSEC,...) to seek efficiently.
+Step 4: The Editor
+Use moviepy to perform the actual cutting.
+         * Take the list of validated intervals.
+         * Use ffmpeg_extract_subclip (wrapped by moviepy) to cut without re-encoding if possible (stream copy), or re-encode if precise frame accuracy is needed.
+         * Concatenate clips into a summary video.
+5.2 Phase 2: Evaluation and Tuning
+Without ground truth labels, evaluation is qualitative. The user should define:
+         * False Negative Rate: Did we cut a rally? (The worst error).
+         * False Positive Rate: Did we keep a changeover? (Acceptable error).
+Tuning Parameters:
+         * Audio Threshold: Lowering it catches quiet slices but increases noise.
+         * Gap Tolerance: Increasing it keeps more "walking between points" but ensures long rallies aren't split.
+         * Motion Threshold: Needs to be tuned to distinguish "walking" from "running." Running generally affects more pixels and creates larger inter-frame differences.
+6. Transition to iOS: Architecture and Optimization
+The transition from a Python prototype to an iPhone app involves mapping the logic to Apple's native frameworks. Python libraries like librosa and opencv are not standard on iOS (though OpenCV has an iOS port, it is heavy). We will utilize AVFoundation, Accelerate, and Vision.
+6.1 iOS Audio Processing: The Accelerate Framework
+Python's numpy and scipy operations map directly to Apple's Accelerate framework, specifically the vDSP (Digital Signal Processing) library. vDSP provides highly optimized, vector-based arithmetic that runs on the CPU's SIMD units.
+         * Reading Audio: Use AVAssetReader with an AVAssetReaderTrackOutput to read the audio track. Configure the output settings to Linear PCM, 16kHz, mono.
+         * Processing:
+         * FFT/Spectral Analysis: Use vDSP_fft_zrip to compute the Short-Time Fourier Transform.
+         * RMS/Energy: Use vDSP_rmsqv to calculate root-mean-square amplitude over sliding windows.
+         * Filtering: Use vDSP_biquad to implement the bandpass filter.
+         * Performance: Reading and processing the audio of a 3-hour video can be accomplished in under a minute on an A14 or A15 Bionic chip due to the extreme efficiency of vDSP.
+6.2 iOS Visual Processing: The Vision Framework
+While extracting raw Motion Vectors via AVFoundation is non-trivial (often requiring low-level VideoToolbox callbacks that are poorly documented for this specific use case), Apple provides a high-level framework that is hardware-accelerated and designed exactly for this purpose: Vision.
+6.2.1 Trajectory Detection (VNDetectTrajectoriesRequest)
+Introduced in iOS 14, this API is a game-changer for this specific request.15 It is a pre-built heuristic that detects objects moving along parabolic paths (i.e., balls in flight).
+         * How it works: It analyzes a sequence of frames and builds evidence of a trajectory. It does not require training; it looks for the kinematic signature of a projectile.
+         * Usage:
+         1. Create a VNDetectTrajectoriesRequest.
+         2. Feed it frames via VNImageRequestHandler.
+         3. Set frameAnalysisSpacing to CMTime(value: 1, timescale: 10) (analyzing 10 FPS is sufficient).
+         4. If the request returns observations (VNTrajectoryObservation), you have confirmed "action."
+         * Fusion Strategy: Use this to validate the audio candidates. If the audio detects a "hit" cluster, and Vision detects a "trajectory" within that window, the confidence is near 100%.
+6.2.2 The "Metal" Alternative (Custom Shaders)
+If VNDetectTrajectoriesRequest proves too battery-intensive for 3-hour files, a custom Metal Compute Shader is the ultimate optimization.
+         * Concept: Implement the "Sparse Frame Differencing" logic (from Python) directly on the GPU.
+         * Implementation:
+         * Write a Metal kernel (.metal file) that takes two textures (Frame A and Frame B).
+         * Subtract them, compute the absolute value, and sum the result into a small buffer.
+         * The CPU only reads this tiny sum buffer to determine "Motion Score."
+         * Efficiency: This pipeline avoids bringing pixel data to the CPU, keeping memory bandwidth usage low and maximizing battery life.17
+6.3 Data Flow and Memory Management
+Processing 3-hour 4K videos requires strict memory hygiene to avoid app crashes.
+         * Streaming Architecture: Never load the entire video into RAM. Use AVAssetReader to stream samples.
+         * Thumbnail Generation: For the visual pass, do not decode full 4K frames. Use AVAssetImageGenerator with .maximumSize set to a low resolution (e.g., 640x360). The hardware decoder will optimize the downscaling, saving significant memory and heat.
+         * Thermal Throttling: The iPhone will throttle the CPU/GPU if they run at 100% for extended periods. Implement a "batch" system where the app processes the video in 10-minute chunks, yielding slightly between chunks to allow heat dissipation.
+6.4 The Final "On-Device" Pipeline
+         1. User Selection: User selects a 2-hour video from the Photo Library.
+         2. Audio Pass (Fast): The app reads the audio track (using Accelerate), identifying 40 "potential rally" segments. Progress bar moves quickly (0-50% in ~30 seconds).
+         3. Video Pass (Targeted): The app requests video frames only for those 40 segments (plus margins). It runs VNDetectTrajectoriesRequest or Metal Motion Analysis on these frames.
+         4. Refinement: False positives (audio noise with no ball motion) are dropped. Boundaries are adjusted based on motion cessation.
+         5. Export: AVAssetExportSession takes the AVMutableComposition (the list of valid time ranges) and writes a new video file. This is the slowest part, limited by the flash storage write speed, but it is unavoidable.
+7. Comparison of Approaches
+Approach
+	Complexity (Dev)
+	Speed (Runtime)
+	Accuracy
+	Battery Impact
+	Note
+	Audio Only (Amplitude)
+	Low
+	Very High
+	Low
+	Very Low
+	Will verify noise as rallies.
+	Audio + Pixel Difference
+	Medium
+	High
+	Medium
+	Low
+	Good balance, handles static noise.
+	Audio + Motion Vectors
+	High (Python) / Hard (iOS)
+	Very High
+	Medium
+	Low
+	Hard to implement on iOS natively.
+	Audio + Vision Trajectory
+	Medium
+	Medium-High
+	High
+	Medium
+	Recommended. Leverages Apple's specific sports R&D.
+	Full CNN (YOLO/CoreML)
+	High
+	Low
+	Very High
+	High
+	Too slow/heavy for this constraint set.
+	8. Conclusion
+Developing a fast, on-device tennis summarizer is feasible by shifting the paradigm from "understanding the scene" (Deep Learning) to "analyzing the signal" (Heuristics). The unique acoustic impulse of the racket hit serves as an incredibly efficient index for the video, allowing us to bypass processing 80-90% of the visual data.
+The recommended roadmap is to first prototype the Audio + Sparse Frame Differencing logic in Python. This validates the core hypothesis that "sound + motion = rally." Once validated, the move to iOS should replace the generic frame differencing with Apple's specialized Vision Framework (VNDetectTrajectoriesRequest), which offers a hardware-accelerated "best effort" validator requiring no training data. This approach respects the device's constraints while delivering a tool that effectively automates the drudgery of video review for tennis players.
+Works cited
+         1. Open Source Sports Video Analysis using Maching Learning - DEV Community, accessed December 24, 2025, https://dev.to/stephan007/open-source-sports-video-analysis-using-maching-learning-2ag4
+         2. Basketball AI: Player Tracking, Team Detection, and Number Recognition with Python, accessed December 24, 2025, https://www.youtube.com/watch?v=yGQb9KkvQ1Q
+         3. Vibrational Modes of a Tennis Racket (2014) - Graduate Program in Acoustics, accessed December 24, 2025, https://www.acs.psu.edu/drussell/demos/tennis/tennis-1.html
+         4. Radiated Sound and Transmitted Vibration Following the Ball/Racket Impact of a Tennis Serve - MDPI, accessed December 24, 2025, https://www.mdpi.com/2571-631X/7/4/47
+         5. (PDF) Radiated Sound and Transmitted Vibration Following the Ball/Racket Impact of a Tennis Serve - ResearchGate, accessed December 24, 2025, https://www.researchgate.net/publication/384497057_Radiated_Sound_and_Transmitted_Vibration_Following_the_BallRacket_Impact_of_a_Tennis_Serve
+         6. Spin Detection Using Racket Bounce Sounds in Table Tennis This research was funded by Sony AI. - arXiv, accessed December 24, 2025, https://arxiv.org/html/2409.11760v1
+         7. The effect of tennis batting sound on anxiety: a randomized controlled trial and basic acoustic analysis - PubMed Central, accessed December 24, 2025, https://pmc.ncbi.nlm.nih.gov/articles/PMC10733858/
+         8. Motion Vector extraction from encoded video file - Stack Overflow, accessed December 24, 2025, https://stackoverflow.com/questions/19993733/motion-vector-extraction-from-encoded-video-file
+         9. pyav / ffmpeg / libav access side data without decoding the video - Stack Overflow, accessed December 24, 2025, https://stackoverflow.com/questions/67828088/pyav-ffmpeg-libav-access-side-data-without-decoding-the-video
+         10. Tutorial — librosa 0.11.0 documentation, accessed December 24, 2025, https://librosa.org/doc/0.11.0/tutorial.html
+         11. emkademy/jumpcutter: Automatically jump-cut silent parts of your videos using Python - GitHub, accessed December 24, 2025, https://github.com/emkademy/jumpcutter
+         12. motion-vector-extractor 2.0.0 - PyPI, accessed December 24, 2025, https://pypi.org/project/motion-vector-extractor/
+         13. PyAV 9.0.3.dev0 documentation, accessed December 24, 2025, https://pyav.org/docs/develop/
+         14. Support for VideoEncParams · Issue #779 · PyAV-Org/PyAV - GitHub, accessed December 24, 2025, https://github.com/PyAV-Org/PyAV/issues/779
+         15. VNDetectTrajectoriesRequest | Apple Developer Documentation, accessed December 24, 2025, https://developer.apple.com/documentation/vision/vndetecttrajectoriesrequest?language=objc
+         16. Identifying Trajectories in Video | Apple Developer Documentation, accessed December 24, 2025, https://developer.apple.com/documentation/vision/identifying_trajectories_in_video
+         17. Metal Shader Debugging and Profiling - WWDC18 - Videos - Apple Developer, accessed December 24, 2025, https://developer.apple.com/videos/play/wwdc2018/608/
+         18. Metal Game Performance Optimization - WWDC18 - Videos - Apple Developer, accessed December 24, 2025, https://developer.apple.com/la/videos/play/wwdc2018/612/
