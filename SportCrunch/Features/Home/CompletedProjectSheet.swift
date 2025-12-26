@@ -14,6 +14,7 @@ struct CompletedProjectSheet: View {
     @State private var player: AVPlayer?
     @State private var isPlaying = false
     @State private var showShareSheet = false
+    @State private var isSavedToCameraRoll = false
     
     var body: some View {
         NavigationStack {
@@ -242,8 +243,23 @@ struct CompletedProjectSheet: View {
                 showShareSheet = true
             }
             
-            SecondaryButton("Save to Camera Roll", icon: "square.and.arrow.down") {
-                saveToPhotoLibrary()
+            if isSavedToCameraRoll {
+                // Saved confirmation button
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                    Text("Saved to Camera Roll")
+                        .font(AppFont.bodyBold())
+                }
+                .foregroundStyle(Color.scSuccess)
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .background(Color.scSuccess.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+            } else {
+                SecondaryButton("Save to Camera Roll", icon: "square.and.arrow.down") {
+                    saveToPhotoLibrary()
+                }
             }
         }
         .padding(.horizontal, Spacing.lg)
@@ -284,6 +300,10 @@ struct CompletedProjectSheet: View {
         guard let url = project.highlightVideoURL else { return }
         
         UISaveVideoAtPathToSavedPhotosAlbum(url.path, nil, nil, nil)
+        
+        withAnimation(.spring(response: 0.4)) {
+            isSavedToCameraRoll = true
+        }
     }
 }
 

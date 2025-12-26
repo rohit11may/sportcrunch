@@ -8,16 +8,17 @@
 import Foundation
 
 /// Represents a highlight project created by the user
-struct Project: Identifiable, Codable, Equatable {
+struct Project: Identifiable, Equatable {
     let id: UUID
     let sport: Sport
     let createdAt: Date
     
-    /// URL to the original source video
-    let sourceVideoURL: URL
+    /// URL to the original source video (may not persist between launches - used during processing only)
+    var sourceVideoURL: URL
     
-    /// URL to the generated highlight video (nil if not yet processed)
-    var highlightVideoURL: URL?
+    /// Filename of the generated highlight video (stored relative to Documents/Highlights)
+    /// Use `highlightVideoURL` computed property to get the full URL
+    var highlightVideoFilename: String?
     
     /// Duration of the original video in seconds
     let originalDuration: TimeInterval
@@ -40,6 +41,23 @@ struct Project: Identifiable, Codable, Equatable {
     /// Sport mode (e.g., Tennis Rally vs Individual)
     var sportMode: SportModeWrapper?
     
+    /// URL to the generated highlight video (reconstructed from filename)
+    var highlightVideoURL: URL? {
+        get {
+            guard let filename = highlightVideoFilename else { return nil }
+            return Self.highlightsDirectory.appendingPathComponent(filename)
+        }
+        set {
+            highlightVideoFilename = newValue?.lastPathComponent
+        }
+    }
+    
+    /// The persistent Highlights directory in Documents
+    static var highlightsDirectory: URL {
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return documentsURL.appendingPathComponent("Highlights", isDirectory: true)
+    }
+    
     init(
         id: UUID = UUID(),
         sport: Sport,
@@ -59,12 +77,12 @@ struct Project: Identifiable, Codable, Equatable {
         self.sportMode = sportMode
     }
     
+    // MARK: - Computed Properties
+    
     /// Formatted sport mode display name
     var formattedSportMode: String? {
         sportMode?.displayName
     }
-    
-    // MARK: - Computed Properties
     
     /// Time saved by the highlight
     var timeSaved: TimeInterval? {
@@ -107,6 +125,55 @@ struct Project: Identifiable, Codable, Equatable {
         } else {
             return "\(seconds)s"
         }
+    }
+}
+
+// MARK: - Codable (Custom Implementation for Path Persistence)
+
+extension Project: Codable {
+    
+    private enum CodingKeys: String, CodingKey {
+        case id, sport, createdAt, originalDuration, highlightDuration
+        case status, segments, title, thumbnailData, sportMode
+        case highlightVideoFilename
+        // Note: sourceVideoURL is NOT persisted - it's only valid during processing
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(UUID.self, forKey: .id)
+        sport = try container.decode(Sport.self, forKey: .sport)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        originalDuration = try container.decode(TimeInterval.self, forKey: .originalDuration)
+        highlightDuration = try container.decodeIfPresent(TimeInterval.self, forKey: .highlightDuration)
+        status = try container.decode(ProcessingStatus.self, forKey: .status)
+        segments = try container.decode([ActionSegment].self, forKey: .segments)
+        title = try container.decodeIfPresent(String.self, forKey: .title)
+        thumbnailData = try container.decodeIfPresent(Data.self, forKey: .thumbnailData)
+        sportMode = try container.decodeIfPresent(SportModeWrapper.self, forKey: .sportMode)
+        highlightVideoFilename = try container.decodeIfPresent(String.self, forKey: .highlightVideoFilename)
+        
+        // sourceVideoURL is not persisted - use a placeholder
+        // It's only used during initial processing
+        sourceVideoURL = URL(fileURLWithPath: "/")
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        try container.encode(id, forKey: .id)
+        try container.encode(sport, forKey: .sport)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(originalDuration, forKey: .originalDuration)
+        try container.encodeIfPresent(highlightDuration, forKey: .highlightDuration)
+        try container.encode(status, forKey: .status)
+        try container.encode(segments, forKey: .segments)
+        try container.encodeIfPresent(title, forKey: .title)
+        try container.encodeIfPresent(thumbnailData, forKey: .thumbnailData)
+        try container.encodeIfPresent(sportMode, forKey: .sportMode)
+        try container.encodeIfPresent(highlightVideoFilename, forKey: .highlightVideoFilename)
+        // Note: sourceVideoURL is intentionally NOT encoded
     }
 }
 
@@ -212,7 +279,7 @@ extension Project {
         var project = sampleTennis
         project.status = .completed
         project.highlightDuration = 1080 // 18 minutes
-        project.highlightVideoURL = URL(fileURLWithPath: "/sample/tennis_highlights.mov")
+        project.highlightVideoFilename = "tennis_highlights.mp4"
         project.segments = [
             ActionSegment(startTime: 120, endTime: 180),
             ActionSegment(startTime: 300, endTime: 420),
@@ -221,4 +288,3 @@ extension Project {
         return project
     }
 }
-

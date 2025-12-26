@@ -45,6 +45,7 @@ struct ExportView: View {
     @State private var isExporting = false
     @State private var exportComplete = false
     @State private var showShareSheet = false
+    @State private var showSavedConfirmation = false
     
     var body: some View {
         VStack(spacing: Spacing.xl) {
@@ -90,6 +91,8 @@ struct ExportView: View {
             // Export button
             if isExporting {
                 exportingIndicator
+            } else if showSavedConfirmation {
+                savedConfirmationButton
             } else {
                 PrimaryButton("Save to Camera Roll", icon: "arrow.down.to.line") {
                     performExport()
@@ -171,6 +174,22 @@ struct ExportView: View {
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
     }
     
+    // MARK: - Saved Confirmation Button
+    
+    private var savedConfirmationButton: some View {
+        HStack(spacing: Spacing.xs) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 20, weight: .semibold))
+            Text("Saved to Camera Roll")
+                .font(AppFont.bodyBold())
+        }
+        .foregroundStyle(Color.scTextTertiary)
+        .frame(maxWidth: .infinity)
+        .frame(height: 56)
+        .background(Color.scSurfaceElevated.opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+    }
+    
     // MARK: - Export Complete View
     
     private var exportCompleteView: some View {
@@ -229,7 +248,7 @@ struct ExportView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             withAnimation(.spring(response: 0.5)) {
                 isExporting = false
-                exportComplete = true
+                showSavedConfirmation = true
             }
         }
     }

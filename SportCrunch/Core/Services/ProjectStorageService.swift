@@ -44,9 +44,25 @@ final class UserDefaultsProjectStorageService: ProjectStorageServiceProtocol {
         
         do {
             let decoder = JSONDecoder()
-            return try decoder.decode([Project].self, from: data)
+            let projects = try decoder.decode([Project].self, from: data)
+            
+            // Filter out completed projects with missing highlight files
+            let validProjects = projects.filter { project in
+                guard project.status == .completed else { return true }
+                
+                if let highlightURL = project.highlightVideoURL {
+                    let exists = FileManager.default.fileExists(atPath: highlightURL.path)
+                    if !exists {
+                        print("⚠️ [ProjectStorage] Highlight file missing for project: \(project.title ?? project.id.uuidString)")
+                    }
+                    return exists
+                }
+                return true
+            }
+            
+            return validProjects
         } catch {
-            print("Failed to decode projects: \(error)")
+            print("❌ [ProjectStorage] Failed to decode projects: \(error)")
             return []
         }
     }
@@ -69,6 +85,11 @@ final class UserDefaultsProjectStorageService: ProjectStorageServiceProtocol {
         var projects = loadProjects()
         projects.removeAll { $0.id == project.id }
         saveAllProjects(projects)
+        
+        // Also delete the highlight video file if it exists
+        if let highlightURL = project.highlightVideoURL {
+            try? FileManager.default.removeItem(at: highlightURL)
+        }
     }
     
     func getProject(id: UUID) -> Project? {
@@ -82,8 +103,9 @@ final class UserDefaultsProjectStorageService: ProjectStorageServiceProtocol {
             let encoder = JSONEncoder()
             let data = try encoder.encode(projects)
             defaults.set(data, forKey: projectsKey)
+            defaults.synchronize() // Force immediate write
         } catch {
-            print("Failed to encode projects: \(error)")
+            print("❌ [ProjectStorage] Failed to encode projects: \(error)")
         }
     }
 }
@@ -130,4 +152,3 @@ final class MockProjectStorageService: ProjectStorageServiceProtocol {
         projects.first { $0.id == id }
     }
 }
-
