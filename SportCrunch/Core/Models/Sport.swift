@@ -281,12 +281,14 @@ enum Sport: String, CaseIterable, Identifiable, Codable {
                 paddingPreSec: 2.0,         // PADDING_PRE_SEC - seconds before first hit
                 paddingPostSec: 2.0,        // PADDING_POST_SEC - seconds after last hit
                 
-                // Video Motion Validation - SKIP for tennis (audio is reliable enough)
-                skipVisualValidation: true,
-                videoSampleStride: 10,
-                videoThumbSize: (width: 320, height: 180),
-                motionPixelThreshold: 15,
-                motionAreaThreshold: 200
+                // Video Motion Validation - ENABLED for tennis
+                // OPTIMIZED: stride 15, thumbnail 160x90 for faster processing
+                // Thresholds scaled for smaller thumbnail (160x90 = 14,400 pixels)
+                skipVisualValidation: false,
+                videoSampleStride: 15,
+                videoThumbSize: (width: 160, height: 90),
+                motionPixelThreshold: 10,
+                motionAreaThreshold: 50
             )
             
         case .individual:
@@ -311,11 +313,13 @@ enum Sport: String, CaseIterable, Identifiable, Codable {
                 paddingPostSec: 0.5,        // 0.5s after hit
                 
                 // Video Motion Validation - ENABLED for shot mode
+                // OPTIMIZED: stride 15, thumbnail 160x90 for faster processing
+                // Thresholds scaled for smaller thumbnail (160x90 = 14,400 pixels)
                 skipVisualValidation: false,
-                videoSampleStride: 10,
-                videoThumbSize: (width: 320, height: 180),
-                motionPixelThreshold: 15,
-                motionAreaThreshold: 200
+                videoSampleStride: 15,
+                videoThumbSize: (width: 160, height: 90),
+                motionPixelThreshold: 10,
+                motionAreaThreshold: 50
             )
         }
     }
@@ -342,11 +346,13 @@ enum Sport: String, CaseIterable, Identifiable, Codable {
             paddingPostSec: 3.0,        // More follow-through for replay
             
             // Video Motion Validation - Keep for cricket (different audio profile)
+            // OPTIMIZED: stride 15, thumbnail 160x90 for faster processing
+            // Thresholds scaled for smaller thumbnail (160x90 = 14,400 pixels)
             skipVisualValidation: false,
-            videoSampleStride: 10,
-            videoThumbSize: (width: 320, height: 180),
-            motionPixelThreshold: 15,
-            motionAreaThreshold: 200
+            videoSampleStride: 15,
+            videoThumbSize: (width: 160, height: 90),
+            motionPixelThreshold: 10,
+            motionAreaThreshold: 50
         )
     }
     
