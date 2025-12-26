@@ -80,17 +80,17 @@ struct PreviewView: View {
                 Image(uiImage: thumbnail)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(height: 220)
+                    .frame(height: 300)
                     .clipped()
             } else {
                 Rectangle()
                     .fill(Color.scSurfaceElevated)
-                    .frame(height: 220)
+                    .frame(height: 300)
             }
             
             // Gradient overlay
             LinearGradient(
-                colors: [.clear, .black.opacity(0.5)],
+                colors: [.clear, .black.opacity(0.6)],
                 startPoint: .center,
                 endPoint: .bottom
             )
@@ -102,10 +102,10 @@ struct PreviewView: View {
                 ZStack {
                     Circle()
                         .fill(Color.black.opacity(0.5))
-                        .frame(width: 72, height: 72)
+                        .frame(width: 80, height: 80)
                     
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 28))
+                        .font(.system(size: 32))
                         .foregroundStyle(.white)
                         .offset(x: isPlaying ? 0 : 3)
                 }
@@ -120,14 +120,14 @@ struct PreviewView: View {
                     ZStack(alignment: .leading) {
                         Rectangle()
                             .fill(Color.white.opacity(0.3))
-                            .frame(height: 3)
+                            .frame(height: 4)
                         
                         Rectangle()
                             .fill(viewModel.selectedSport?.accentColor ?? .scGradientStart)
-                            .frame(width: geometry.size.width * 0.3, height: 3)
+                            .frame(width: geometry.size.width * 0.3, height: 4)
                     }
                 }
-                .frame(height: 3)
+                .frame(height: 4)
             }
         }
     }
@@ -135,36 +135,55 @@ struct PreviewView: View {
     // MARK: - Stats Summary
     
     private var statsSummary: some View {
-        HStack(spacing: Spacing.lg) {
-            // Original duration
-            statItem(
-                label: "Original",
-                value: viewModel.project?.formattedOriginalDuration ?? "—",
-                color: .scTextSecondary
-            )
+        VStack(spacing: Spacing.sm) {
+            // Duration row
+            HStack(spacing: Spacing.lg) {
+                // Original duration
+                statItem(
+                    label: "Original",
+                    value: viewModel.project?.formattedOriginalDuration ?? "—",
+                    color: .scTextSecondary
+                )
+                
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Color.scTextTertiary)
+                
+                // Highlight duration
+                statItem(
+                    label: "Highlight",
+                    value: viewModel.project?.formattedHighlightDuration ?? "—",
+                    color: viewModel.selectedSport?.accentColor ?? .scGradientStart
+                )
+                
+                Spacer()
+            }
             
-            Image(systemName: "arrow.right")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(Color.scTextTertiary)
-            
-            // Highlight duration
-            statItem(
-                label: "Highlight",
-                value: viewModel.project?.formattedHighlightDuration ?? "—",
-                color: viewModel.selectedSport?.accentColor ?? .scGradientStart
-            )
-            
-            Spacer()
-            
-            // Time saved
-            if let timeSaved = viewModel.project?.formattedTimeSaved {
-                HStack(spacing: Spacing.xxs) {
-                    Image(systemName: "clock.badge.checkmark")
-                        .font(.system(size: 14))
-                    Text(timeSaved)
-                        .font(AppFont.captionBold())
+            // Savings row
+            HStack(spacing: Spacing.lg) {
+                // Time saved
+                if let timeSaved = viewModel.project?.formattedTimeSaved {
+                    HStack(spacing: Spacing.xxs) {
+                        Image(systemName: "clock.badge.checkmark")
+                            .font(.system(size: 14))
+                        Text(timeSaved)
+                            .font(AppFont.captionBold())
+                    }
+                    .foregroundStyle(Color.scSuccess)
                 }
-                .foregroundStyle(Color.scSuccess)
+                
+                // Space saved
+                if let spaceSaved = viewModel.project?.formattedSpaceSaved {
+                    HStack(spacing: Spacing.xxs) {
+                        Image(systemName: "externaldrive.badge.checkmark")
+                            .font(.system(size: 14))
+                        Text(spaceSaved)
+                            .font(AppFont.captionBold())
+                    }
+                    .foregroundStyle(Color.scSuccess)
+                }
+                
+                Spacer()
             }
         }
         .padding(.horizontal, Spacing.lg)

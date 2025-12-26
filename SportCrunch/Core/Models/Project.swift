@@ -41,6 +41,12 @@ struct Project: Identifiable, Equatable {
     /// Sport mode (e.g., Tennis Rally vs Individual)
     var sportMode: SportModeWrapper?
     
+    /// Size of the original video file in bytes
+    var originalFileSize: Int64?
+    
+    /// Size of the generated highlight file in bytes
+    var highlightFileSize: Int64?
+    
     /// URL to the generated highlight video (reconstructed from filename)
     var highlightVideoURL: URL? {
         get {
@@ -113,6 +119,30 @@ struct Project: Identifiable, Equatable {
         return "\(formatDuration(timeSaved)) saved"
     }
     
+    /// Space saved by the highlight in bytes
+    var spaceSaved: Int64? {
+        guard let originalFileSize, let highlightFileSize else { return nil }
+        return originalFileSize - highlightFileSize
+    }
+    
+    /// Formatted space saved (e.g., "1.2 GB saved")
+    var formattedSpaceSaved: String? {
+        guard let spaceSaved, spaceSaved > 0 else { return nil }
+        return "\(formatFileSize(spaceSaved)) saved"
+    }
+    
+    /// Formatted original file size (e.g., "2.5 GB")
+    var formattedOriginalFileSize: String? {
+        guard let originalFileSize else { return nil }
+        return formatFileSize(originalFileSize)
+    }
+    
+    /// Formatted highlight file size (e.g., "350 MB")
+    var formattedHighlightFileSize: String? {
+        guard let highlightFileSize else { return nil }
+        return formatFileSize(highlightFileSize)
+    }
+    
     private func formatDuration(_ duration: TimeInterval) -> String {
         let hours = Int(duration) / 3600
         let minutes = Int(duration) % 3600 / 60
@@ -126,6 +156,20 @@ struct Project: Identifiable, Equatable {
             return "\(seconds)s"
         }
     }
+    
+    private func formatFileSize(_ bytes: Int64) -> String {
+        let gb = Double(bytes) / 1_073_741_824 // 1024^3
+        let mb = Double(bytes) / 1_048_576 // 1024^2
+        
+        if gb >= 1.0 {
+            return String(format: "%.1f GB", gb)
+        } else if mb >= 1.0 {
+            return String(format: "%.0f MB", mb)
+        } else {
+            let kb = Double(bytes) / 1024
+            return String(format: "%.0f KB", kb)
+        }
+    }
 }
 
 // MARK: - Codable (Custom Implementation for Path Persistence)
@@ -135,7 +179,7 @@ extension Project: Codable {
     private enum CodingKeys: String, CodingKey {
         case id, sport, createdAt, originalDuration, highlightDuration
         case status, segments, title, thumbnailData, sportMode
-        case highlightVideoFilename
+        case highlightVideoFilename, originalFileSize, highlightFileSize
         // Note: sourceVideoURL is NOT persisted - it's only valid during processing
     }
     
@@ -153,6 +197,8 @@ extension Project: Codable {
         thumbnailData = try container.decodeIfPresent(Data.self, forKey: .thumbnailData)
         sportMode = try container.decodeIfPresent(SportModeWrapper.self, forKey: .sportMode)
         highlightVideoFilename = try container.decodeIfPresent(String.self, forKey: .highlightVideoFilename)
+        originalFileSize = try container.decodeIfPresent(Int64.self, forKey: .originalFileSize)
+        highlightFileSize = try container.decodeIfPresent(Int64.self, forKey: .highlightFileSize)
         
         // sourceVideoURL is not persisted - use a placeholder
         // It's only used during initial processing
@@ -173,6 +219,8 @@ extension Project: Codable {
         try container.encodeIfPresent(thumbnailData, forKey: .thumbnailData)
         try container.encodeIfPresent(sportMode, forKey: .sportMode)
         try container.encodeIfPresent(highlightVideoFilename, forKey: .highlightVideoFilename)
+        try container.encodeIfPresent(originalFileSize, forKey: .originalFileSize)
+        try container.encodeIfPresent(highlightFileSize, forKey: .highlightFileSize)
         // Note: sourceVideoURL is intentionally NOT encoded
     }
 }
@@ -280,6 +328,8 @@ extension Project {
         project.status = .completed
         project.highlightDuration = 1080 // 18 minutes
         project.highlightVideoFilename = "tennis_highlights.mp4"
+        project.originalFileSize = 2_684_354_560 // 2.5 GB
+        project.highlightFileSize = 367_001_600 // 350 MB
         project.segments = [
             ActionSegment(startTime: 120, endTime: 180),
             ActionSegment(startTime: 300, endTime: 420),

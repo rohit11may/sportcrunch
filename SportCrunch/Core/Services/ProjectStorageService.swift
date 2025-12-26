@@ -44,23 +44,42 @@ final class UserDefaultsProjectStorageService: ProjectStorageServiceProtocol {
         
         do {
             let decoder = JSONDecoder()
-            let projects = try decoder.decode([Project].self, from: data)
+            var projects = try decoder.decode([Project].self, from: data)
+            var needsSave = false
             
-            // Filter out completed projects with missing highlight files
-            let validProjects = projects.filter { project in
-                guard project.status == .completed else { return true }
+            // Clean up projects and handle edge cases
+            projects = projects.compactMap { project -> Project? in
+                var mutableProject = project
                 
-                if let highlightURL = project.highlightVideoURL {
-                    let exists = FileManager.default.fileExists(atPath: highlightURL.path)
-                    if !exists {
-                        print("⚠️ [ProjectStorage] Highlight file missing for project: \(project.title ?? project.id.uuidString)")
-                    }
-                    return exists
+                // Mark orphaned processing projects as failed
+                // These are projects that were mid-processing when the app was killed
+                if project.status.isProcessing {
+                    print("⚠️ [ProjectStorage] Marking orphaned processing project as failed: \(project.title ?? project.id.uuidString)")
+                    mutableProject.status = .failed
+                    needsSave = true
+                    return mutableProject
                 }
-                return true
+                
+                // Filter out completed projects with missing highlight files
+                if project.status == .completed {
+                    if let highlightURL = project.highlightVideoURL {
+                        let exists = FileManager.default.fileExists(atPath: highlightURL.path)
+                        if !exists {
+                            print("⚠️ [ProjectStorage] Highlight file missing for project: \(project.title ?? project.id.uuidString)")
+                            return nil
+                        }
+                    }
+                }
+                
+                return mutableProject
             }
             
-            return validProjects
+            // Persist the cleanup changes
+            if needsSave {
+                saveAllProjects(projects)
+            }
+            
+            return projects
         } catch {
             print("❌ [ProjectStorage] Failed to decode projects: \(error)")
             return []

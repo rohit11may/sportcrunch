@@ -9,7 +9,8 @@ import SwiftUI
 
 struct TennisModeSelectionView: View {
     var viewModel: HighlightCreationViewModel
-    @State private var hoveredMode: TennisMode?
+    @State private var selectedMode: TennisMode?
+    @State private var glowPhase: CGFloat = 0
     
     var body: some View {
         VStack(spacing: Spacing.xl) {
@@ -39,13 +40,10 @@ struct TennisModeSelectionView: View {
                 ForEach(TennisMode.allCases, id: \.self) { mode in
                     TennisModeButton(
                         mode: mode,
-                        isSelected: hoveredMode == mode
+                        isSelected: selectedMode == mode
                     ) {
-                        hoveredMode = mode
-                        
-                        // Brief delay before proceeding
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            viewModel.selectTennisMode(mode)
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            selectedMode = mode
                         }
                     }
                 }
@@ -68,9 +66,26 @@ struct TennisModeSelectionView: View {
                     description: "Best for technique review. Creates short, snappy clips around each individual shot (~1s each)."
                 )
             }
+            
+            // Crunch Button - appears when mode is selected
+            if let mode = selectedMode {
+                CrunchButton(glowPhase: glowPhase) {
+                    viewModel.selectTennisMode(mode)
+                }
+                .transition(.asymmetric(
+                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                    removal: .opacity
+                ))
+            }
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.bottom, Spacing.xl)
+        .onAppear {
+            // Start the glow animation
+            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                glowPhase = 1
+            }
+        }
     }
     
     // MARK: - Mode Info Card
@@ -98,6 +113,69 @@ struct TennisModeSelectionView: View {
         .padding(Spacing.md)
         .background(Color.scSurface)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+    }
+}
+
+// MARK: - Crunch Button
+
+struct CrunchButton: View {
+    let glowPhase: CGFloat
+    let action: () -> Void
+    
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 20, weight: .bold))
+                Text("Crunch")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+            }
+            .foregroundStyle(.black)
+            .frame(maxWidth: .infinity)
+            .frame(height: 60)
+            .background(
+                ZStack {
+                    // Base gradient
+                    AppGradient.primary
+                    
+                    // Animated shimmer overlay
+                    LinearGradient(
+                        colors: [
+                            .clear,
+                            .white.opacity(0.3),
+                            .clear
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .offset(x: -200 + (400 * glowPhase))
+                }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.large)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                Color.scGradientStart.opacity(0.8),
+                                Color.scGradientEnd.opacity(0.6)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 2
+                    )
+            )
+            // Glow effect
+            .shadow(color: Color.scGradientStart.opacity(0.3 + 0.3 * glowPhase), radius: 12 + 8 * glowPhase, x: 0, y: 4)
+            .shadow(color: Color.scGradientEnd.opacity(0.2 + 0.2 * glowPhase), radius: 20 + 10 * glowPhase, x: 0, y: 8)
+            .scaleEffect(isPressed ? 0.96 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+        }
+        .buttonStyle(PressableButtonStyle(isPressed: $isPressed))
+        .padding(.top, Spacing.md)
     }
 }
 

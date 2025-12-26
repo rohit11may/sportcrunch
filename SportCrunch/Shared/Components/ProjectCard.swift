@@ -193,13 +193,29 @@ struct ProjectCard: View {
                 }
             }
             
-            // Time saved badge
-            if let timeSaved = project.formattedTimeSaved {
-                Text(timeSaved)
-                    .font(AppFont.captionBold())
+            // Savings badges
+            HStack(spacing: Spacing.md) {
+                if let timeSaved = project.formattedTimeSaved {
+                    HStack(spacing: Spacing.xxs) {
+                        Image(systemName: "clock.badge.checkmark")
+                            .font(.system(size: 11))
+                        Text(timeSaved)
+                            .font(AppFont.captionBold())
+                    }
                     .foregroundStyle(Color.scSuccess)
-                    .padding(.top, Spacing.xxs)
+                }
+                
+                if let spaceSaved = project.formattedSpaceSaved {
+                    HStack(spacing: Spacing.xxs) {
+                        Image(systemName: "externaldrive.badge.checkmark")
+                            .font(.system(size: 11))
+                        Text(spaceSaved)
+                            .font(AppFont.captionBold())
+                    }
+                    .foregroundStyle(Color.scSuccess)
+                }
             }
+            .padding(.top, Spacing.xxs)
         }
         .padding(Spacing.md)
     }

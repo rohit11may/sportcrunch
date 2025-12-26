@@ -15,6 +15,8 @@ struct ProcessingResult {
     let segments: [ActionSegment]
     let highlightURL: URL
     let highlightDuration: TimeInterval
+    let originalFileSize: Int64
+    let highlightFileSize: Int64
 }
 
 // MARK: - Processing Error
@@ -114,13 +116,28 @@ final class DummyVideoProcessingService: VideoProcessingServiceProtocol {
         // In real implementation, this would be the exported file URL
         let highlightURL = sourceURL
         
+        // Get original file size (or use dummy value)
+        let originalFileSize: Int64
+        if let attrs = try? FileManager.default.attributesOfItem(atPath: sourceURL.path),
+           let size = attrs[.size] as? Int64 {
+            originalFileSize = size
+        } else {
+            originalFileSize = 2_684_354_560 // Dummy: 2.5 GB
+        }
+        
+        // Estimate highlight file size based on duration ratio
+        let durationRatio = highlightDuration / 7200.0 // Assume 2 hour original
+        let highlightFileSize = Int64(Double(originalFileSize) * min(durationRatio, 0.3))
+        
         statusSubject.send(.completed)
         progressSubject.send(1.0)
         
         return ProcessingResult(
             segments: segments,
             highlightURL: highlightURL,
-            highlightDuration: highlightDuration
+            highlightDuration: highlightDuration,
+            originalFileSize: originalFileSize,
+            highlightFileSize: highlightFileSize
         )
     }
     
@@ -246,9 +263,11 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             throw ProcessingError.invalidVideoURL
         }
         
-        // Get file size for display
+        // Get file size for display and storage
+        var originalFileSize: Int64 = 0
         if let attrs = try? FileManager.default.attributesOfItem(atPath: sourceURL.path),
            let fileSize = attrs[.size] as? Int64 {
+            originalFileSize = fileSize
             let mb = Double(fileSize) / 1024 / 1024
             print("⚙️ [VideoProcessor] File size: \(String(format: "%.1f", mb)) MB")
             await MainActor.run {
@@ -359,7 +378,8 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
                     sourceURL: sourceURL,
                     intervals: audioResult.candidateIntervals,
                     segments: fallbackSegments,
-                    pipelineStart: pipelineStart
+                    pipelineStart: pipelineStart,
+                    originalFileSize: originalFileSize
                 )
             }
             
@@ -426,7 +446,8 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             sourceURL: sourceURL,
             intervals: finalIntervals,
             segments: segments,
-            pipelineStart: pipelineStart
+            pipelineStart: pipelineStart,
+            originalFileSize: originalFileSize
         )
     }
     
@@ -436,7 +457,8 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         sourceURL: URL,
         intervals: [(start: TimeInterval, end: TimeInterval)],
         segments: [ActionSegment],
-        pipelineStart: Date
+        pipelineStart: Date,
+        originalFileSize: Int64
     ) async throws -> ProcessingResult {
         let logger = ProcessingLogger.shared
         
@@ -516,10 +538,21 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             logger.success("Highlight created! \(formatTime(exportResult.inputDuration)) → \(formatTime(exportResult.outputDuration)) in \(String(format: "%.1f", totalElapsed))s")
         }
         
+        // Get highlight file size
+        var highlightFileSize: Int64 = 0
+        if let attrs = try? FileManager.default.attributesOfItem(atPath: exportResult.outputURL.path),
+           let size = attrs[.size] as? Int64 {
+            highlightFileSize = size
+            let mb = Double(size) / 1024 / 1024
+            print("⚙️ [VideoProcessor]    • Highlight size: \(String(format: "%.1f", mb)) MB")
+        }
+        
         return ProcessingResult(
             segments: segments,
             highlightURL: exportResult.outputURL,
-            highlightDuration: exportResult.outputDuration
+            highlightDuration: exportResult.outputDuration,
+            originalFileSize: originalFileSize,
+            highlightFileSize: highlightFileSize
         )
     }
     

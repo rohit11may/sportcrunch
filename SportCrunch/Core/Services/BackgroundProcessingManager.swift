@@ -175,6 +175,8 @@ final class BackgroundProcessingManager: ObservableObject {
                     project.highlightVideoURL = result.highlightURL
                     project.highlightDuration = result.highlightDuration
                     project.thumbnailData = thumbnailData
+                    project.originalFileSize = result.originalFileSize
+                    project.highlightFileSize = result.highlightFileSize
                     project.status = .completed
                     storageService.updateProject(project)
                 }

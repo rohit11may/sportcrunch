@@ -92,7 +92,7 @@ struct CompletedProjectSheet: View {
         ZStack {
             if let player = player {
                 VideoPlayer(player: player)
-                    .frame(height: 240)
+                    .frame(height: 320)
                     .onAppear {
                         // Auto-play when view appears
                         player.play()
@@ -111,7 +111,7 @@ struct CompletedProjectSheet: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(height: 240)
+                    .frame(height: 320)
                     .overlay(
                         VStack(spacing: Spacing.sm) {
                             Image(systemName: "exclamationmark.triangle")
@@ -129,36 +129,55 @@ struct CompletedProjectSheet: View {
     // MARK: - Stats Summary
     
     private var statsSummary: some View {
-        HStack(spacing: Spacing.lg) {
-            // Original duration
-            statItem(
-                label: "Original",
-                value: project.formattedOriginalDuration,
-                color: .scTextSecondary
-            )
+        VStack(spacing: Spacing.sm) {
+            // Duration row
+            HStack(spacing: Spacing.lg) {
+                // Original duration
+                statItem(
+                    label: "Original",
+                    value: project.formattedOriginalDuration,
+                    color: .scTextSecondary
+                )
+                
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Color.scTextTertiary)
+                
+                // Highlight duration
+                statItem(
+                    label: "Highlight",
+                    value: project.formattedHighlightDuration ?? "—",
+                    color: project.sport.accentColor
+                )
+                
+                Spacer()
+            }
             
-            Image(systemName: "arrow.right")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(Color.scTextTertiary)
-            
-            // Highlight duration
-            statItem(
-                label: "Highlight",
-                value: project.formattedHighlightDuration ?? "—",
-                color: project.sport.accentColor
-            )
-            
-            Spacer()
-            
-            // Time saved
-            if let timeSaved = project.formattedTimeSaved {
-                HStack(spacing: Spacing.xxs) {
-                    Image(systemName: "clock.badge.checkmark")
-                        .font(.system(size: 14))
-                    Text(timeSaved)
-                        .font(AppFont.captionBold())
+            // Savings row
+            HStack(spacing: Spacing.lg) {
+                // Time saved
+                if let timeSaved = project.formattedTimeSaved {
+                    HStack(spacing: Spacing.xxs) {
+                        Image(systemName: "clock.badge.checkmark")
+                            .font(.system(size: 14))
+                        Text(timeSaved)
+                            .font(AppFont.captionBold())
+                    }
+                    .foregroundStyle(Color.scSuccess)
                 }
-                .foregroundStyle(Color.scSuccess)
+                
+                // Space saved
+                if let spaceSaved = project.formattedSpaceSaved {
+                    HStack(spacing: Spacing.xxs) {
+                        Image(systemName: "externaldrive.badge.checkmark")
+                            .font(.system(size: 14))
+                        Text(spaceSaved)
+                            .font(AppFont.captionBold())
+                    }
+                    .foregroundStyle(Color.scSuccess)
+                }
+                
+                Spacer()
             }
         }
         .padding(.horizontal, Spacing.lg)

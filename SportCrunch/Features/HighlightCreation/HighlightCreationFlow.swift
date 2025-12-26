@@ -623,6 +623,8 @@ final class HighlightCreationViewModel {
                     self.project?.segments = result.segments
                     self.project?.highlightVideoURL = result.highlightURL
                     self.project?.highlightDuration = result.highlightDuration
+                    self.project?.originalFileSize = result.originalFileSize
+                    self.project?.highlightFileSize = result.highlightFileSize
                     self.project?.status = .completed
                     
                     withAnimation(.spring(response: 0.4)) {
