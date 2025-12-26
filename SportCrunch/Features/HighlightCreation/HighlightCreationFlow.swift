@@ -132,6 +132,7 @@ final class HighlightCreationViewModel {
     var selectedVideoURL: URL?
     var videoDuration: TimeInterval = 0
     var videoThumbnail: UIImage?
+    var videoCreationDate: Date?
     var selectedSport: Sport?
     var selectedTennisMode: TennisMode?
     var processingProgress: Double = 0
@@ -183,6 +184,14 @@ final class HighlightCreationViewModel {
         selectedTennisMode
     }
     
+    /// Generates a default title based on the video creation date
+    var defaultTitle: String {
+        let date = videoCreationDate ?? Date()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        return "\(formatter.string(from: date)) Highlight"
+    }
+    
     // MARK: - Setup
     
     func setServices(
@@ -213,6 +222,12 @@ final class HighlightCreationViewModel {
     }
     
     func cancel() {
+        // Only cancel if this flow has its own processing task running AND
+        // it's not using background processing (which is managed separately)
+        // This prevents closing a new flow from canceling an ongoing background job
+        guard processingTask != nil, !isBackgroundProcessing else {
+            return
+        }
         processingTask?.cancel()
         processingService?.cancel()
     }
@@ -257,6 +272,14 @@ final class HighlightCreationViewModel {
                 logger.pipeline("Could not fetch PHAsset, falling back to Transferable...")
             }
             return try await loadVideoViaTransferable(item: item, logger: logger)
+        }
+        
+        // Capture the video creation date
+        await MainActor.run {
+            self.videoCreationDate = asset.creationDate
+            if let date = asset.creationDate {
+                print("SportCrunch: Video creation date: \(date)")
+            }
         }
         
         print("SportCrunch: Requesting video URL directly from Photos...")
@@ -442,6 +465,7 @@ final class HighlightCreationViewModel {
                     sport: sport,
                     sourceVideoURL: videoURL,
                     originalDuration: self.videoDuration,
+                    title: self.defaultTitle,
                     sportMode: sportModeWrapper
                 )
                 
@@ -528,7 +552,8 @@ final class HighlightCreationViewModel {
                     self.project = Project(
                         sport: sport,
                         sourceVideoURL: videoURL,
-                        originalDuration: self.videoDuration
+                        originalDuration: self.videoDuration,
+                        title: self.defaultTitle
                     )
                 }
                 

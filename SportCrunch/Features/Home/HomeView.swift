@@ -151,6 +151,7 @@ struct HomeView: View {
             .padding(Spacing.md)
             .background(Color.scSurface)
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -198,7 +199,7 @@ struct HomeView: View {
                 .font(AppFont.headline())
                 .foregroundStyle(Color.scTextPrimary)
             
-            LazyVStack(spacing: Spacing.md) {
+            VStack(spacing: Spacing.md) {
                 ForEach(viewModel.projects) { project in
                     let isProcessing = appState.backgroundProcessingManager.isProcessing(projectId: project.id)
                     let progress = progressByProject[project.id] ?? 0
@@ -209,17 +210,6 @@ struct HomeView: View {
                         progress: progress
                     ) {
                         handleProjectTap(project)
-                    }
-                    .contextMenu {
-                        // Only allow deletion if not currently processing
-                        if !isProcessing {
-                            Button(role: .destructive) {
-                                projectToDelete = project
-                                showDeleteConfirmation = true
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
                     }
                 }
             }

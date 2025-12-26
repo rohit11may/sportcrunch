@@ -454,8 +454,15 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             throw ProcessingError.cancelled
         }
         
-        // Create output URL in temp directory
-        let outputURL = FileManager.default.temporaryDirectory
+        // Create output URL in Documents directory for persistence
+        // (temp directory gets cleaned up by the system)
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let highlightsDir = documentsURL.appendingPathComponent("Highlights", isDirectory: true)
+        
+        // Create Highlights directory if it doesn't exist
+        try? FileManager.default.createDirectory(at: highlightsDir, withIntermediateDirectories: true)
+        
+        let outputURL = highlightsDir
             .appendingPathComponent("SportCrunch_\(UUID().uuidString)")
             .appendingPathExtension("mp4")
         

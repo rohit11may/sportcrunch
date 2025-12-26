@@ -51,11 +51,15 @@ struct ProjectCard: View {
         ZStack(alignment: .topLeading) {
             // Background: Actual thumbnail or gradient placeholder
             if let image = thumbnailImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(height: 140)
-                    .clipped()
+                GeometryReader { geo in
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: geo.size.width, height: 140)
+                        .clipped()
+                }
+                .frame(height: 140)
+                .contentShape(Rectangle()) // Constrain hit testing to visible bounds
             } else {
                 // Placeholder gradient background
                 Rectangle()

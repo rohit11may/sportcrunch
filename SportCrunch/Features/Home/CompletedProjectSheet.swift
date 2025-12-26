@@ -253,11 +253,30 @@ struct CompletedProjectSheet: View {
     // MARK: - Helper Methods
     
     private func setupPlayer() {
-        guard let url = project.highlightVideoURL else { return }
+        guard let url = project.highlightVideoURL else {
+            print("⚠️ [CompletedProjectSheet] No highlight URL stored")
+            return
+        }
         
         // Check if file exists
-        if FileManager.default.fileExists(atPath: url.path) {
-            player = AVPlayer(url: url)
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            print("⚠️ [CompletedProjectSheet] Video file not found at: \(url.path)")
+            return
+        }
+        
+        // Create player with error observation
+        let playerItem = AVPlayerItem(url: url)
+        player = AVPlayer(playerItem: playerItem)
+        
+        // Observe for playback errors
+        NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemFailedToPlayToEndTime,
+            object: playerItem,
+            queue: .main
+        ) { notification in
+            if let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error {
+                print("⚠️ [CompletedProjectSheet] Playback error: \(error.localizedDescription)")
+            }
         }
     }
     
