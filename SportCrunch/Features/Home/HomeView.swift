@@ -12,10 +12,15 @@ struct HomeView: View {
     @EnvironmentObject private var appState: AppState
     @State private var viewModel = HomeViewModel()
     @State private var showCreateFlow = false
-    @State private var showProgressSheet = false
-    @State private var showCompletedSheet = false
-    @State private var selectedProcessingProject: Project?
     @State private var selectedCompletedProject: Project?
+    
+    // Track progress and status for reactive updates
+    @State private var progressByProject: [UUID: Double] = [:]
+    @State private var statusByProject: [UUID: ProcessingStatus] = [:]
+    
+    // Delete confirmation
+    @State private var showDeleteConfirmation = false
+    @State private var projectToDelete: Project?
     
     var body: some View {
         NavigationStack {
@@ -46,23 +51,36 @@ struct HomeView: View {
                 HighlightCreationFlow()
                     .environmentObject(appState)
             }
-            .sheet(isPresented: $showProgressSheet) {
-                if let project = selectedProcessingProject {
-                    ProcessingProgressSheet(project: project)
-                        .environmentObject(appState)
-                }
+            .sheet(item: $selectedCompletedProject) { project in
+                CompletedProjectSheet(project: project)
             }
-            .sheet(isPresented: $showCompletedSheet) {
-                if let project = selectedCompletedProject {
-                    CompletedProjectSheet(project: project)
+            .alert("Delete Highlight?", isPresented: $showDeleteConfirmation) {
+                Button("Cancel", role: .cancel) {
+                    projectToDelete = nil
+                }
+                Button("Delete", role: .destructive) {
+                    if let project = projectToDelete {
+                        deleteProject(project)
+                    }
+                }
+            } message: {
+                if let project = projectToDelete {
+                    Text("Are you sure you want to delete \"\(project.title ?? "this highlight")\"? This action cannot be undone.")
                 }
             }
             .onAppear {
                 viewModel.loadProjects(using: appState.projectStorageService)
+                // Initialize progress/status from background manager
+                progressByProject = appState.backgroundProcessingManager.progressByProject
+                statusByProject = appState.backgroundProcessingManager.statusByProject
             }
-            .onReceive(appState.backgroundProcessingManager.$statusByProject) { _ in
+            .onReceive(appState.backgroundProcessingManager.$statusByProject) { newStatus in
+                statusByProject = newStatus
                 // Reload projects when processing status changes
                 viewModel.loadProjects(using: appState.projectStorageService)
+            }
+            .onReceive(appState.backgroundProcessingManager.$progressByProject) { newProgress in
+                progressByProject = newProgress
             }
         }
     }
@@ -182,11 +200,26 @@ struct HomeView: View {
             
             LazyVStack(spacing: Spacing.md) {
                 ForEach(viewModel.projects) { project in
+                    let isProcessing = appState.backgroundProcessingManager.isProcessing(projectId: project.id)
+                    let progress = progressByProject[project.id] ?? 0
+                    
                     ProjectCard(
                         project: projectWithLiveStatus(project),
-                        isProcessing: appState.backgroundProcessingManager.isProcessing(projectId: project.id)
+                        isProcessing: isProcessing,
+                        progress: progress
                     ) {
                         handleProjectTap(project)
+                    }
+                    .contextMenu {
+                        // Only allow deletion if not currently processing
+                        if !isProcessing {
+                            Button(role: .destructive) {
+                                projectToDelete = project
+                                showDeleteConfirmation = true
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                     }
                 }
             }
@@ -199,7 +232,7 @@ struct HomeView: View {
     private func projectWithLiveStatus(_ project: Project) -> Project {
         if appState.backgroundProcessingManager.isProcessing(projectId: project.id) {
             var updatedProject = project
-            updatedProject.status = appState.backgroundProcessingManager.status(for: project.id)
+            updatedProject.status = statusByProject[project.id] ?? project.status
             return updatedProject
         }
         return project
@@ -207,18 +240,24 @@ struct HomeView: View {
     
     /// Handles tap on a project card
     private func handleProjectTap(_ project: Project) {
-        // If project is currently processing, show progress sheet
+        // If project is currently processing, do nothing (progress shown inline)
         if appState.backgroundProcessingManager.isProcessing(projectId: project.id) {
-            selectedProcessingProject = project
-            showProgressSheet = true
+            return
         } else if project.status == .completed {
-            // Show completed project sheet
+            // Show completed project sheet (setting the item triggers the sheet)
             selectedCompletedProject = project
-            showCompletedSheet = true
         } else {
             // Failed or other status - could show details or retry option
             viewModel.selectedProject = project
         }
+    }
+    
+    /// Deletes a project after confirmation
+    private func deleteProject(_ project: Project) {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            viewModel.deleteProject(project, using: appState.projectStorageService)
+        }
+        projectToDelete = nil
     }
 }
 

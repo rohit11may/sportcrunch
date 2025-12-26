@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ProjectCard: View {
     let project: Project
     var isProcessing: Bool = false
+    var progress: Double = 0
     let action: () -> Void
     
     @State private var isPressed = false
@@ -38,22 +40,37 @@ struct ProjectCard: View {
     
     // MARK: - Thumbnail View
     
+    /// Converts the project's thumbnail data to a UIImage
+    private var thumbnailImage: UIImage? {
+        guard let data = project.thumbnailData else { return nil }
+        return UIImage(data: data)
+    }
+    
     @ViewBuilder
     private var thumbnailView: some View {
         ZStack(alignment: .topLeading) {
-            // Placeholder gradient background
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            project.sport.accentColor.opacity(0.3),
-                            project.sport.accentColor.opacity(0.1)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+            // Background: Actual thumbnail or gradient placeholder
+            if let image = thumbnailImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(height: 140)
+                    .clipped()
+            } else {
+                // Placeholder gradient background
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                project.sport.accentColor.opacity(0.3),
+                                project.sport.accentColor.opacity(0.1)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
-                )
-                .frame(height: 140)
+                    .frame(height: 140)
+            }
             
             // Sport badge
             HStack(spacing: Spacing.xxs) {
@@ -73,11 +90,8 @@ struct ProjectCard: View {
             if showsProcessing {
                 VStack {
                     Spacer()
-                    HStack {
-                        Spacer()
-                        processingIndicator
-                            .padding(Spacing.sm)
-                    }
+                    processingIndicator
+                        .padding(Spacing.sm)
                 }
                 .frame(height: 140)
             }
@@ -99,19 +113,42 @@ struct ProjectCard: View {
     }
     
     private var processingIndicator: some View {
-        HStack(spacing: Spacing.xs) {
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                .scaleEffect(0.8)
+        VStack(spacing: Spacing.xs) {
+            HStack(spacing: Spacing.xs) {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    .scaleEffect(0.7)
+                
+                Text(project.status.displayText)
+                    .font(AppFont.caption())
+                    .foregroundStyle(Color.scTextPrimary)
+                
+                Spacer()
+                
+                Text("\(Int(progress * 100))%")
+                    .font(AppFont.captionBold())
+                    .foregroundStyle(Color.scTextPrimary)
+            }
             
-            Text(project.status.displayText)
-                .font(AppFont.caption())
-                .foregroundStyle(Color.scTextPrimary)
+            // Progress bar
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.white.opacity(0.3))
+                        .frame(height: 6)
+                    
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(project.sport.gradient)
+                        .frame(width: max(0, geometry.size.width * progress), height: 6)
+                        .animation(.easeInOut(duration: 0.3), value: progress)
+                }
+            }
+            .frame(height: 6)
         }
         .padding(.horizontal, Spacing.sm)
-        .padding(.vertical, Spacing.xs)
-        .background(Color.black.opacity(0.7))
-        .clipShape(Capsule())
+        .padding(.vertical, Spacing.sm)
+        .background(Color.black.opacity(0.8))
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
     }
     
     private var playButton: some View {
@@ -189,8 +226,7 @@ struct ProjectCard: View {
     var project = Project.sampleTennis
     project.status = .detectingAction
     
-    return ProjectCard(project: project) {}
-        .frame(width: 280)
+    return ProjectCard(project: project, isProcessing: true, progress: 0.45) {}
         .padding()
         .background(Color.scBackground)
 }

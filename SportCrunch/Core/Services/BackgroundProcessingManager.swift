@@ -9,6 +9,7 @@
 import Foundation
 import Combine
 import AVFoundation
+import UIKit
 
 // MARK: - Processing Job
 
@@ -164,12 +165,16 @@ final class BackgroundProcessingManager: ObservableObject {
                 sportMode: job.sportMode
             )
             
+            // Generate thumbnail from highlight video
+            let thumbnailData = await generateThumbnail(from: result.highlightURL)
+            
             // Update project with results
             await MainActor.run {
                 if var project = storageService.getProject(id: job.projectId) {
                     project.segments = result.segments
                     project.highlightVideoURL = result.highlightURL
                     project.highlightDuration = result.highlightDuration
+                    project.thumbnailData = thumbnailData
                     project.status = .completed
                     storageService.updateProject(project)
                 }
@@ -193,6 +198,30 @@ final class BackgroundProcessingManager: ObservableObject {
                 processingTasks.removeValue(forKey: job.projectId)
                 statusByProject[job.projectId] = .failed
             }
+        }
+    }
+    
+    // MARK: - Thumbnail Generation
+    
+    /// Generates a thumbnail image from a video URL
+    /// - Parameter videoURL: URL to the video file
+    /// - Returns: JPEG data of the thumbnail, or nil if generation fails
+    private func generateThumbnail(from videoURL: URL) async -> Data? {
+        let asset = AVAsset(url: videoURL)
+        let imageGenerator = AVAssetImageGenerator(asset: asset)
+        imageGenerator.appliesPreferredTrackTransform = true
+        imageGenerator.maximumSize = CGSize(width: 400, height: 400) // Limit size for storage
+        
+        // Try to get a frame from 1 second into the video
+        let time = CMTime(seconds: 1, preferredTimescale: 600)
+        
+        do {
+            let cgImage = try await imageGenerator.image(at: time).image
+            let uiImage = UIImage(cgImage: cgImage)
+            return uiImage.jpegData(compressionQuality: 0.7)
+        } catch {
+            print("⚙️ [BackgroundProcessingManager] Failed to generate thumbnail: \(error.localizedDescription)")
+            return nil
         }
     }
 }
