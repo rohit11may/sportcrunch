@@ -13,6 +13,7 @@ struct ProjectCard: View {
     var isProcessing: Bool = false
     var progress: Double = 0
     let action: () -> Void
+    var onLongPress: (() -> Void)? = nil
     
     @State private var isPressed = false
     
@@ -36,6 +37,15 @@ struct ProjectCard: View {
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
         }
         .buttonStyle(PressableButtonStyle(isPressed: $isPressed))
+        .contextMenu {
+            if let onLongPress = onLongPress {
+                Button(role: .destructive) {
+                    onLongPress()
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
+        }
     }
     
     // MARK: - Thumbnail View

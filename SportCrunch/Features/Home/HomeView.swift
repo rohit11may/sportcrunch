@@ -207,10 +207,15 @@ struct HomeView: View {
                     ProjectCard(
                         project: projectWithLiveStatus(project),
                         isProcessing: isProcessing,
-                        progress: progress
-                    ) {
-                        handleProjectTap(project)
-                    }
+                        progress: progress,
+                        action: {
+                            handleProjectTap(project)
+                        },
+                        onLongPress: {
+                            projectToDelete = project
+                            showDeleteConfirmation = true
+                        }
+                    )
                 }
             }
         }

@@ -94,43 +94,55 @@ struct SportButton: View {
     
     @State private var isPressed = false
     
+    private var isDisabled: Bool { sport.isComingSoon }
+    
     var body: some View {
         Button(action: action) {
             VStack(spacing: Spacing.md) {
                 // Sport Icon
                 ZStack {
                     Circle()
-                        .fill(isSelected ? sport.gradient : LinearGradient(colors: [.scSurfaceElevated], startPoint: .top, endPoint: .bottom))
+                        .fill(isDisabled ? LinearGradient(colors: [.gray.opacity(0.3)], startPoint: .top, endPoint: .bottom) :
+                              (isSelected ? sport.gradient : LinearGradient(colors: [.scSurfaceElevated], startPoint: .top, endPoint: .bottom)))
                         .frame(width: 80, height: 80)
                     
                     Text(sport.emoji)
                         .font(.system(size: 36))
+                        .grayscale(isDisabled ? 1.0 : 0)
+                        .opacity(isDisabled ? 0.5 : 1.0)
                 }
                 
                 // Sport Name
                 VStack(spacing: Spacing.xxs) {
                     Text(sport.displayName)
                         .font(AppFont.subheadline())
-                        .foregroundStyle(Color.scTextPrimary)
+                        .foregroundStyle(isDisabled ? Color.scTextTertiary : Color.scTextPrimary)
                     
-                    Text(sport.description)
-                        .font(AppFont.caption())
-                        .foregroundStyle(Color.scTextSecondary)
-                        .multilineTextAlignment(.center)
+                    if isDisabled {
+                        Text("Coming soon!")
+                            .font(AppFont.captionBold())
+                            .foregroundStyle(Color.scTextTertiary)
+                    } else {
+                        Text(sport.description)
+                            .font(AppFont.caption())
+                            .foregroundStyle(Color.scTextSecondary)
+                            .multilineTextAlignment(.center)
+                    }
                 }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, Spacing.lg)
-            .background(Color.scSurface)
+            .background(isDisabled ? Color.scSurface.opacity(0.5) : Color.scSurface)
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.large)
-                    .stroke(isSelected ? sport.accentColor : Color.clear, lineWidth: 2)
+                    .stroke(isSelected && !isDisabled ? sport.accentColor : Color.clear, lineWidth: 2)
             )
-            .scaleEffect(isPressed ? 0.97 : 1.0)
+            .scaleEffect(isPressed && !isDisabled ? 0.97 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
         }
         .buttonStyle(PressableButtonStyle(isPressed: $isPressed))
+        .disabled(isDisabled)
     }
 }
 

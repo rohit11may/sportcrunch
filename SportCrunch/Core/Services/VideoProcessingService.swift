@@ -234,6 +234,15 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         isCancelled = false
         let pipelineStart = Date()
         let logger = ProcessingLogger.shared
+        let debugReport = DebugReportService.shared
+        
+        // Start debug report for this processing run
+        await debugReport.startReport(inputFileURL: sourceURL, sport: sport, sportMode: sportMode)
+        
+        // Track timing for each phase
+        var audioExtractionTime: Double = 0
+        var visualValidationTime: Double = 0
+        var exportTime: Double = 0
         
         // Get the preset for this sport/mode combination
         let preset = sport.preset(for: sportMode)
@@ -248,6 +257,7 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         print("⚙️ [VideoProcessor] Source: \(sourceURL.lastPathComponent)")
         print("⚙️ [VideoProcessor] Path: \(sourceURL.path)")
         print("⚙️ [VideoProcessor] Preset: padding=\(preset.paddingPreSec)s/\(preset.paddingPostSec)s, maxGap=\(preset.clusterMaxGapSec)s")
+        print("⚙️ [VideoProcessor] 📊 Debug reporting: ENABLED")
         print("")
         
         await MainActor.run {
@@ -260,6 +270,7 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             await MainActor.run {
                 logger.error("Video file not found")
             }
+            await debugReport.log(level: "error", component: "VideoProcessor", message: "File does not exist", data: ["path": sourceURL.path])
             throw ProcessingError.invalidVideoURL
         }
         
@@ -286,6 +297,7 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         statusSubject.send(.analyzingAudio)
         progressSubject.send(0.05)
         
+        let audioPhaseStart = Date()
         let audioResult: AudioAnalysisResult
         do {
             audioResult = try await audioAnalyzer.analyze(videoURL: sourceURL, sport: sport, sportMode: sportMode)
@@ -294,7 +306,26 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             await MainActor.run {
                 logger.error("Audio analysis failed: \(error.localizedDescription)")
             }
+            await debugReport.log(level: "error", component: "AudioAnalyzer", message: "Audio analysis failed", data: ["error": error.localizedDescription])
             throw ProcessingError.audioExtractionFailed
+        }
+        audioExtractionTime = Date().timeIntervalSince(audioPhaseStart)
+        
+        // Record audio analysis debug data
+        if let debugData = audioResult.debugData {
+            let audioDetails = debugReport.createAudioAnalysisDetails(
+                rawSamples: debugData.rawSamples,
+                filteredSamples: debugData.filteredSamples,
+                onsetStrength: debugData.onsetStrength,
+                thresholds: debugData.thresholds,
+                peakIndices: debugData.peakIndices,
+                peakTimes: audioResult.peakTimes,
+                clusters: debugData.clusters,
+                candidateIntervals: audioResult.candidateIntervals,
+                duration: audioResult.duration,
+                framesPerSecond: debugData.framesPerSecond
+            )
+            await debugReport.recordAudioAnalysis(audioDetails)
         }
         
         guard !isCancelled else {
@@ -312,6 +343,7 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             await MainActor.run {
                 logger.error("No action detected in audio")
             }
+            await debugReport.log(level: "error", component: "VideoProcessor", message: "No action detected in audio", data: nil)
             throw ProcessingError.noActionDetected
         }
         
@@ -349,6 +381,7 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             progressSubject.send(0.75)
         } else {
             // Perform visual validation for sports that need it
+            let visualPhaseStart = Date()
             let validations: [SegmentValidation]
             do {
                 validations = try await visualValidator.validate(
@@ -357,12 +390,14 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
                     sport: sport,
                     sportMode: sportMode
                 )
+                visualValidationTime = Date().timeIntervalSince(visualPhaseStart)
             } catch {
                 print("⚙️ [VideoProcessor] ⚠️ Visual validation failed, falling back to audio-only")
                 print("⚙️ [VideoProcessor] Error: \(error.localizedDescription)")
                 await MainActor.run {
                     logger.warning("Visual validation unavailable, using audio-only")
                 }
+                await debugReport.log(level: "warning", component: "VisualValidator", message: "Visual validation failed, using audio-only", data: ["error": error.localizedDescription])
                 
                 // If visual validation fails, fall back to using audio-only results
                 let fallbackSegments = audioResult.candidateIntervals.map { interval in
@@ -379,7 +414,9 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
                     intervals: audioResult.candidateIntervals,
                     segments: fallbackSegments,
                     pipelineStart: pipelineStart,
-                    originalFileSize: originalFileSize
+                    originalFileSize: originalFileSize,
+                    audioExtractionTime: audioExtractionTime,
+                    visualValidationTime: 0
                 )
             }
             
@@ -447,7 +484,9 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             intervals: finalIntervals,
             segments: segments,
             pipelineStart: pipelineStart,
-            originalFileSize: originalFileSize
+            originalFileSize: originalFileSize,
+            audioExtractionTime: audioExtractionTime,
+            visualValidationTime: visualValidationTime
         )
     }
     
@@ -458,9 +497,12 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         intervals: [(start: TimeInterval, end: TimeInterval)],
         segments: [ActionSegment],
         pipelineStart: Date,
-        originalFileSize: Int64
+        originalFileSize: Int64,
+        audioExtractionTime: Double = 0,
+        visualValidationTime: Double = 0
     ) async throws -> ProcessingResult {
         let logger = ProcessingLogger.shared
+        let debugReport = DebugReportService.shared
         
         print("⚙️ [VideoProcessor] ┌─────────────────────────────────────────┐")
         print("⚙️ [VideoProcessor] │  PHASE 3/3: VIDEO EXPORT                │")
@@ -492,6 +534,7 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         statusSubject.send(.exporting)
         progressSubject.send(0.85)
         
+        let exportPhaseStart = Date()
         let exportResult: ExportResult
         do {
             exportResult = try await videoExporter.export(
@@ -504,8 +547,10 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             await MainActor.run {
                 logger.error("Export failed: \(error.localizedDescription)")
             }
+            await debugReport.log(level: "error", component: "VideoExporter", message: "Export failed", data: ["error": error.localizedDescription])
             throw ProcessingError.exportFailed
         }
+        let exportTime = Date().timeIntervalSince(exportPhaseStart)
         
         guard !isCancelled else {
             print("⚙️ [VideoProcessor] ⚠️ Cancelled after export, cleaning up...")
@@ -545,6 +590,56 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             highlightFileSize = size
             let mb = Double(size) / 1024 / 1024
             print("⚙️ [VideoProcessor]    • Highlight size: \(String(format: "%.1f", mb)) MB")
+        }
+        
+        // Record export details to debug report
+        let exportDetails = ExportDetails(
+            outputFileName: exportResult.outputURL.lastPathComponent,
+            outputFilePath: exportResult.outputURL.path,
+            outputFileSizeBytes: highlightFileSize,
+            outputFileSizeMB: Double(highlightFileSize) / 1024 / 1024,
+            outputDuration: exportResult.outputDuration,
+            segmentsExported: segments.count,
+            compressionRatio: exportResult.compressionRatio
+        )
+        await debugReport.recordExport(exportDetails)
+        
+        // Record timing information
+        let timing = TimingInfo(
+            totalProcessingTime: totalElapsed,
+            audioExtractionTime: audioExtractionTime,
+            audioFilteringTime: 0,  // Included in audioExtractionTime
+            onsetDetectionTime: 0,  // Included in audioExtractionTime
+            peakDetectionTime: 0,   // Included in audioExtractionTime
+            clusteringTime: 0,      // Included in audioExtractionTime
+            visualValidationTime: visualValidationTime,
+            exportTime: exportTime
+        )
+        await debugReport.recordTiming(timing)
+        
+        // Record final results
+        let processingResults = ProcessingResults(
+            success: true,
+            errorMessage: nil,
+            inputDuration: exportResult.inputDuration,
+            outputDuration: exportResult.outputDuration,
+            reductionPercent: exportResult.compressionRatio,
+            segmentCount: segments.count,
+            segments: segments.enumerated().map { index, segment in
+                SegmentResult(
+                    index: index,
+                    startTime: segment.startTime,
+                    endTime: segment.endTime,
+                    duration: segment.duration,
+                    confidence: segment.confidence
+                )
+            }
+        )
+        await debugReport.recordResults(processingResults)
+        
+        // Finalize and save the debug report
+        if let reportURL = try? await debugReport.finalizeReport() {
+            print("📊 [VideoProcessor] Debug report saved: \(reportURL.lastPathComponent)")
         }
         
         return ProcessingResult(

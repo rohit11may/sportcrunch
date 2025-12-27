@@ -13,6 +13,8 @@ struct SettingsView: View {
     @State private var defaultSport: Sport = .tennis
     @State private var autoSaveToLibrary = true
     @State private var showResetAlert = false
+    @State private var showDebugReportsSheet = false
+    @State private var debugReportCount = 0
     
     var body: some View {
         ZStack {
@@ -38,26 +40,15 @@ struct SettingsView: View {
                         linkRow(title: "Privacy Policy", icon: "lock.shield") {
                             // Open privacy policy
                         }
-                        
-                        linkRow(title: "Terms of Service", icon: "doc.text") {
-                            // Open terms
-                        }
-                    }
-                    
-                    // Storage Section
-                    settingsSection(title: "Storage") {
-                        storageInfo
                     }
                     
                     // Debug Section (for development)
                     #if DEBUG
                     settingsSection(title: "Developer") {
+                        debugReportsRow
+                        
                         linkRow(title: "Reset Onboarding", icon: "arrow.counterclockwise") {
                             showResetAlert = true
-                        }
-                        
-                        linkRow(title: "Clear All Projects", icon: "trash", isDestructive: true) {
-                            // Clear projects
                         }
                     }
                     #endif
@@ -76,6 +67,54 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This will show the onboarding screens again next time you launch the app.")
+        }
+        .sheet(isPresented: $showDebugReportsSheet) {
+            DebugReportsListView()
+        }
+        .onAppear {
+            updateDebugReportCount()
+        }
+    }
+    
+    // MARK: - Debug Reports Row
+    
+    private var debugReportsRow: some View {
+        Button {
+            showDebugReportsSheet = true
+        } label: {
+            HStack {
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.system(size: 16))
+                    .foregroundStyle(Color.scTextSecondary)
+                    .frame(width: 24)
+                
+                Text("Debug Reports")
+                    .font(AppFont.body())
+                    .foregroundStyle(Color.scTextPrimary)
+                
+                Spacer()
+                
+                Text("\(debugReportCount)")
+                    .font(AppFont.body())
+                    .foregroundStyle(Color.scTextSecondary)
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.scTextTertiary)
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+            .background(Color.scSurface)
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private func updateDebugReportCount() {
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let reportsDir = documentsURL.appendingPathComponent("DebugReports", isDirectory: true)
+        
+        if let files = try? FileManager.default.contentsOfDirectory(atPath: reportsDir.path) {
+            debugReportCount = files.filter { $0.hasSuffix(".json") }.count
         }
     }
     
@@ -221,44 +260,6 @@ struct SettingsView: View {
         .buttonStyle(.plain)
     }
     
-    // MARK: - Storage Info
-    
-    private var storageInfo: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack {
-                Text("App Storage")
-                    .font(AppFont.body())
-                    .foregroundStyle(Color.scTextPrimary)
-                
-                Spacer()
-                
-                Text("12.4 MB")
-                    .font(AppFont.body())
-                    .foregroundStyle(Color.scTextSecondary)
-            }
-            
-            // Storage bar
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.scSurfaceElevated)
-                        .frame(height: 8)
-                    
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(AppGradient.primary)
-                        .frame(width: geometry.size.width * 0.15, height: 8)
-                }
-            }
-            .frame(height: 8)
-            
-            Text("Stored locally on device. No cloud sync.")
-                .font(AppFont.caption())
-                .foregroundStyle(Color.scTextTertiary)
-        }
-        .padding(.horizontal, Spacing.md)
-        .padding(.vertical, Spacing.sm)
-        .background(Color.scSurface)
-    }
 }
 
 // MARK: - Preview

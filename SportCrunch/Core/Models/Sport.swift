@@ -204,6 +204,14 @@ enum Sport: String, CaseIterable, Identifiable, Codable {
         }
     }
     
+    /// Whether this sport is coming soon and should be disabled
+    var isComingSoon: Bool {
+        switch self {
+        case .tennis: return false
+        case .cricket: return true
+        }
+    }
+    
     // MARK: - Sport Modes
     
     /// Whether this sport has selectable modes

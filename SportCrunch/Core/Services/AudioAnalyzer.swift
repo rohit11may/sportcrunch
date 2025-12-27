@@ -16,6 +16,22 @@ struct AudioAnalysisResult {
     let duration: TimeInterval
     let peakTimes: [TimeInterval]
     let candidateIntervals: [(start: TimeInterval, end: TimeInterval)]
+    
+    // Debug data for comparison reports (only populated when debug reporting is enabled)
+    let debugData: AudioAnalysisDebugData?
+}
+
+// MARK: - Audio Analysis Debug Data
+
+/// All intermediate values captured during audio analysis for debug comparison.
+struct AudioAnalysisDebugData {
+    let rawSamples: [Float]
+    let filteredSamples: [Float]
+    let onsetStrength: [Float]
+    let thresholds: [Float]
+    let peakIndices: [Int]
+    let clusters: [[TimeInterval]]
+    let framesPerSecond: Double
 }
 
 // MARK: - Audio Analyzer Errors
@@ -152,7 +168,7 @@ actor AudioAnalyzer {
         // Step 4: Compute adaptive threshold and find peaks
         print("🎵 [AudioAnalyzer] Step 4/5: Finding peaks with adaptive threshold (λ=\(preset.onsetThresholdLambda))...")
         logger.audioAsync("Detecting impact sounds...")
-        let peakIndices = findPeaks(
+        let (peakIndices, thresholds) = findPeaksWithThresholds(
             onsetStrength: onsetStrength,
             sampleRate: preset.sampleRate,
             thresholdLambda: preset.onsetThresholdLambda,
@@ -169,8 +185,9 @@ actor AudioAnalyzer {
         print("🎵 [AudioAnalyzer] 🔍 DEBUG: Peak indices and their onset strengths:")
         for (i, peakIdx) in peakIndices.prefix(20).enumerated() {
             let peakStrength = onsetStrength[peakIdx]
+            let threshold = peakIdx < thresholds.count ? thresholds[peakIdx] : 0
             let peakTime = Double(peakIdx) / framesPerSecond
-            print("🎵 [AudioAnalyzer]   Peak \(i+1): t=\(String(format: "%.3f", peakTime))s, idx=\(peakIdx), strength=\(String(format: "%.2f", peakStrength))")
+            print("🎵 [AudioAnalyzer]   Peak \(i+1): t=\(String(format: "%.3f", peakTime))s, idx=\(peakIdx), strength=\(String(format: "%.2f", peakStrength)), threshold=\(String(format: "%.2f", threshold))")
         }
         if peakIndices.count > 20 {
             print("🎵 [AudioAnalyzer]   ... and \(peakIndices.count - 20) more peaks")
@@ -184,7 +201,7 @@ actor AudioAnalyzer {
         // Step 5: Cluster peaks into intervals
         print("🎵 [AudioAnalyzer] Step 5/5: Clustering peaks (max gap: \(preset.clusterMaxGapSec)s, min hits: \(preset.clusterMinHits))...")
         logger.audioAsync("Clustering hits into action segments...")
-        let candidateIntervals = clusterPeaks(
+        let (candidateIntervals, rawClusters) = clusterPeaksWithDetails(
             peakTimes: peakTimes,
             maxGapSeconds: preset.clusterMaxGapSec,
             minHitsPerSegment: preset.clusterMinHits,
@@ -209,10 +226,22 @@ actor AudioAnalyzer {
         
         logger.successAsync("Audio analysis complete: \(candidateIntervals.count) segments found in \(String(format: "%.1f", elapsed))s")
         
+        // Build debug data for comparison reports
+        let debugData = AudioAnalysisDebugData(
+            rawSamples: samples,
+            filteredSamples: filteredSamples,
+            onsetStrength: onsetStrength,
+            thresholds: thresholds,
+            peakIndices: peakIndices,
+            clusters: rawClusters,
+            framesPerSecond: framesPerSecond
+        )
+        
         return AudioAnalysisResult(
             duration: duration,
             peakTimes: peakTimes,
-            candidateIntervals: candidateIntervals
+            candidateIntervals: candidateIntervals,
+            debugData: debugData
         )
     }
     
@@ -535,13 +564,14 @@ actor AudioAnalyzer {
     // MARK: - Peak Detection
     
     /// Find peaks in onset strength using adaptive thresholding.
-    private func findPeaks(
+    /// Returns tuple of (peakIndices, thresholds) for debug reporting.
+    private func findPeaksWithThresholds(
         onsetStrength: [Float],
         sampleRate: Double,
         thresholdLambda: Float,
         minDistanceSec: Double
-    ) -> [Int] {
-        guard onsetStrength.count > 0 else { return [] }
+    ) -> (peaks: [Int], thresholds: [Float]) {
+        guard onsetStrength.count > 0 else { return ([], []) }
         
         // Calculate window size for adaptive threshold (5 seconds)
         let framesPerSecond = sampleRate / Double(hopLength)
@@ -589,7 +619,7 @@ actor AudioAnalyzer {
             }
         }
         
-        return peaks
+        return (peaks, threshold)
     }
     
     /// Compute adaptive threshold: rolling_mean + lambda * rolling_std
@@ -641,15 +671,16 @@ actor AudioAnalyzer {
     // MARK: - Peak Clustering
     
     /// Cluster detected peaks into action intervals.
-    private func clusterPeaks(
+    /// Returns tuple of (intervals, rawClusters) for debug reporting.
+    private func clusterPeaksWithDetails(
         peakTimes: [TimeInterval],
         maxGapSeconds: Double,
         minHitsPerSegment: Int,
         paddingPre: Double,
         paddingPost: Double,
         videoDuration: TimeInterval
-    ) -> [(start: TimeInterval, end: TimeInterval)] {
-        guard !peakTimes.isEmpty else { return [] }
+    ) -> (intervals: [(start: TimeInterval, end: TimeInterval)], clusters: [[TimeInterval]]) {
+        guard !peakTimes.isEmpty else { return ([], []) }
         
         let sortedPeaks = peakTimes.sorted()
         
@@ -687,7 +718,7 @@ actor AudioAnalyzer {
             intervals.append((start: start, end: end))
         }
         
-        return intervals
+        return (intervals, clusters)
     }
 }
 
