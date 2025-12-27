@@ -19,16 +19,12 @@ enum CreationStep: Int, CaseIterable {
     case selectVideo
     case selectSport
     case selectMode    // New step for sports with modes (e.g., Tennis)
-    case preview
-    case export
     
     var title: String {
         switch self {
         case .selectVideo: return "Select Video"
         case .selectSport: return "Choose Sport"
         case .selectMode: return "Choose Mode"
-        case .preview: return "Preview"
-        case .export: return "Export"
         }
     }
 }
@@ -52,10 +48,6 @@ struct HighlightCreationFlow: View {
                     SportSelectionView(viewModel: viewModel)
                 case .selectMode:
                     TennisModeSelectionView(viewModel: viewModel)
-                case .preview:
-                    PreviewView(viewModel: viewModel)
-                case .export:
-                    ExportView(viewModel: viewModel)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -153,8 +145,6 @@ final class HighlightCreationViewModel {
             return true
         case .selectMode:
             return true
-        case .preview, .export:
-            return false
         }
     }
     
@@ -180,7 +170,7 @@ final class HighlightCreationViewModel {
         let date = videoCreationDate ?? Date()
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d, yyyy"
-        return "\(formatter.string(from: date)) Highlight"
+        return formatter.string(from: date)
     }
     
     // MARK: - Setup
@@ -637,22 +627,11 @@ final class HighlightCreationViewModel {
         }
     }
     
-    // MARK: - Export
-    
-    func proceedToExport() {
-        withAnimation(.spring(response: 0.4)) {
-            currentStep = .export
-        }
-    }
+    // MARK: - Project Management
     
     func saveProject() {
         guard let project else { return }
         storageService?.saveProject(project)
-    }
-    
-    func complete() {
-        saveProject()
-        shouldDismiss = true
     }
 }
 

@@ -52,7 +52,24 @@ struct HomeView: View {
                     .environmentObject(appState)
             }
             .sheet(item: $selectedCompletedProject) { project in
-                CompletedProjectSheet(project: project)
+                // Create a binding that syncs with viewModel.projects
+                CompletedProjectSheet(
+                    project: Binding(
+                        get: {
+                            // Get the latest version from viewModel
+                            viewModel.projects.first(where: { $0.id == project.id }) ?? project
+                        },
+                        set: { updatedProject in
+                            // Update the viewModel's projects array
+                            if let index = viewModel.projects.firstIndex(where: { $0.id == updatedProject.id }) {
+                                viewModel.projects[index] = updatedProject
+                            }
+                            // Also update selectedCompletedProject for sheet state
+                            selectedCompletedProject = updatedProject
+                        }
+                    )
+                )
+                .environmentObject(appState)
             }
             .alert("Delete Highlight?", isPresented: $showDeleteConfirmation) {
                 Button("Cancel", role: .cancel) {

@@ -287,6 +287,9 @@ struct ActionSegment: Identifiable, Codable, Equatable {
     /// Whether this segment is included in the final highlight
     var isIncluded: Bool
     
+    /// Whether this segment is starred (for selective export)
+    var isStarred: Bool
+    
     var duration: TimeInterval {
         endTime - startTime
     }
@@ -296,13 +299,15 @@ struct ActionSegment: Identifiable, Codable, Equatable {
         startTime: TimeInterval,
         endTime: TimeInterval,
         confidence: Double = 1.0,
-        isIncluded: Bool = true
+        isIncluded: Bool = true,
+        isStarred: Bool = false
     ) {
         self.id = id
         self.startTime = startTime
         self.endTime = endTime
         self.confidence = confidence
         self.isIncluded = isIncluded
+        self.isStarred = isStarred
     }
 }
 
