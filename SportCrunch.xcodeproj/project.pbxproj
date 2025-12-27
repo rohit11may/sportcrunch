@@ -399,6 +399,7 @@
 				DEVELOPMENT_TEAM = 8BWHD8UVXP;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "SportCrunch needs permission to save your highlight videos to your photo library.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "SportCrunch needs access to your photo library to select videos for creating highlights.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -433,6 +434,7 @@
 				DEVELOPMENT_TEAM = 8BWHD8UVXP;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "SportCrunch needs permission to save your highlight videos to your photo library.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "SportCrunch needs access to your photo library to select videos for creating highlights.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

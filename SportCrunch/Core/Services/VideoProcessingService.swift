@@ -391,6 +391,14 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
                     sportMode: sportMode
                 )
                 visualValidationTime = Date().timeIntervalSince(visualPhaseStart)
+                
+                // Record detailed visual validation debug data
+                await recordVisualValidationDebugData(
+                    validations: validations,
+                    preset: preset,
+                    debugReport: debugReport
+                )
+                
             } catch {
                 print("⚙️ [VideoProcessor] ⚠️ Visual validation failed, falling back to audio-only")
                 print("⚙️ [VideoProcessor] Error: \(error.localizedDescription)")
@@ -592,16 +600,112 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             print("⚙️ [VideoProcessor]    • Highlight size: \(String(format: "%.1f", mb)) MB")
         }
         
-        // Record export details to debug report
-        let exportDetails = ExportDetails(
-            outputFileName: exportResult.outputURL.lastPathComponent,
-            outputFilePath: exportResult.outputURL.path,
-            outputFileSizeBytes: highlightFileSize,
-            outputFileSizeMB: Double(highlightFileSize) / 1024 / 1024,
-            outputDuration: exportResult.outputDuration,
-            segmentsExported: segments.count,
-            compressionRatio: exportResult.compressionRatio
-        )
+        // Record export details to debug report - convert from ExportDebugData to ExportDetails
+        let exportDetails: ExportDetails
+        if let debugData = exportResult.debugData {
+            // Convert debug data to the report format
+            let sourceProps: SourceVideoProperties? = {
+                let src = debugData.sourceVideoProperties
+                return SourceVideoProperties(
+                    duration: src.duration,
+                    durationCMTime: src.durationCMTime.debugString,
+                    nominalFrameRate: src.nominalFrameRate,
+                    minFrameDuration: src.minFrameDuration.debugString,
+                    naturalTimeScale: src.naturalTimeScale,
+                    videoTrackCount: src.videoTrackCount,
+                    audioTrackCount: src.audioTrackCount,
+                    naturalSize: "\(Int(src.naturalSize.width))x\(Int(src.naturalSize.height))",
+                    preferredTransform: "a=\(src.preferredTransform.a),b=\(src.preferredTransform.b),c=\(src.preferredTransform.c),d=\(src.preferredTransform.d)",
+                    isVideoPortrait: src.isVideoPortrait,
+                    colorPrimaries: src.colorPrimaries,
+                    transferFunction: src.transferFunction,
+                    ycbcrMatrix: src.ycbcrMatrix,
+                    videoCodecType: src.videoCodecType,
+                    videoCodecName: src.videoCodecType,
+                    hasVariableFrameRate: src.hasVariableFrameRate
+                )
+            }()
+            
+            let compConfig: CompositionConfig? = {
+                let cfg = debugData.compositionConfig
+                return CompositionConfig(
+                    exportPreset: cfg.exportPreset,
+                    outputFileType: cfg.outputFileType,
+                    shouldOptimizeForNetworkUse: cfg.shouldOptimizeForNetworkUse,
+                    usedVideoComposition: cfg.usedVideoComposition,
+                    renderSize: cfg.renderSize != nil ? "\(Int(cfg.renderSize!.width))x\(Int(cfg.renderSize!.height))" : nil,
+                    frameDuration: cfg.frameDuration?.debugString,
+                    frameRate: cfg.frameRate,
+                    colorPrimariesApplied: cfg.colorPrimariesApplied,
+                    transferFunctionApplied: cfg.transferFunctionApplied,
+                    ycbcrMatrixApplied: cfg.ycbcrMatrixApplied,
+                    appliedTransform: cfg.appliedTransform != nil ? "a=\(cfg.appliedTransform!.a),b=\(cfg.appliedTransform!.b),c=\(cfg.appliedTransform!.c),d=\(cfg.appliedTransform!.d)" : nil
+                )
+            }()
+            
+            let segmentTimings: [SegmentTimingDetail]? = debugData.segmentTimingDetails.map { detail in
+                SegmentTimingDetail(
+                    segmentIndex: detail.segmentIndex,
+                    requestedStartTime: detail.requestedStartTime,
+                    requestedEndTime: detail.requestedEndTime,
+                    requestedDuration: detail.requestedDuration,
+                    startCMTime: detail.startCMTime.debugString,
+                    endCMTime: detail.endCMTime.debugString,
+                    durationCMTime: detail.durationCMTime.debugString,
+                    insertionPosition: detail.insertionPosition.debugString,
+                    insertedSuccessfully: detail.insertedSuccessfully,
+                    errorMessage: detail.errorMessage,
+                    timeRangeValid: detail.timeRangeValid,
+                    clampedToVideoBounds: detail.clampedToVideoBounds
+                )
+            }
+            
+            let outputVerification: OutputVideoVerification? = {
+                guard let ver = debugData.outputVerification else { return nil }
+                return OutputVideoVerification(
+                    duration: ver.duration,
+                    durationCMTime: ver.durationCMTime.debugString,
+                    expectedDuration: ver.expectedDuration,
+                    durationMismatch: ver.durationMismatch,
+                    durationMismatchPercent: ver.durationMismatchPercent,
+                    nominalFrameRate: ver.nominalFrameRate,
+                    frameRateMismatch: ver.frameRateMismatch,
+                    sourceFrameRate: ver.sourceFrameRate,
+                    naturalSize: ver.naturalSize != nil ? "\(Int(ver.naturalSize!.width))x\(Int(ver.naturalSize!.height))" : nil,
+                    videoCodecType: ver.videoCodecType,
+                    timingAccurate: ver.timingAccurate,
+                    timingIssueDescription: ver.timingIssueDescription
+                )
+            }()
+            
+            exportDetails = debugReport.createExportDetails(
+                outputFileName: exportResult.outputURL.lastPathComponent,
+                outputFilePath: exportResult.outputURL.path,
+                outputFileSizeBytes: highlightFileSize,
+                outputDuration: exportResult.outputDuration,
+                segmentsExported: segments.count,
+                inputDuration: exportResult.inputDuration,
+                sourceVideoProperties: sourceProps,
+                compositionConfig: compConfig,
+                segmentTimingDetails: segmentTimings,
+                outputVideoVerification: outputVerification
+            )
+        } else {
+            // No debug data - use basic export details
+            exportDetails = ExportDetails(
+                outputFileName: exportResult.outputURL.lastPathComponent,
+                outputFilePath: exportResult.outputURL.path,
+                outputFileSizeBytes: highlightFileSize,
+                outputFileSizeMB: Double(highlightFileSize) / 1024 / 1024,
+                outputDuration: exportResult.outputDuration,
+                segmentsExported: segments.count,
+                compressionRatio: exportResult.compressionRatio,
+                sourceVideoProperties: nil,
+                compositionConfig: nil,
+                segmentTimingDetails: nil,
+                outputVideoVerification: nil
+            )
+        }
         await debugReport.recordExport(exportDetails)
         
         // Record timing information
@@ -657,6 +761,105 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         let mins = Int(seconds) / 60
         let secs = Int(seconds) % 60
         return String(format: "%d:%02d", mins, secs)
+    }
+    
+    // MARK: - Debug Data Recording
+    
+    /// Record detailed visual validation debug data to the debug report.
+    private func recordVisualValidationDebugData(
+        validations: [SegmentValidation],
+        preset: AnalysisPreset,
+        debugReport: DebugReportService
+    ) async {
+        // Build frame processing info
+        let frameProcessingInfo = FrameProcessingInfo(
+            thumbnailWidth: preset.videoThumbSize.width,
+            thumbnailHeight: preset.videoThumbSize.height,
+            pixelCount: preset.videoThumbSize.width * preset.videoThumbSize.height,
+            frameStride: preset.videoSampleStride,
+            motionPixelThreshold: preset.motionPixelThreshold,
+            motionAreaThreshold: preset.motionAreaThreshold,
+            sourceVideoFPS: 0, // Will be updated from actual video
+            sourceVideoResolution: "unknown"
+        )
+        
+        // Build segment validation details from the debug data
+        var segmentDetails: [SegmentValidationDetail] = []
+        var allMotionScores: [Double] = []
+        
+        for (index, validation) in validations.enumerated() {
+            // Collect all motion scores for aggregate stats
+            if let debugData = validation.debugData {
+                allMotionScores.append(contentsOf: debugData.allFrameScores)
+                
+                // Convert frame pair debug data to the report format
+                var framePairDetails: [FramePairDetail]? = nil
+                if !debugData.framePairDetails.isEmpty {
+                    framePairDetails = debugData.framePairDetails.map { pair in
+                        FramePairDetail(
+                            pairIndex: pair.pairIndex,
+                            frameATime: pair.frameATime,
+                            frameBTime: pair.frameBTime,
+                            frameAWidth: pair.frameAWidth,
+                            frameAHeight: pair.frameAHeight,
+                            frameBWidth: pair.frameBWidth,
+                            frameBHeight: pair.frameBHeight,
+                            frameAGrayscaleMean: pair.frameAGrayscaleMean,
+                            frameAGrayscaleStdDev: pair.frameAGrayscaleStdDev,
+                            frameBGrayscaleMean: pair.frameBGrayscaleMean,
+                            frameBGrayscaleStdDev: pair.frameBGrayscaleStdDev,
+                            rawDiffSum: pair.rawDiffSum,
+                            rawDiffMean: pair.rawDiffMean,
+                            rawDiffMax: pair.rawDiffMax,
+                            pixelsAboveThreshold: pair.pixelsAboveThreshold,
+                            motionScore: pair.motionScore
+                        )
+                    }
+                }
+                
+                let detail = debugReport.createSegmentValidationDetail(
+                    segmentIndex: index,
+                    startTime: validation.start,
+                    endTime: validation.end,
+                    framesRequested: debugData.framesRequested,
+                    framesExtracted: debugData.framesExtracted,
+                    motionScore: validation.motionScore,
+                    threshold: preset.motionAreaThreshold,
+                    isValid: validation.isValid,
+                    usedEarlyExit: debugData.usedEarlyExit,
+                    framesProcessedBeforeDecision: debugData.framesProcessedBeforeDecision,
+                    allFrameScores: debugData.allFrameScores,
+                    framePairDetails: framePairDetails
+                )
+                segmentDetails.append(detail)
+            } else {
+                // No debug data available - create minimal entry
+                let detail = debugReport.createSegmentValidationDetail(
+                    segmentIndex: index,
+                    startTime: validation.start,
+                    endTime: validation.end,
+                    framesRequested: 0,
+                    framesExtracted: 0,
+                    motionScore: validation.motionScore,
+                    threshold: preset.motionAreaThreshold,
+                    isValid: validation.isValid,
+                    usedEarlyExit: false,
+                    framesProcessedBeforeDecision: 0,
+                    allFrameScores: [],
+                    framePairDetails: nil
+                )
+                segmentDetails.append(detail)
+            }
+        }
+        
+        // Create and record the visual validation details
+        let visualDetails = debugReport.createVisualValidationDetails(
+            segmentResults: segmentDetails,
+            frameProcessingInfo: frameProcessingInfo,
+            allMotionScores: allMotionScores
+        )
+        
+        await debugReport.recordVisualValidation(visualDetails)
     }
     
     // MARK: - Cancellation

@@ -43,15 +43,20 @@ struct SettingsView: View {
                     }
                     
                     // Debug Section (for development)
-                    #if DEBUG
+                    // Note: Temporarily always visible for debugging simulator vs device differences
                     settingsSection(title: "Developer") {
                         debugReportsRow
                         
+                        #if DEBUG
                         linkRow(title: "Reset Onboarding", icon: "arrow.counterclockwise") {
                             showResetAlert = true
                         }
+                        
+                        linkRow(title: "Clear All Projects", icon: "trash", isDestructive: true) {
+                            // Clear projects
+                        }
+                        #endif
                     }
-                    #endif
                 }
                 .padding(.horizontal, Spacing.lg)
                 .padding(.top, Spacing.md)

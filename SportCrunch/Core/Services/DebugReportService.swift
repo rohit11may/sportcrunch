@@ -394,27 +394,96 @@ struct IntervalDetail: Codable {
     let hitCount: Int
 }
 
-// MARK: - Visual Validation Details
+// MARK: - Visual Validation Details (Enhanced)
 
 struct VisualValidationDetails: Codable {
     let segmentsValidated: Int
     let segmentsApproved: Int
     let segmentsRejected: Int
     let validationResults: [SegmentValidationDetail]
+    
+    // Platform-specific frame processing info
+    let frameProcessingInfo: FrameProcessingInfo?
+    
+    // Aggregated statistics across all segments
+    let aggregateStats: VisualValidationStats?
+}
+
+struct FrameProcessingInfo: Codable {
+    let thumbnailWidth: Int
+    let thumbnailHeight: Int
+    let pixelCount: Int
+    let frameStride: Int
+    let motionPixelThreshold: Int
+    let motionAreaThreshold: Double
+    let sourceVideoFPS: Double
+    let sourceVideoResolution: String
+}
+
+struct VisualValidationStats: Codable {
+    let totalFramesRequested: Int
+    let totalFramesExtracted: Int
+    let frameExtractionSuccessRate: Double
+    let averageMotionScore: Double
+    let medianMotionScore: Double
+    let minMotionScore: Double
+    let maxMotionScore: Double
+    let stdDevMotionScore: Double
+    let approvalRate: Double
 }
 
 struct SegmentValidationDetail: Codable {
     let segmentIndex: Int
     let startTime: Double
     let endTime: Double
+    let duration: Double
+    
+    // Frame extraction details
+    let framesRequested: Int
     let framesExtracted: Int
+    let frameExtractionRate: Double
+    
+    // Motion analysis details
     let motionScore: Double
     let threshold: Double
     let isValid: Bool
-    let frameScores: [Double]?  // First N frame scores for comparison
+    let usedEarlyExit: Bool
+    let framesProcessedBeforeDecision: Int
+    
+    // Per-frame motion scores (all of them for comparison)
+    let allFrameScores: [Double]
+    
+    // Frame pair analysis for first N pairs (detailed debugging)
+    let framePairDetails: [FramePairDetail]?
 }
 
-// MARK: - Export Details
+/// Detailed info about a single frame pair comparison for motion detection
+struct FramePairDetail: Codable {
+    let pairIndex: Int
+    let frameATime: Double
+    let frameBTime: Double
+    
+    // Frame dimensions (to detect resizing issues)
+    let frameAWidth: Int
+    let frameAHeight: Int
+    let frameBWidth: Int
+    let frameBHeight: Int
+    
+    // Grayscale conversion stats
+    let frameAGrayscaleMean: Float
+    let frameAGrayscaleStdDev: Float
+    let frameBGrayscaleMean: Float
+    let frameBGrayscaleStdDev: Float
+    
+    // Motion computation intermediates
+    let rawDiffSum: Float           // Sum of absolute differences before threshold
+    let rawDiffMean: Float          // Mean of absolute differences
+    let rawDiffMax: Float           // Max absolute difference
+    let pixelsAboveThreshold: Int   // Count of pixels exceeding threshold
+    let motionScore: Double         // Final motion score for this pair
+}
+
+// MARK: - Export Details (Enhanced for timing/slow-mo diagnosis)
 
 struct ExportDetails: Codable {
     let outputFileName: String
@@ -424,6 +493,118 @@ struct ExportDetails: Codable {
     let outputDuration: Double
     let segmentsExported: Int
     let compressionRatio: Double
+    
+    // Enhanced: Source video properties (critical for slow-mo diagnosis)
+    let sourceVideoProperties: SourceVideoProperties?
+    
+    // Enhanced: Composition configuration
+    let compositionConfig: CompositionConfig?
+    
+    // Enhanced: Per-segment timing details
+    let segmentTimingDetails: [SegmentTimingDetail]?
+    
+    // Enhanced: Output video verification
+    let outputVideoVerification: OutputVideoVerification?
+}
+
+/// Source video timing and format properties - critical for diagnosing slow-mo
+struct SourceVideoProperties: Codable {
+    // Basic timing
+    let duration: Double
+    let durationCMTime: String              // CMTime as string for exact comparison
+    let nominalFrameRate: Float
+    let minFrameDuration: String            // CMTime as string
+    let naturalTimeScale: Int32
+    
+    // Track info
+    let videoTrackCount: Int
+    let audioTrackCount: Int
+    
+    // Video format
+    let naturalSize: String                 // "WIDTHxHEIGHT"
+    let preferredTransform: String          // Transform matrix as string
+    let isVideoPortrait: Bool
+    
+    // Color space (for color issues)
+    let colorPrimaries: String?
+    let transferFunction: String?
+    let ycbcrMatrix: String?
+    
+    // Codec info
+    let videoCodecType: String?
+    let videoCodecName: String?
+    
+    // For detecting variable frame rate videos (VFR) which can cause issues
+    let hasVariableFrameRate: Bool?
+}
+
+/// Composition configuration used during export
+struct CompositionConfig: Codable {
+    let exportPreset: String
+    let outputFileType: String
+    let shouldOptimizeForNetworkUse: Bool
+    
+    // Video composition settings
+    let usedVideoComposition: Bool
+    let renderSize: String?                 // "WIDTHxHEIGHT"
+    let frameDuration: String?              // CMTime as string
+    let frameRate: Double?
+    
+    // Color settings applied
+    let colorPrimariesApplied: String?
+    let transferFunctionApplied: String?
+    let ycbcrMatrixApplied: String?
+    
+    // Transform handling
+    let appliedTransform: String?
+}
+
+/// Per-segment timing details for diagnosing timing issues
+struct SegmentTimingDetail: Codable {
+    let segmentIndex: Int
+    
+    // Requested times
+    let requestedStartTime: Double
+    let requestedEndTime: Double
+    let requestedDuration: Double
+    
+    // CMTime values used (exact representation)
+    let startCMTime: String                 // e.g., "12345/600"
+    let endCMTime: String
+    let durationCMTime: String
+    
+    // Insertion position
+    let insertionPosition: String           // CMTime at which segment was inserted
+    
+    // Success/failure
+    let insertedSuccessfully: Bool
+    let errorMessage: String?
+    
+    // Time range validation
+    let timeRangeValid: Bool
+    let clampedToVideoBounds: Bool
+}
+
+/// Verification of output video properties (to compare with input)
+struct OutputVideoVerification: Codable {
+    let duration: Double
+    let durationCMTime: String
+    let expectedDuration: Double            // Sum of segment durations
+    let durationMismatch: Double            // Difference from expected
+    let durationMismatchPercent: Double
+    
+    // Frame rate verification (critical for slow-mo)
+    let nominalFrameRate: Float?
+    let frameRateMismatch: Bool
+    let sourceFrameRate: Float
+    
+    // Output format
+    let naturalSize: String?
+    let videoCodecType: String?
+    
+    // Timing accuracy
+    let timingAccurate: Bool                // true if duration matches expected within tolerance
+    let timingIssueDescription: String?
 }
 
 // MARK: - Timing Information
@@ -652,6 +833,33 @@ actor DebugReportService {
             print("📊    • Validated: \(visual.segmentsValidated)")
             print("📊    • Approved: \(visual.segmentsApproved)")
             print("📊    • Rejected: \(visual.segmentsRejected)")
+            
+            if let frameInfo = visual.frameProcessingInfo {
+                print("📊    • Thumbnail: \(frameInfo.thumbnailWidth)x\(frameInfo.thumbnailHeight) (\(frameInfo.pixelCount) pixels)")
+                print("📊    • Frame stride: \(frameInfo.frameStride)")
+                print("📊    • Pixel threshold: \(frameInfo.motionPixelThreshold)")
+                print("📊    • Area threshold: \(Int(frameInfo.motionAreaThreshold))")
+            }
+            
+            if let stats = visual.aggregateStats {
+                print("📊    • Frame extraction rate: \(String(format: "%.1f", stats.frameExtractionSuccessRate * 100))%")
+                print("📊    • Motion scores: avg=\(String(format: "%.1f", stats.averageMotionScore)), median=\(String(format: "%.1f", stats.medianMotionScore))")
+                print("📊    • Motion range: \(String(format: "%.1f", stats.minMotionScore)) - \(String(format: "%.1f", stats.maxMotionScore))")
+                print("📊    • Motion stdDev: \(String(format: "%.1f", stats.stdDevMotionScore))")
+                print("📊    • Approval rate: \(String(format: "%.1f", stats.approvalRate * 100))%")
+            }
+            
+            // Print details for rejected segments to help diagnose
+            let rejectedSegments = visual.validationResults.filter { !$0.isValid }
+            if !rejectedSegments.isEmpty {
+                print("📊    • REJECTED SEGMENTS (motion below threshold):")
+                for seg in rejectedSegments.prefix(5) {
+                    print("📊      - Seg \(seg.segmentIndex): score=\(String(format: "%.1f", seg.motionScore)) (threshold=\(String(format: "%.1f", seg.threshold))), frames=\(seg.framesExtracted)/\(seg.framesRequested)")
+                }
+                if rejectedSegments.count > 5 {
+                    print("📊      ... and \(rejectedSegments.count - 5) more")
+                }
+            }
         }
         
         if let results = report.results {
@@ -662,6 +870,39 @@ actor DebugReportService {
             print("📊    • Output duration: \(String(format: "%.2f", results.outputDuration))s")
             print("📊    • Reduction: \(String(format: "%.1f", results.reductionPercent))%")
             print("📊    • Segments: \(results.segmentCount)")
+        }
+        
+        // Print export verification details (critical for slow-mo diagnosis)
+        if let exportDetails = report.exportDetails {
+            if let sourceProps = exportDetails.sourceVideoProperties {
+                print("📊 ───────────────────────────────────────────────────────────────")
+                print("📊  SOURCE VIDEO (for timing comparison):")
+                print("📊    • Duration CMTime: \(sourceProps.durationCMTime)")
+                print("📊    • Frame rate: \(sourceProps.nominalFrameRate) fps")
+                print("📊    • Time scale: \(sourceProps.naturalTimeScale)")
+                print("📊    • Size: \(sourceProps.naturalSize)")
+                print("📊    • Codec: \(sourceProps.videoCodecType ?? "unknown")")
+                if sourceProps.hasVariableFrameRate == true {
+                    print("📊    ⚠️ VARIABLE FRAME RATE detected!")
+                }
+            }
+            
+            if let verification = exportDetails.outputVideoVerification {
+                print("📊 ───────────────────────────────────────────────────────────────")
+                print("📊  OUTPUT VERIFICATION:")
+                print("📊    • Actual duration: \(String(format: "%.3f", verification.duration))s")
+                print("📊    • Expected: \(String(format: "%.3f", verification.expectedDuration))s")
+                print("📊    • Mismatch: \(String(format: "%.3f", verification.durationMismatch))s (\(String(format: "%.1f", verification.durationMismatchPercent))%)")
+                if let fps = verification.nominalFrameRate {
+                    print("📊    • Output FPS: \(String(format: "%.2f", fps)) (source: \(String(format: "%.2f", verification.sourceFrameRate)))")
+                }
+                if verification.frameRateMismatch {
+                    print("📊    ⚠️ FRAME RATE MISMATCH detected!")
+                }
+                if !verification.timingAccurate {
+                    print("📊    ⚠️ TIMING ISSUE: \(verification.timingIssueDescription ?? "Unknown")")
+                }
+            }
         }
         
         if let timing = report.timing {
@@ -767,6 +1008,130 @@ extension DebugReportService {
             clusters: clusterDetails,
             candidateIntervals: intervalDetails
         )
+    }
+    
+    // MARK: - Visual Validation Helpers
+    
+    /// Create comprehensive visual validation details.
+    nonisolated func createVisualValidationDetails(
+        segmentResults: [SegmentValidationDetail],
+        frameProcessingInfo: FrameProcessingInfo?,
+        allMotionScores: [Double]
+    ) -> VisualValidationDetails {
+        let approved = segmentResults.filter { $0.isValid }.count
+        let rejected = segmentResults.count - approved
+        
+        // Calculate aggregate stats
+        var aggregateStats: VisualValidationStats? = nil
+        if !allMotionScores.isEmpty {
+            let sorted = allMotionScores.sorted()
+            let sum = allMotionScores.reduce(0, +)
+            let mean = sum / Double(allMotionScores.count)
+            let variance = allMotionScores.reduce(0) { $0 + pow($1 - mean, 2) } / Double(allMotionScores.count)
+            let stdDev = sqrt(variance)
+            
+            let totalRequested = segmentResults.reduce(0) { $0 + $1.framesRequested }
+            let totalExtracted = segmentResults.reduce(0) { $0 + $1.framesExtracted }
+            
+            aggregateStats = VisualValidationStats(
+                totalFramesRequested: totalRequested,
+                totalFramesExtracted: totalExtracted,
+                frameExtractionSuccessRate: totalRequested > 0 ? Double(totalExtracted) / Double(totalRequested) : 0,
+                averageMotionScore: mean,
+                medianMotionScore: sorted[sorted.count / 2],
+                minMotionScore: sorted.first ?? 0,
+                maxMotionScore: sorted.last ?? 0,
+                stdDevMotionScore: stdDev,
+                approvalRate: segmentResults.isEmpty ? 0 : Double(approved) / Double(segmentResults.count)
+            )
+        }
+        
+        return VisualValidationDetails(
+            segmentsValidated: segmentResults.count,
+            segmentsApproved: approved,
+            segmentsRejected: rejected,
+            validationResults: segmentResults,
+            frameProcessingInfo: frameProcessingInfo,
+            aggregateStats: aggregateStats
+        )
+    }
+    
+    /// Create a segment validation detail with frame pair analysis.
+    nonisolated func createSegmentValidationDetail(
+        segmentIndex: Int,
+        startTime: Double,
+        endTime: Double,
+        framesRequested: Int,
+        framesExtracted: Int,
+        motionScore: Double,
+        threshold: Double,
+        isValid: Bool,
+        usedEarlyExit: Bool,
+        framesProcessedBeforeDecision: Int,
+        allFrameScores: [Double],
+        framePairDetails: [FramePairDetail]?
+    ) -> SegmentValidationDetail {
+        return SegmentValidationDetail(
+            segmentIndex: segmentIndex,
+            startTime: startTime,
+            endTime: endTime,
+            duration: endTime - startTime,
+            framesRequested: framesRequested,
+            framesExtracted: framesExtracted,
+            frameExtractionRate: framesRequested > 0 ? Double(framesExtracted) / Double(framesRequested) : 0,
+            motionScore: motionScore,
+            threshold: threshold,
+            isValid: isValid,
+            usedEarlyExit: usedEarlyExit,
+            framesProcessedBeforeDecision: framesProcessedBeforeDecision,
+            allFrameScores: allFrameScores,
+            framePairDetails: framePairDetails
+        )
+    }
+    
+    // MARK: - Export Helpers
+    
+    /// Create comprehensive export details with timing verification.
+    nonisolated func createExportDetails(
+        outputFileName: String,
+        outputFilePath: String,
+        outputFileSizeBytes: Int64,
+        outputDuration: Double,
+        segmentsExported: Int,
+        inputDuration: Double,
+        sourceVideoProperties: SourceVideoProperties?,
+        compositionConfig: CompositionConfig?,
+        segmentTimingDetails: [SegmentTimingDetail]?,
+        outputVideoVerification: OutputVideoVerification?
+    ) -> ExportDetails {
+        let compressionRatio = inputDuration > 0 ? (1 - outputDuration / inputDuration) * 100 : 0
+        
+        return ExportDetails(
+            outputFileName: outputFileName,
+            outputFilePath: outputFilePath,
+            outputFileSizeBytes: outputFileSizeBytes,
+            outputFileSizeMB: Double(outputFileSizeBytes) / 1024 / 1024,
+            outputDuration: outputDuration,
+            segmentsExported: segmentsExported,
+            compressionRatio: compressionRatio,
+            sourceVideoProperties: sourceVideoProperties,
+            compositionConfig: compositionConfig,
+            segmentTimingDetails: segmentTimingDetails,
+            outputVideoVerification: outputVideoVerification
+        )
+    }
+}
+
+// MARK: - CMTime String Helpers
+
+extension CMTime {
+    /// Format CMTime as a debug string showing exact representation.
+    var debugString: String {
+        if isIndefinite { return "indefinite" }
+        if isNegativeInfinity { return "-infinity" }
+        if isPositiveInfinity { return "+infinity" }
+        if !flags.contains(.valid) { return "invalid" }
+        return "\(value)/\(timescale) (\(String(format: "%.4f", seconds))s)"
     }
 }
 

@@ -19,6 +19,39 @@ struct SegmentValidation {
     let end: TimeInterval
     let isValid: Bool
     let motionScore: Double
+    
+    // Enhanced debug data
+    let debugData: SegmentValidationDebugData?
+}
+
+/// Detailed debug data for a segment validation (for comparing simulator vs device)
+struct SegmentValidationDebugData {
+    let framesRequested: Int
+    let framesExtracted: Int
+    let usedEarlyExit: Bool
+    let framesProcessedBeforeDecision: Int
+    let allFrameScores: [Double]
+    let framePairDetails: [FramePairDebugData]
+}
+
+/// Debug data for a single frame pair comparison
+struct FramePairDebugData {
+    let pairIndex: Int
+    let frameATime: Double
+    let frameBTime: Double
+    let frameAWidth: Int
+    let frameAHeight: Int
+    let frameBWidth: Int
+    let frameBHeight: Int
+    let frameAGrayscaleMean: Float
+    let frameAGrayscaleStdDev: Float
+    let frameBGrayscaleMean: Float
+    let frameBGrayscaleStdDev: Float
+    let rawDiffSum: Float
+    let rawDiffMean: Float
+    let rawDiffMax: Float
+    let pixelsAboveThreshold: Int
+    let motionScore: Double
 }
 
 // MARK: - Visual Validator Errors
@@ -70,6 +103,21 @@ private final class FrameBuffers {
         floatB = [Float](repeating: 0, count: pixelCount)
         diff = [Float](repeating: 0, count: pixelCount)
     }
+}
+
+/// Result of motion computation with debug statistics
+struct MotionComputationResult {
+    let motionScore: Double
+    let rawDiffSum: Float
+    let rawDiffMean: Float
+    let rawDiffMax: Float
+    let pixelsAboveThreshold: Int
+}
+
+/// Statistics for a grayscale buffer
+struct GrayscaleStats {
+    let mean: Float
+    let stdDev: Float
 }
 
 // MARK: - Visual Validator
@@ -204,6 +252,7 @@ actor VisualValidator {
     // MARK: - Batch Segment Validation
     
     /// Validates a segment using batch frame extraction for better performance.
+    /// Now captures detailed debug data for comparing simulator vs device behavior.
     private nonisolated func validateSegmentBatch(
         generator: AVAssetImageGenerator,
         start: TimeInterval,
@@ -216,22 +265,43 @@ actor VisualValidator {
         
         // Build list of times to extract
         var times: [NSValue] = []
+        var frameTimes: [Double] = []  // Track actual times for debug
         var frameIndex = startFrame
         while frameIndex < endFrame {
-            let time = CMTime(seconds: Double(frameIndex) / fps, preferredTimescale: 600)
+            let timeSeconds = Double(frameIndex) / fps
+            let time = CMTime(seconds: timeSeconds, preferredTimescale: 600)
             times.append(NSValue(time: time))
+            frameTimes.append(timeSeconds)
             frameIndex += preset.videoSampleStride
         }
         
+        let framesRequested = times.count
+        
         guard !times.isEmpty else {
-            return SegmentValidation(start: start, end: end, isValid: false, motionScore: 0)
+            let debugData = SegmentValidationDebugData(
+                framesRequested: 0,
+                framesExtracted: 0,
+                usedEarlyExit: false,
+                framesProcessedBeforeDecision: 0,
+                allFrameScores: [],
+                framePairDetails: []
+            )
+            return SegmentValidation(start: start, end: end, isValid: false, motionScore: 0, debugData: debugData)
         }
         
         // Use batch frame extraction with continuation
         let extractedFrames = await extractFramesBatch(generator: generator, times: times)
         
         guard extractedFrames.count >= 2 else {
-            return SegmentValidation(start: start, end: end, isValid: false, motionScore: 0)
+            let debugData = SegmentValidationDebugData(
+                framesRequested: framesRequested,
+                framesExtracted: extractedFrames.count,
+                usedEarlyExit: false,
+                framesProcessedBeforeDecision: 0,
+                allFrameScores: [],
+                framePairDetails: []
+            )
+            return SegmentValidation(start: start, end: end, isValid: false, motionScore: 0, debugData: debugData)
         }
         
         // Pre-allocate buffers based on first frame size
@@ -240,8 +310,10 @@ actor VisualValidator {
         let buffers = FrameBuffers(pixelCount: pixelCount)
         
         var frameScores: [Double] = []
+        var framePairDetails: [FramePairDebugData] = []
         var runningTotal: Double = 0
         var framesProcessed = 0
+        var usedEarlyExit = false
         
         // Process consecutive frame pairs
         for i in 1..<extractedFrames.count {
@@ -252,24 +324,67 @@ actor VisualValidator {
             extractGrayscaleIntoBuffer(from: prevFrame, buffer: &buffers.grayscaleA)
             extractGrayscaleIntoBuffer(from: currFrame, buffer: &buffers.grayscaleB)
             
-            // Compute motion score with vectorized operations
-            let score = computeMotionScoreVectorized(
+            // Calculate grayscale statistics for debug
+            let statsA = computeGrayscaleStats(buffer: buffers.grayscaleA)
+            let statsB = computeGrayscaleStats(buffer: buffers.grayscaleB)
+            
+            // Compute motion score with vectorized operations and get debug details
+            let result = computeMotionScoreVectorizedWithDebug(
                 buffers: buffers,
                 pixelThreshold: preset.motionPixelThreshold
             )
+            
+            let score = result.motionScore
             frameScores.append(score)
             runningTotal += score
             framesProcessed += 1
             
+            // Capture frame pair debug data (limit to first 10 pairs to avoid huge reports)
+            if framePairDetails.count < 10 {
+                let frameATime = i - 1 < frameTimes.count ? frameTimes[i - 1] : 0
+                let frameBTime = i < frameTimes.count ? frameTimes[i] : 0
+                
+                let pairDebug = FramePairDebugData(
+                    pairIndex: i - 1,
+                    frameATime: frameATime,
+                    frameBTime: frameBTime,
+                    frameAWidth: prevFrame.width,
+                    frameAHeight: prevFrame.height,
+                    frameBWidth: currFrame.width,
+                    frameBHeight: currFrame.height,
+                    frameAGrayscaleMean: statsA.mean,
+                    frameAGrayscaleStdDev: statsA.stdDev,
+                    frameBGrayscaleMean: statsB.mean,
+                    frameBGrayscaleStdDev: statsB.stdDev,
+                    rawDiffSum: result.rawDiffSum,
+                    rawDiffMean: result.rawDiffMean,
+                    rawDiffMax: result.rawDiffMax,
+                    pixelsAboveThreshold: result.pixelsAboveThreshold,
+                    motionScore: score
+                )
+                framePairDetails.append(pairDebug)
+            }
+            
             // EARLY EXIT: If running average already exceeds threshold, we can stop
             let runningAverage = runningTotal / Double(framesProcessed)
             if runningAverage >= preset.motionAreaThreshold && framesProcessed >= 3 {
-                // Already confirmed motion - skip remaining frames for speed
+                usedEarlyExit = true
+                
+                let debugData = SegmentValidationDebugData(
+                    framesRequested: framesRequested,
+                    framesExtracted: extractedFrames.count,
+                    usedEarlyExit: true,
+                    framesProcessedBeforeDecision: framesProcessed,
+                    allFrameScores: frameScores,
+                    framePairDetails: framePairDetails
+                )
+                
                 return SegmentValidation(
                     start: start,
                     end: end,
                     isValid: true,
-                    motionScore: runningAverage
+                    motionScore: runningAverage,
+                    debugData: debugData
                 )
             }
         }
@@ -284,12 +399,44 @@ actor VisualValidator {
         
         let isValid = motionScore >= preset.motionAreaThreshold
         
+        let debugData = SegmentValidationDebugData(
+            framesRequested: framesRequested,
+            framesExtracted: extractedFrames.count,
+            usedEarlyExit: usedEarlyExit,
+            framesProcessedBeforeDecision: framesProcessed,
+            allFrameScores: frameScores,
+            framePairDetails: framePairDetails
+        )
+        
         return SegmentValidation(
             start: start,
             end: end,
             isValid: isValid,
-            motionScore: motionScore
+            motionScore: motionScore,
+            debugData: debugData
         )
+    }
+    
+    /// Compute grayscale statistics for debug logging.
+    private nonisolated func computeGrayscaleStats(buffer: [UInt8]) -> GrayscaleStats {
+        guard !buffer.isEmpty else {
+            return GrayscaleStats(mean: 0, stdDev: 0)
+        }
+        
+        var sum: Float = 0
+        for value in buffer {
+            sum += Float(value)
+        }
+        let mean = sum / Float(buffer.count)
+        
+        var varianceSum: Float = 0
+        for value in buffer {
+            let diff = Float(value) - mean
+            varianceSum += diff * diff
+        }
+        let stdDev = sqrt(varianceSum / Float(buffer.count))
+        
+        return GrayscaleStats(mean: mean, stdDev: stdDev)
     }
     
     // MARK: - Batch Frame Extraction
@@ -362,8 +509,18 @@ actor VisualValidator {
         buffers: FrameBuffers,
         pixelThreshold: Int
     ) -> Double {
+        return computeMotionScoreVectorizedWithDebug(buffers: buffers, pixelThreshold: pixelThreshold).motionScore
+    }
+    
+    /// Compute motion score with detailed debug statistics for platform comparison.
+    private nonisolated func computeMotionScoreVectorizedWithDebug(
+        buffers: FrameBuffers,
+        pixelThreshold: Int
+    ) -> MotionComputationResult {
         let count = buffers.grayscaleA.count
-        guard count > 0, count == buffers.grayscaleB.count else { return 0 }
+        guard count > 0, count == buffers.grayscaleB.count else {
+            return MotionComputationResult(motionScore: 0, rawDiffSum: 0, rawDiffMean: 0, rawDiffMax: 0, pixelsAboveThreshold: 0)
+        }
         
         let length = vDSP_Length(count)
         
@@ -374,6 +531,14 @@ actor VisualValidator {
         // Compute absolute difference: diff = |A - B|
         vDSP_vsub(buffers.floatB, 1, buffers.floatA, 1, &buffers.diff, 1, length)
         vDSP_vabs(buffers.diff, 1, &buffers.diff, 1, length)
+        
+        // DEBUG: Capture raw difference statistics BEFORE thresholding
+        var rawDiffSum: Float = 0
+        vDSP_sve(buffers.diff, 1, &rawDiffSum, length)
+        let rawDiffMean = rawDiffSum / Float(count)
+        
+        var rawDiffMax: Float = 0
+        vDSP_maxv(buffers.diff, 1, &rawDiffMax, length)
         
         // VECTORIZED THRESHOLDING:
         // 1. Subtract threshold from all values
@@ -399,6 +564,12 @@ actor VisualValidator {
         var sum: Float = 0
         vDSP_sve(buffers.diff, 1, &sum, length)
         
-        return Double(sum)
+        return MotionComputationResult(
+            motionScore: Double(sum),
+            rawDiffSum: rawDiffSum,
+            rawDiffMean: rawDiffMean,
+            rawDiffMax: rawDiffMax,
+            pixelsAboveThreshold: Int(sum)
+        )
     }
 }
