@@ -32,6 +32,9 @@ struct SegmentValidationDebugData {
     let framesProcessedBeforeDecision: Int
     let allFrameScores: [Double]
     let framePairDetails: [FramePairDebugData]
+    
+    /// Errors encountered during frame extraction (for debugging device issues)
+    let extractionErrors: [String]
 }
 
 /// Debug data for a single frame pair comparison
@@ -125,12 +128,18 @@ struct GrayscaleStats {
 /// Validates candidate segments by checking for sufficient motion.
 ///
 /// Pipeline (OPTIMIZED):
-/// 1. Batch extract frames using generateCGImagesAsynchronously
-/// 2. Process segments in parallel with TaskGroup
+/// 1. Process segments in controlled batches (12 at a time) to avoid decoder overload
+/// 2. Batch extract frames using generateCGImagesAsynchronously
 /// 3. Downscale to thumbnail size
 /// 4. Compute frame differences with vectorized vDSP
 /// 5. Early exit when motion threshold is confirmed
 actor VisualValidator {
+    
+    // MARK: - Constants
+    
+    /// Number of segments to process in parallel.
+    /// Limited to avoid overwhelming the HEVC hardware decoder on device.
+    private let segmentBatchSize = 12
     
     // MARK: - Current Preset (set per validation call)
     
@@ -171,8 +180,9 @@ actor VisualValidator {
         print("👁️ [VisualValidator]   • Frame stride: every \(preset.videoSampleStride) frames")
         print("👁️ [VisualValidator]   • Pixel threshold: \(preset.motionPixelThreshold)")
         print("👁️ [VisualValidator]   • Area threshold: \(Int(preset.motionAreaThreshold)) pixels")
+        print("👁️ [VisualValidator]   • Batch size: \(segmentBatchSize) segments")
         print("👁️ [VisualValidator] ───────────────────────────────────────────")
-        print("👁️ [VisualValidator] 🚀 OPTIMIZED: Batch extraction + parallel processing")
+        print("👁️ [VisualValidator] 🚀 OPTIMIZED: Batched processing + controlled parallelism")
         
         logger.visualAsync("Starting motion validation for \(candidates.count) segments...")
         
@@ -188,45 +198,71 @@ actor VisualValidator {
         let fps = try await videoTrack.load(.nominalFrameRate)
         print("👁️ [VisualValidator] Video FPS: \(String(format: "%.2f", fps))")
         
-        // Process segments in parallel using TaskGroup
-        // Each segment gets its own generator for thread safety
-        let validations = try await withThrowingTaskGroup(of: (Int, SegmentValidation).self) { group in
-            for (index, candidate) in candidates.enumerated() {
-                group.addTask { [self] in
-                    print("👁️ [VisualValidator] Validating segment \(index + 1)/\(candidates.count): \(self.formatTime(candidate.start)) → \(self.formatTime(candidate.end))")
+        // Calculate time tolerance based on frame stride to avoid duplicate frames
+        // The tolerance should be less than the interval between sampled frames
+        // to ensure each request returns a distinct frame
+        let frameInterval = Double(preset.videoSampleStride) / Double(fps)  // e.g., 15/120 = 0.125s
+        let timeTolerance = max(0.05, frameInterval * 0.4)  // 40% of frame interval, min 50ms
+        print("👁️ [VisualValidator] Frame interval: \(String(format: "%.3f", frameInterval))s (stride \(preset.videoSampleStride) @ \(String(format: "%.0f", fps))fps)")
+        print("👁️ [VisualValidator] Time tolerance: \(String(format: "%.3f", timeTolerance))s (40% of interval to avoid duplicates)")
+        
+        // Process segments in batches to avoid overwhelming the decoder
+        var allValidations: [SegmentValidation] = []
+        let totalBatches = (candidates.count + segmentBatchSize - 1) / segmentBatchSize
+        
+        for batchIndex in 0..<totalBatches {
+            let batchStart = batchIndex * segmentBatchSize
+            let batchEnd = min(batchStart + segmentBatchSize, candidates.count)
+            let batchCandidates = Array(candidates[batchStart..<batchEnd])
+            
+            print("👁️ [VisualValidator] Processing batch \(batchIndex + 1)/\(totalBatches): segments \(batchStart + 1)-\(batchEnd)")
+            
+            let batchValidations = try await withThrowingTaskGroup(of: (Int, SegmentValidation).self) { group in
+                for (localIndex, candidate) in batchCandidates.enumerated() {
+                    let globalIndex = batchStart + localIndex
                     
-                    // Create a separate generator for each parallel task
-                    let taskGenerator = AVAssetImageGenerator(asset: asset)
-                    taskGenerator.maximumSize = thumbSize
-                    taskGenerator.appliesPreferredTrackTransform = true
-                    // OPTIMIZATION: Relaxed tolerance for faster frame retrieval
-                    taskGenerator.requestedTimeToleranceBefore = CMTime(seconds: 0.1, preferredTimescale: 600)
-                    taskGenerator.requestedTimeToleranceAfter = CMTime(seconds: 0.1, preferredTimescale: 600)
-                    
-                    let validation = await self.validateSegmentBatch(
-                        generator: taskGenerator,
-                        start: candidate.start,
-                        end: candidate.end,
-                        fps: Double(fps),
-                        preset: preset
-                    )
-                    
-                    let status = validation.isValid ? "✅ VALID" : "⚪️ LOW MOTION"
-                    print("👁️ [VisualValidator]   → Segment \(index + 1) motion score: \(Int(validation.motionScore)) \(status)")
-                    
-                    return (index, validation)
+                    group.addTask { [self] in
+                        // Create a separate generator for each parallel task
+                        let taskGenerator = AVAssetImageGenerator(asset: asset)
+                        taskGenerator.maximumSize = thumbSize
+                        taskGenerator.appliesPreferredTrackTransform = true
+                        
+                        // Use adaptive time tolerance based on fps
+                        taskGenerator.requestedTimeToleranceBefore = CMTime(seconds: timeTolerance, preferredTimescale: 600)
+                        taskGenerator.requestedTimeToleranceAfter = CMTime(seconds: timeTolerance, preferredTimescale: 600)
+                        
+                        let validation = await self.validateSegmentBatch(
+                            generator: taskGenerator,
+                            start: candidate.start,
+                            end: candidate.end,
+                            fps: Double(fps),
+                            preset: preset
+                        )
+                        
+                        let status = validation.isValid ? "✅ VALID" : "⚪️ LOW MOTION"
+                        print("👁️ [VisualValidator]   → Segment \(globalIndex + 1) motion score: \(Int(validation.motionScore)) \(status)")
+                        
+                        return (globalIndex, validation)
+                    }
                 }
+                
+                // Collect results and sort by original index to maintain order
+                var results: [(Int, SegmentValidation)] = []
+                for try await result in group {
+                    results.append(result)
+                }
+                return results.sorted { $0.0 < $1.0 }.map { $0.1 }
             }
             
-            // Collect results and sort by original index to maintain order
-            var results: [(Int, SegmentValidation)] = []
-            for try await result in group {
-                results.append(result)
+            allValidations.append(contentsOf: batchValidations)
+            
+            // Small delay between batches to let decoder recover
+            if batchIndex < totalBatches - 1 {
+                try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
             }
-            return results.sorted { $0.0 < $1.0 }.map { $0.1 }
         }
         
-        let validCount = validations.filter { $0.isValid }.count
+        let validCount = allValidations.filter { $0.isValid }.count
         let elapsed = Date().timeIntervalSince(startTime)
         
         print("👁️ [VisualValidator] ═══════════════════════════════════════════")
@@ -234,11 +270,12 @@ actor VisualValidator {
         print("👁️ [VisualValidator] 📊 Results:")
         print("👁️ [VisualValidator]    • Valid segments: \(validCount)/\(candidates.count)")
         print("👁️ [VisualValidator]    • Rejected (low motion): \(candidates.count - validCount)")
+        print("👁️ [VisualValidator]    • Batches processed: \(totalBatches)")
         print("👁️ [VisualValidator] ═══════════════════════════════════════════")
         
         logger.successAsync("Motion validation complete: \(validCount)/\(candidates.count) segments verified in \(String(format: "%.1f", elapsed))s")
         
-        return validations
+        return allValidations
     }
     
     // MARK: - Formatting Helpers
@@ -284,13 +321,16 @@ actor VisualValidator {
                 usedEarlyExit: false,
                 framesProcessedBeforeDecision: 0,
                 allFrameScores: [],
-                framePairDetails: []
+                framePairDetails: [],
+                extractionErrors: []
             )
             return SegmentValidation(start: start, end: end, isValid: false, motionScore: 0, debugData: debugData)
         }
         
         // Use batch frame extraction with continuation
-        let extractedFrames = await extractFramesBatch(generator: generator, times: times)
+        let extractionResult = await extractFramesBatch(generator: generator, times: times)
+        let extractedFrames = extractionResult.frames
+        let extractionErrors = extractionResult.errors
         
         guard extractedFrames.count >= 2 else {
             let debugData = SegmentValidationDebugData(
@@ -299,7 +339,8 @@ actor VisualValidator {
                 usedEarlyExit: false,
                 framesProcessedBeforeDecision: 0,
                 allFrameScores: [],
-                framePairDetails: []
+                framePairDetails: [],
+                extractionErrors: extractionErrors
             )
             return SegmentValidation(start: start, end: end, isValid: false, motionScore: 0, debugData: debugData)
         }
@@ -376,7 +417,8 @@ actor VisualValidator {
                     usedEarlyExit: true,
                     framesProcessedBeforeDecision: framesProcessed,
                     allFrameScores: frameScores,
-                    framePairDetails: framePairDetails
+                    framePairDetails: framePairDetails,
+                    extractionErrors: extractionErrors
                 )
                 
                 return SegmentValidation(
@@ -405,7 +447,8 @@ actor VisualValidator {
             usedEarlyExit: usedEarlyExit,
             framesProcessedBeforeDecision: framesProcessed,
             allFrameScores: frameScores,
-            framePairDetails: framePairDetails
+            framePairDetails: framePairDetails,
+            extractionErrors: extractionErrors
         )
         
         return SegmentValidation(
@@ -441,13 +484,21 @@ actor VisualValidator {
     
     // MARK: - Batch Frame Extraction
     
+    /// Result of batch frame extraction including any errors encountered.
+    private struct FrameExtractionResult {
+        let frames: [CGImage]
+        let errors: [String]
+    }
+    
     /// Extracts frames in batch using generateCGImagesAsynchronously for better I/O efficiency.
+    /// Returns both extracted frames and any errors encountered for debug logging.
     private nonisolated func extractFramesBatch(
         generator: AVAssetImageGenerator,
         times: [NSValue]
-    ) async -> [CGImage] {
+    ) async -> FrameExtractionResult {
         await withCheckedContinuation { continuation in
             var frames: [CGImage] = []
+            var errors: [String] = []
             var expectedCount = times.count
             var receivedCount = 0
             let lock = NSLock()
@@ -458,12 +509,32 @@ actor VisualValidator {
                 
                 if let image = cgImage, result == .succeeded {
                     frames.append(image)
+                } else {
+                    // Capture error details for debug report (limit to first 10 to avoid huge reports)
+                    if errors.count < 10 {
+                        let resultDesc: String
+                        switch result {
+                        case .succeeded: resultDesc = "succeeded"
+                        case .failed: resultDesc = "failed"
+                        case .cancelled: resultDesc = "cancelled"
+                        @unknown default: resultDesc = "unknown(\(result.rawValue))"
+                        }
+                        let timeStr = String(format: "%.3f", requestedTime.seconds)
+                        let errorStr = "t=\(timeStr)s: \(resultDesc), \(error?.localizedDescription ?? "no error message")"
+                        errors.append(errorStr)
+                    }
                 }
                 
                 receivedCount += 1
                 
                 if receivedCount >= expectedCount {
-                    continuation.resume(returning: frames)
+                    // Log extraction stats if there were failures
+                    if !errors.isEmpty {
+                        let successRate = Double(frames.count) / Double(expectedCount) * 100
+                        print("👁️ [VisualValidator] ⚠️ Frame extraction: \(frames.count)/\(expectedCount) succeeded (\(String(format: "%.0f", successRate))%)")
+                        print("👁️ [VisualValidator]   First failure: \(errors.first ?? "unknown")")
+                    }
+                    continuation.resume(returning: FrameExtractionResult(frames: frames, errors: errors))
                 }
             }
         }

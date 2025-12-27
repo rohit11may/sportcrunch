@@ -829,7 +829,8 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
                     usedEarlyExit: debugData.usedEarlyExit,
                     framesProcessedBeforeDecision: debugData.framesProcessedBeforeDecision,
                     allFrameScores: debugData.allFrameScores,
-                    framePairDetails: framePairDetails
+                    framePairDetails: framePairDetails,
+                    extractionErrors: debugData.extractionErrors.isEmpty ? nil : debugData.extractionErrors
                 )
                 segmentDetails.append(detail)
             } else {
@@ -846,7 +847,8 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
                     usedEarlyExit: false,
                     framesProcessedBeforeDecision: 0,
                     allFrameScores: [],
-                    framePairDetails: nil
+                    framePairDetails: nil,
+                    extractionErrors: nil
                 )
                 segmentDetails.append(detail)
             }

@@ -455,6 +455,9 @@ struct SegmentValidationDetail: Codable {
     
     // Frame pair analysis for first N pairs (detailed debugging)
     let framePairDetails: [FramePairDetail]?
+    
+    // Errors encountered during frame extraction (for debugging device issues)
+    let extractionErrors: [String]?
 }
 
 /// Detailed info about a single frame pair comparison for motion detection
@@ -1069,7 +1072,8 @@ extension DebugReportService {
         usedEarlyExit: Bool,
         framesProcessedBeforeDecision: Int,
         allFrameScores: [Double],
-        framePairDetails: [FramePairDetail]?
+        framePairDetails: [FramePairDetail]?,
+        extractionErrors: [String]? = nil
     ) -> SegmentValidationDetail {
         return SegmentValidationDetail(
             segmentIndex: segmentIndex,
@@ -1085,7 +1089,8 @@ extension DebugReportService {
             usedEarlyExit: usedEarlyExit,
             framesProcessedBeforeDecision: framesProcessedBeforeDecision,
             allFrameScores: allFrameScores,
-            framePairDetails: framePairDetails
+            framePairDetails: framePairDetails,
+            extractionErrors: extractionErrors
         )
     }
     

@@ -281,8 +281,8 @@ final class HighlightCreationViewModel {
         }
     }
     
-    /// Loads the video URL directly from Photos library without copying the file.
-    /// This is significantly faster than using Transferable which copies the entire video.
+    /// Loads the video file from Photos library using PHAssetResourceManager for byte-for-byte original access.
+    /// This avoids transcoding issues that cause frame extraction failures on physical devices.
     private func loadVideoFile() async throws -> URL {
         guard let item = selectedVideoItem else {
             throw ProcessingError.invalidVideoURL
@@ -319,17 +319,119 @@ final class HighlightCreationViewModel {
             }
         }
         
-        print("SportCrunch: Requesting video URL directly from Photos...")
-        await MainActor.run {
-            logger.pipeline("Requesting video URL directly from Photos...")
+        // Check if this is a slow-mo or edited video (mediaSubtypes contains .videoHighFrameRate)
+        let isSlowMo = asset.mediaSubtypes.contains(.videoHighFrameRate)
+        if isSlowMo {
+            print("SportCrunch: Video is slow-mo, using PHImageManager fallback...")
+            await MainActor.run {
+                logger.pipeline("Video is slow-mo, using PHImageManager fallback...")
+            }
+            return try await loadVideoViaPHImageManager(asset: asset, item: item, logger: logger)
         }
         
-        // Request the video URL directly (no file copy needed!)
+        // Use PHAssetResourceManager for byte-for-byte original access (no transcoding)
+        print("SportCrunch: Using PHAssetResourceManager for original video access...")
+        await MainActor.run {
+            logger.pipeline("Loading original video file (no transcoding)...")
+        }
+        
+        return try await loadVideoViaPHAssetResourceManager(asset: asset, item: item, logger: logger)
+    }
+    
+    /// Primary method: Uses PHAssetResourceManager to copy the original video bytes without transcoding.
+    /// This is critical for reliable frame extraction on physical devices.
+    private func loadVideoViaPHAssetResourceManager(
+        asset: PHAsset,
+        item: PhotosPickerItem,
+        logger: ProcessingLogger
+    ) async throws -> URL {
+        // Find the video resource (prefer fullSizeVideo for edited videos, fall back to video)
+        let resources = PHAssetResource.assetResources(for: asset)
+        
+        // Log available resources for debugging
+        print("SportCrunch: Available resources: \(resources.map { "\($0.type.rawValue):\($0.originalFilename)" })")
+        
+        // Priority: fullSizeVideo > video (fullSizeVideo is the original for edited assets)
+        guard let videoResource = resources.first(where: { $0.type == .fullSizeVideo })
+                ?? resources.first(where: { $0.type == .video }) else {
+            print("SportCrunch: No video resource found, falling back to PHImageManager...")
+            await MainActor.run {
+                logger.pipeline("No video resource found, falling back to PHImageManager...")
+            }
+            return try await loadVideoViaPHImageManager(asset: asset, item: item, logger: logger)
+        }
+        
+        print("SportCrunch: Using resource type \(videoResource.type.rawValue): \(videoResource.originalFilename)")
+        await MainActor.run {
+            logger.pipeline("Copying original video: \(videoResource.originalFilename)")
+        }
+        
+        // Create destination URL with original filename extension
+        let originalExtension = (videoResource.originalFilename as NSString).pathExtension
+        let fileExtension = originalExtension.isEmpty ? "mov" : originalExtension
+        let destinationURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(fileExtension)
+        
+        // Configure options for the copy
+        let options = PHAssetResourceRequestOptions()
+        options.isNetworkAccessAllowed = true // For iCloud videos
+        
+        // Copy the original video bytes to our temp location
+        return try await withCheckedThrowingContinuation { continuation in
+            PHAssetResourceManager.default().writeData(
+                for: videoResource,
+                toFile: destinationURL,
+                options: options
+            ) { error in
+                if let error = error {
+                    print("SportCrunch: PHAssetResourceManager error: \(error.localizedDescription)")
+                    Task { @MainActor in
+                        logger.error("PHAssetResourceManager error: \(error.localizedDescription)")
+                    }
+                    
+                    // Fall back to PHImageManager on error
+                    Task {
+                        do {
+                            let url = try await self.loadVideoViaPHImageManager(
+                                asset: asset,
+                                item: item,
+                                logger: logger
+                            )
+                            continuation.resume(returning: url)
+                        } catch {
+                            continuation.resume(throwing: error)
+                        }
+                    }
+                    return
+                }
+                
+                print("SportCrunch: Successfully copied original video to: \(destinationURL)")
+                Task { @MainActor in
+                    logger.success("Original video copied successfully (no transcoding)")
+                }
+                continuation.resume(returning: destinationURL)
+            }
+        }
+    }
+    
+    /// Secondary fallback: Uses PHImageManager for slow-mo and edited videos that need composition.
+    /// These videos return AVComposition and need to be exported via Transferable.
+    private func loadVideoViaPHImageManager(
+        asset: PHAsset,
+        item: PhotosPickerItem,
+        logger: ProcessingLogger
+    ) async throws -> URL {
+        print("SportCrunch: Using PHImageManager for video asset...")
+        await MainActor.run {
+            logger.pipeline("Using PHImageManager for video access...")
+        }
+        
         return try await withCheckedThrowingContinuation { continuation in
             let options = PHVideoRequestOptions()
             options.version = .current
             options.deliveryMode = .highQualityFormat
-            options.isNetworkAccessAllowed = true // For iCloud videos
+            options.isNetworkAccessAllowed = true
             
             PHImageManager.default().requestAVAsset(forVideo: asset, options: options) { avAsset, _, info in
                 // Check for errors
@@ -348,17 +450,16 @@ final class HighlightCreationViewModel {
                 }
                 
                 if let urlAsset = avAsset as? AVURLAsset {
-                    // Direct URL to the video - no copy needed!
-                    print("SportCrunch: Got direct video URL: \(urlAsset.url)")
+                    print("SportCrunch: Got video URL from PHImageManager: \(urlAsset.url)")
                     Task { @MainActor in
-                        logger.success("Got direct video URL (no copy needed)")
+                        logger.success("Got video URL from PHImageManager")
                     }
                     continuation.resume(returning: urlAsset.url)
                 } else if avAsset is AVComposition {
-                    // Slow-mo or edited video returns AVComposition - need to fall back
-                    print("SportCrunch: Video is slow-mo/edited, falling back to Transferable...")
+                    // Slow-mo or heavily edited video - need Transferable export
+                    print("SportCrunch: Video is AVComposition, falling back to Transferable export...")
                     Task { @MainActor in
-                        logger.pipeline("Video is slow-mo/edited, falling back to Transferable...")
+                        logger.pipeline("Video requires export (slow-mo/edited), using Transferable...")
                     }
                     Task {
                         do {
@@ -369,8 +470,8 @@ final class HighlightCreationViewModel {
                         }
                     }
                 } else {
-                    // Unexpected type - fall back
-                    print("SportCrunch: Unexpected AVAsset type, falling back to Transferable...")
+                    // Unexpected type - fall back to Transferable
+                    print("SportCrunch: Unexpected AVAsset type: \(type(of: avAsset)), falling back to Transferable...")
                     Task {
                         do {
                             let url = try await self.loadVideoViaTransferable(item: item, logger: logger)
