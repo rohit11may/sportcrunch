@@ -113,10 +113,10 @@ struct Project: Identifiable, Equatable {
         return formatDuration(highlightDuration)
     }
     
-    /// Formatted time saved (e.g., "1h 57m saved")
+    /// Formatted time saved (e.g., "1h 57m removed")
     var formattedTimeSaved: String? {
         guard let timeSaved else { return nil }
-        return "\(formatDuration(timeSaved)) saved"
+        return "\(formatDuration(timeSaved)) removed"
     }
     
     /// Space saved by the highlight in bytes

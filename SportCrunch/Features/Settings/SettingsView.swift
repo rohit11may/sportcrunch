@@ -43,9 +43,16 @@ struct SettingsView: View {
                     }
                     
                     // Debug Section (for development)
-                    // Note: Temporarily always visible for debugging simulator vs device differences
                     settingsSection(title: "Developer") {
-                        debugReportsRow
+                        toggleRow(
+                            title: "Developer Mode",
+                            subtitle: "Enable debug report logging during video processing",
+                            isOn: $appState.developerModeEnabled
+                        )
+                        
+                        if appState.developerModeEnabled {
+                            debugReportsRow
+                        }
                         
                         #if DEBUG
                         linkRow(title: "Reset Onboarding", icon: "arrow.counterclockwise") {

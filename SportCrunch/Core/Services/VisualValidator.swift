@@ -153,12 +153,14 @@ actor VisualValidator {
     ///   - candidates: List of (start, end) intervals in seconds
     ///   - sport: Sport type for preset configuration
     ///   - sportMode: Optional sport-specific mode (e.g., TennisMode)
+    ///   - progressHandler: Optional callback for granular progress updates (0.0 to 1.0)
     /// - Returns: Array of validation results for each segment
     func validate(
         videoURL: URL,
         candidates: [(start: TimeInterval, end: TimeInterval)],
         sport: Sport,
-        sportMode: SportMode? = nil
+        sportMode: SportMode? = nil,
+        progressHandler: ((Double) -> Void)? = nil
     ) async throws -> [SegmentValidation] {
         let preset = sport.preset(for: sportMode)
         currentPreset = preset
@@ -255,6 +257,11 @@ actor VisualValidator {
             }
             
             allValidations.append(contentsOf: batchValidations)
+            
+            // Report progress after each batch
+            let batchProgress = Double(batchIndex + 1) / Double(totalBatches)
+            progressHandler?(batchProgress)
+            print("👁️ [VisualValidator] Batch \(batchIndex + 1)/\(totalBatches) complete (\(Int(batchProgress * 100))%)")
             
             // Small delay between batches to let decoder recover
             if batchIndex < totalBatches - 1 {

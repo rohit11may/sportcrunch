@@ -129,72 +129,43 @@ struct CompletedProjectSheet: View {
     // MARK: - Stats Summary
     
     private var statsSummary: some View {
-        VStack(spacing: Spacing.sm) {
-            // Duration row
-            HStack(spacing: Spacing.lg) {
-                // Original duration
-                statItem(
-                    label: "Original",
-                    value: project.formattedOriginalDuration,
-                    color: .scTextSecondary
-                )
+        HStack(spacing: Spacing.md) {
+            // Duration: Original → Highlight
+            HStack(spacing: Spacing.xs) {
+                Text(project.formattedOriginalDuration)
+                    .font(AppFont.caption())
+                    .foregroundStyle(Color.scTextSecondary)
                 
                 Image(systemName: "arrow.right")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(Color.scTextTertiary)
                 
-                // Highlight duration
-                statItem(
-                    label: "Highlight",
-                    value: project.formattedHighlightDuration ?? "—",
-                    color: project.sport.accentColor
-                )
-                
-                Spacer()
+                Text(project.formattedHighlightDuration ?? "—")
+                    .font(AppFont.captionBold())
+                    .foregroundStyle(project.sport.accentColor)
             }
             
-            // Savings row
-            HStack(spacing: Spacing.lg) {
-                // Time saved
-                if let timeSaved = project.formattedTimeSaved {
-                    HStack(spacing: Spacing.xxs) {
-                        Image(systemName: "clock.badge.checkmark")
-                            .font(.system(size: 14))
-                        Text(timeSaved)
-                            .font(AppFont.captionBold())
-                    }
-                    .foregroundStyle(Color.scSuccess)
+            // Divider
+            Circle()
+                .fill(Color.scTextTertiary.opacity(0.5))
+                .frame(width: 3, height: 3)
+            
+            // Space saved badge
+            if let spaceSaved = project.formattedSpaceSaved {
+                HStack(spacing: Spacing.xxs) {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.system(size: 12))
+                    Text(spaceSaved)
+                        .font(AppFont.captionBold())
                 }
-                
-                // Space saved
-                if let spaceSaved = project.formattedSpaceSaved {
-                    HStack(spacing: Spacing.xxs) {
-                        Image(systemName: "externaldrive.badge.checkmark")
-                            .font(.system(size: 14))
-                        Text(spaceSaved)
-                            .font(AppFont.captionBold())
-                    }
-                    .foregroundStyle(Color.scSuccess)
-                }
-                
-                Spacer()
+                .foregroundStyle(Color.scSuccess)
             }
+            
+            Spacer()
         }
         .padding(.horizontal, Spacing.lg)
-        .padding(.vertical, Spacing.md)
+        .padding(.vertical, Spacing.sm)
         .background(Color.scSurface)
-    }
-    
-    private func statItem(label: String, value: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(AppFont.caption())
-                .foregroundStyle(Color.scTextTertiary)
-            
-            Text(value)
-                .font(AppFont.bodyBold())
-                .foregroundStyle(color)
-        }
     }
     
     // MARK: - Timeline Section
@@ -257,32 +228,55 @@ struct CompletedProjectSheet: View {
     // MARK: - Action Buttons
     
     private var actionButtons: some View {
-        VStack(spacing: Spacing.sm) {
-            PrimaryButton("Share Highlight", icon: "square.and.arrow.up") {
+        HStack(spacing: Spacing.md) {
+            // Share button
+            Button {
                 showShareSheet = true
+            } label: {
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("Share")
+                        .font(AppFont.captionBold())
+                }
+                .foregroundStyle(.black)
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.sm)
+                .background(
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [.scGradientStart, .scGradientEnd],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                )
             }
             
-            if isSavedToCameraRoll {
-                // Saved confirmation button
-                HStack(spacing: Spacing.xs) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                    Text("Saved to Camera Roll")
-                        .font(AppFont.bodyBold())
-                }
-                .foregroundStyle(Color.scSuccess)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(Color.scSuccess.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
-            } else {
-                SecondaryButton("Save to Camera Roll", icon: "square.and.arrow.down") {
+            // Save to Camera Roll button
+            Button {
+                if !isSavedToCameraRoll {
                     saveToPhotoLibrary()
                 }
+            } label: {
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: isSavedToCameraRoll ? "checkmark.circle.fill" : "square.and.arrow.down")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text(isSavedToCameraRoll ? "Saved" : "Save")
+                        .font(AppFont.captionBold())
+                }
+                .foregroundStyle(isSavedToCameraRoll ? Color.scSuccess : Color.scTextPrimary)
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.sm)
+                .background(
+                    Capsule()
+                        .fill(isSavedToCameraRoll ? Color.scSuccess.opacity(0.2) : Color.scSurfaceElevated)
+                )
             }
         }
         .padding(.horizontal, Spacing.lg)
-        .padding(.bottom, Spacing.xl)
+        .padding(.bottom, Spacing.lg)
     }
     
     // MARK: - Helper Methods

@@ -23,6 +23,15 @@ final class AppState: ObservableObject {
     
     @Published var selectedTab: Tab = .home
     
+    // MARK: - Developer Settings
+    
+    @Published var developerModeEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(developerModeEnabled, forKey: developerModeKey)
+            updateDebugReportService()
+        }
+    }
+    
     // MARK: - Services
     
     let videoProcessingService: VideoProcessingServiceProtocol
@@ -41,6 +50,7 @@ final class AppState: ObservableObject {
     // MARK: - Constants
     
     private let onboardingKey = "com.sportcrunch.hasCompletedOnboarding"
+    private let developerModeKey = "com.sportcrunch.developerModeEnabled"
     
     // MARK: - Initialization
     
@@ -51,6 +61,10 @@ final class AppState: ObservableObject {
         self.videoProcessingService = videoProcessingService
         self.projectStorageService = projectStorageService
         self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: onboardingKey)
+        self.developerModeEnabled = UserDefaults.standard.bool(forKey: developerModeKey)
+        
+        // Apply developer mode setting to debug report service on init
+        updateDebugReportService()
     }
     
     // MARK: - Actions
@@ -61,6 +75,14 @@ final class AppState: ObservableObject {
     
     func resetOnboarding() {
         hasCompletedOnboarding = false
+    }
+    
+    // MARK: - Developer Mode
+    
+    private func updateDebugReportService() {
+        Task {
+            await DebugReportService.shared.setEnabled(developerModeEnabled)
+        }
     }
 }
 

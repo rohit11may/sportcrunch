@@ -384,11 +384,19 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             let visualPhaseStart = Date()
             let validations: [SegmentValidation]
             do {
+                // Progress during visual validation: 0.55 to 0.75 (range of 0.20)
+                let visualProgressBase: Double = 0.55
+                let visualProgressRange: Double = 0.20
+                
                 validations = try await visualValidator.validate(
                     videoURL: sourceURL,
                     candidates: audioResult.candidateIntervals,
                     sport: sport,
-                    sportMode: sportMode
+                    sportMode: sportMode,
+                    progressHandler: { [weak self] batchProgress in
+                        let overallProgress = visualProgressBase + (batchProgress * visualProgressRange)
+                        self?.progressSubject.send(overallProgress)
+                    }
                 )
                 visualValidationTime = Date().timeIntervalSince(visualPhaseStart)
                 
