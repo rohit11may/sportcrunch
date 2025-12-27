@@ -522,7 +522,10 @@ actor AudioAnalyzer {
                 }
             }
             
-            onsetStrength[frame] = flux
+            // QUANTIZE: Round to 2 decimal places to reduce architecture-specific
+            // floating-point drift between x86_64 (simulator) and ARM64 (device).
+            // This ensures consistent peak detection across platforms.
+            onsetStrength[frame] = (flux * 100).rounded() / 100
             prevMagnitudes = magnitudes
         }
         
@@ -618,7 +621,10 @@ actor AudioAnalyzer {
             }
             let std = sqrt(sumSq / Float(windowLength))
             
-            threshold[i] = mean + lambda * std
+            // QUANTIZE: Round to 2 decimal places to reduce architecture-specific
+            // floating-point drift between x86_64 (simulator) and ARM64 (device).
+            let rawThreshold = mean + lambda * std
+            threshold[i] = (rawThreshold * 100).rounded() / 100
         }
         
         // DEBUG: Log threshold stats for simulator vs device comparison
