@@ -65,106 +65,6 @@ struct MeshGradientBackground: View {
     }
 }
 
-// MARK: - Sport Themed Background
-
-struct SportThemedBackground: View {
-    let sport: Sport
-    @State private var animate = false
-    
-    var body: some View {
-        ZStack {
-            Color.scBackground
-            
-            GeometryReader { geometry in
-                ZStack {
-                    Circle()
-                        .fill(sport.accentColor.opacity(0.2))
-                        .blur(radius: 100)
-                        .frame(width: 400, height: 400)
-                        .offset(
-                            x: animate ? 50 : -50,
-                            y: animate ? -150 : 50
-                        )
-                    
-                    Circle()
-                        .fill(sport.accentColor.opacity(0.1))
-                        .blur(radius: 80)
-                        .frame(width: 300, height: 300)
-                        .offset(
-                            x: animate ? -100 : 100,
-                            y: animate ? 200 : 100
-                        )
-                }
-                .frame(width: geometry.size.width, height: geometry.size.height)
-            }
-        }
-        .ignoresSafeArea()
-        .onAppear {
-            withAnimation(
-                .easeInOut(duration: 6)
-                .repeatForever(autoreverses: true)
-            ) {
-                animate = true
-            }
-        }
-    }
-}
-
-// MARK: - Processing Animation
-
-struct ProcessingAnimation: View {
-    let sport: Sport
-    @State private var rotation: Double = 0
-    @State private var scale: CGFloat = 1.0
-    
-    var body: some View {
-        ZStack {
-            // Outer ring
-            Circle()
-                .stroke(
-                    sport.accentColor.opacity(0.2),
-                    lineWidth: 4
-                )
-                .frame(width: 120, height: 120)
-            
-            // Animated arc
-            Circle()
-                .trim(from: 0, to: 0.3)
-                .stroke(
-                    sport.gradient,
-                    style: StrokeStyle(lineWidth: 4, lineCap: .round)
-                )
-                .frame(width: 120, height: 120)
-                .rotationEffect(.degrees(rotation))
-            
-            // Inner pulsing circle
-            Circle()
-                .fill(sport.gradient)
-                .frame(width: 60, height: 60)
-                .scaleEffect(scale)
-            
-            // Sport emoji
-            Text(sport.emoji)
-                .font(.system(size: 28))
-        }
-        .onAppear {
-            withAnimation(
-                .linear(duration: 1.5)
-                .repeatForever(autoreverses: false)
-            ) {
-                rotation = 360
-            }
-            
-            withAnimation(
-                .easeInOut(duration: 1)
-                .repeatForever(autoreverses: true)
-            ) {
-                scale = 1.15
-            }
-        }
-    }
-}
-
 // MARK: - Success Animation
 
 struct SuccessAnimation: View {
@@ -274,12 +174,6 @@ struct ConfettiParticle: Identifiable {
 
 #Preview("Mesh Background") {
     MeshGradientBackground()
-}
-
-#Preview("Processing Animation") {
-    ProcessingAnimation(sport: .tennis)
-        .frame(width: 200, height: 200)
-        .background(Color.scBackground)
 }
 
 #Preview("Success Animation") {

@@ -19,7 +19,6 @@ enum CreationStep: Int, CaseIterable {
     case selectVideo
     case selectSport
     case selectMode    // New step for sports with modes (e.g., Tennis)
-    case processing
     case preview
     case export
     
@@ -28,7 +27,6 @@ enum CreationStep: Int, CaseIterable {
         case .selectVideo: return "Select Video"
         case .selectSport: return "Choose Sport"
         case .selectMode: return "Choose Mode"
-        case .processing: return "Creating Highlights"
         case .preview: return "Preview"
         case .export: return "Export"
         }
@@ -54,8 +52,6 @@ struct HighlightCreationFlow: View {
                     SportSelectionView(viewModel: viewModel)
                 case .selectMode:
                     TennisModeSelectionView(viewModel: viewModel)
-                case .processing:
-                    ProcessingView(viewModel: viewModel)
                 case .preview:
                     PreviewView(viewModel: viewModel)
                 case .export:
@@ -100,7 +96,6 @@ struct HighlightCreationFlow: View {
         }
         .onAppear {
             viewModel.setServices(
-                processing: appState.videoProcessingService,
                 storage: appState.projectStorageService,
                 backgroundManager: appState.backgroundProcessingManager
             )
@@ -135,8 +130,6 @@ final class HighlightCreationViewModel {
     var videoCreationDate: Date?
     var selectedSport: Sport?
     var selectedTennisMode: TennisMode?
-    var processingProgress: Double = 0
-    var processingStatus: ProcessingStatus = .pending
     var project: Project?
     var error: ProcessingError?
     var showError = false
@@ -147,10 +140,8 @@ final class HighlightCreationViewModel {
     
     // MARK: - Services
     
-    private var processingService: VideoProcessingServiceProtocol?
     private var storageService: ProjectStorageServiceProtocol?
     private var backgroundManager: BackgroundProcessingManager?
-    private var processingTask: Task<Void, Never>?
     
     // MARK: - Computed Properties
     
@@ -162,7 +153,7 @@ final class HighlightCreationViewModel {
             return true
         case .selectMode:
             return true
-        case .processing, .preview, .export:
+        case .preview, .export:
             return false
         }
     }
@@ -195,11 +186,9 @@ final class HighlightCreationViewModel {
     // MARK: - Setup
     
     func setServices(
-        processing: VideoProcessingServiceProtocol,
         storage: ProjectStorageServiceProtocol,
         backgroundManager: BackgroundProcessingManager
     ) {
-        self.processingService = processing
         self.storageService = storage
         self.backgroundManager = backgroundManager
     }
@@ -222,14 +211,8 @@ final class HighlightCreationViewModel {
     }
     
     func cancel() {
-        // Only cancel if this flow has its own processing task running AND
-        // it's not using background processing (which is managed separately)
-        // This prevents closing a new flow from canceling an ongoing background job
-        guard processingTask != nil, !isBackgroundProcessing else {
-            return
-        }
-        processingTask?.cancel()
-        processingService?.cancel()
+        // Background processing is managed by BackgroundProcessingManager
+        // Nothing to cancel in the creation flow itself
     }
     
     // MARK: - Video Selection
@@ -486,14 +469,6 @@ final class HighlightCreationViewModel {
             return
         }
         
-        // Show processing view briefly while loading video
-        withAnimation(.spring(response: 0.4)) {
-            currentStep = .processing
-        }
-        
-        processingStatus = .loadingVideo
-        processingProgress = 0.0
-        
         // Start the setup and queue background task
         Task { [weak self] in
             guard let self else { return }
@@ -556,92 +531,6 @@ final class HighlightCreationViewModel {
                 await MainActor.run {
                     self.error = .unknown(error)
                     self.showError = true
-                }
-            }
-        }
-    }
-    
-    // MARK: - Legacy Processing (for preview flow when opening from home)
-    
-    func startProcessing() {
-        guard let sport = selectedSport,
-              let service = processingService else {
-            return
-        }
-        
-        processingStatus = .loadingVideo
-        processingProgress = 0.0
-        
-        // Subscribe to status updates
-        processingTask = Task { [weak self] in
-            for await status in service.statusPublisher.values {
-                guard status != .pending else { continue }
-                await MainActor.run {
-                    self?.processingStatus = status
-                }
-            }
-        }
-        
-        // Start separate task for progress
-        Task { [weak self] in
-            for await progress in service.progressPublisher.values {
-                await MainActor.run {
-                    self?.processingProgress = progress
-                }
-            }
-        }
-        
-        // Main processing task
-        Task { [weak self] in
-            guard let self else { return }
-            
-            do {
-                let videoURL = try await self.loadVideoFile()
-                
-                await MainActor.run {
-                    self.selectedVideoURL = videoURL
-                }
-                
-                try await self.loadVideoMetadata(from: videoURL)
-                
-                await MainActor.run {
-                    self.project = Project(
-                        sport: sport,
-                        sourceVideoURL: videoURL,
-                        originalDuration: self.videoDuration,
-                        title: self.defaultTitle
-                    )
-                }
-                
-                let result = try await service.processVideo(
-                    sourceURL: videoURL,
-                    sport: sport,
-                    sportMode: self.sportMode
-                )
-                
-                await MainActor.run {
-                    self.project?.segments = result.segments
-                    self.project?.highlightVideoURL = result.highlightURL
-                    self.project?.highlightDuration = result.highlightDuration
-                    self.project?.originalFileSize = result.originalFileSize
-                    self.project?.highlightFileSize = result.highlightFileSize
-                    self.project?.status = .completed
-                    
-                    withAnimation(.spring(response: 0.4)) {
-                        self.currentStep = .preview
-                    }
-                }
-            } catch let processingError as ProcessingError {
-                await MainActor.run {
-                    self.error = processingError
-                    self.showError = true
-                    self.project?.status = .failed
-                }
-            } catch {
-                await MainActor.run {
-                    self.error = .unknown(error)
-                    self.showError = true
-                    self.project?.status = .failed
                 }
             }
         }

@@ -103,6 +103,13 @@ actor AudioAnalyzer {
         print("🎵 [AudioAnalyzer] ✓ Duration: \(formatTime(duration))")
         logger.audioAsync("Extracted \(formatNumber(sampleCount)) samples (\(formatTime(duration)))")
         
+        // DEBUG: Compute audio fingerprint to detect extraction differences between simulator and device
+        // This helps identify if the discrepancy starts at audio extraction or later processing
+        let fingerprint = computeAudioFingerprint(samples)
+        print("🎵 [AudioAnalyzer] 🔍 DEBUG: Audio fingerprint: \(fingerprint)")
+        print("🎵 [AudioAnalyzer] 🔍 DEBUG: First 10 samples: \(samples.prefix(10).map { String(format: "%.6f", $0) }.joined(separator: ", "))")
+        print("🎵 [AudioAnalyzer] 🔍 DEBUG: Samples at 1s: \(samples.dropFirst(Int(preset.sampleRate)).prefix(5).map { String(format: "%.6f", $0) }.joined(separator: ", "))")
+        
         // Step 2: Apply bandpass filter
         print("🎵 [AudioAnalyzer] Step 2/5: Applying bandpass filter (\(Int(preset.bandpassLow))-\(Int(preset.bandpassHigh)) Hz)...")
         logger.audioAsync("Applying bandpass filter (\(Int(preset.bandpassLow))-\(Int(preset.bandpassHigh)) Hz)...")
@@ -114,17 +121,32 @@ actor AudioAnalyzer {
         )
         print("🎵 [AudioAnalyzer] ✓ Bandpass filter applied")
         
+        // DEBUG: Fingerprint after filtering to isolate where divergence occurs
+        let filteredFingerprint = computeAudioFingerprint(filteredSamples)
+        print("🎵 [AudioAnalyzer] 🔍 DEBUG: Filtered audio fingerprint: \(filteredFingerprint)")
+        
         // Step 3: Compute onset strength (spectral flux)
         print("🎵 [AudioAnalyzer] Step 3/5: Computing spectral flux (FFT)...")
         logger.audioAsync("Computing spectral flux (FFT analysis)...")
         let onsetStrength = computeOnsetStrength(filteredSamples)
         print("🎵 [AudioAnalyzer] ✓ Computed \(formatNumber(onsetStrength.count)) onset frames")
         
-        // Log some stats about onset strength for debugging
+        // Log detailed stats about onset strength for debugging simulator vs device differences
         if !onsetStrength.isEmpty {
             let maxOnset = onsetStrength.max() ?? 0
             let avgOnset = onsetStrength.reduce(0, +) / Float(onsetStrength.count)
-            print("🎵 [AudioAnalyzer]   Onset stats - Max: \(String(format: "%.1f", maxOnset)), Avg: \(String(format: "%.1f", avgOnset))")
+            let sortedOnsets = onsetStrength.sorted(by: >)
+            let top10 = sortedOnsets.prefix(10)
+            let median = onsetStrength.count > 0 ? sortedOnsets[onsetStrength.count / 2] : 0
+            
+            print("🎵 [AudioAnalyzer]   Onset stats - Max: \(String(format: "%.1f", maxOnset)), Avg: \(String(format: "%.3f", avgOnset)), Median: \(String(format: "%.3f", median))")
+            print("🎵 [AudioAnalyzer]   Top 10 onset values: \(top10.map { String(format: "%.1f", $0) }.joined(separator: ", "))")
+            
+            #if targetEnvironment(simulator)
+            print("🎵 [AudioAnalyzer]   ⚡ RUNNING ON SIMULATOR (x86_64)")
+            #else
+            print("🎵 [AudioAnalyzer]   📱 RUNNING ON DEVICE (ARM)")
+            #endif
         }
         
         // Step 4: Compute adaptive threshold and find peaks
@@ -142,6 +164,17 @@ actor AudioAnalyzer {
         let peakTimes = peakIndices.map { Double($0) / framesPerSecond }
         print("🎵 [AudioAnalyzer] ✓ Detected \(peakTimes.count) potential hits")
         logger.audioAsync("Detected \(peakTimes.count) potential \(sport.displayName.lowercased()) hits")
+        
+        // DEBUG: Log peak onset strengths for comparison between simulator and device
+        print("🎵 [AudioAnalyzer] 🔍 DEBUG: Peak indices and their onset strengths:")
+        for (i, peakIdx) in peakIndices.prefix(20).enumerated() {
+            let peakStrength = onsetStrength[peakIdx]
+            let peakTime = Double(peakIdx) / framesPerSecond
+            print("🎵 [AudioAnalyzer]   Peak \(i+1): t=\(String(format: "%.3f", peakTime))s, idx=\(peakIdx), strength=\(String(format: "%.2f", peakStrength))")
+        }
+        if peakIndices.count > 20 {
+            print("🎵 [AudioAnalyzer]   ... and \(peakIndices.count - 20) more peaks")
+        }
         
         if !peakTimes.isEmpty {
             let firstFew = peakTimes.prefix(5).map { formatTime($0) }.joined(separator: ", ")
@@ -196,6 +229,26 @@ actor AudioAnalyzer {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         return formatter.string(from: NSNumber(value: n)) ?? "\(n)"
+    }
+    
+    // MARK: - Debug Helpers
+    
+    /// Computes a simple fingerprint of audio samples for comparing between simulator and device.
+    /// Uses sum, sum of squares, min, max, and count to create a reproducible hash.
+    private func computeAudioFingerprint(_ samples: [Float]) -> String {
+        guard !samples.isEmpty else { return "empty" }
+        
+        var sum: Float = 0
+        var sumSq: Float = 0
+        vDSP_sve(samples, 1, &sum, vDSP_Length(samples.count))
+        vDSP_svesq(samples, 1, &sumSq, vDSP_Length(samples.count))
+        
+        let min = samples.min() ?? 0
+        let max = samples.max() ?? 0
+        
+        // Create a fingerprint string that's easy to compare
+        return String(format: "n=%d sum=%.4f ssq=%.4f min=%.6f max=%.6f", 
+                      samples.count, sum, sumSq, min, max)
     }
     
     // MARK: - Audio Extraction
@@ -566,6 +619,14 @@ actor AudioAnalyzer {
             let std = sqrt(sumSq / Float(windowLength))
             
             threshold[i] = mean + lambda * std
+        }
+        
+        // DEBUG: Log threshold stats for simulator vs device comparison
+        if !threshold.isEmpty {
+            let minThresh = threshold.min() ?? 0
+            let maxThresh = threshold.max() ?? 0
+            let avgThresh = threshold.reduce(0, +) / Float(threshold.count)
+            print("🎵 [AudioAnalyzer] 🔍 DEBUG: Adaptive threshold stats - Min: \(String(format: "%.3f", minThresh)), Max: \(String(format: "%.3f", maxThresh)), Avg: \(String(format: "%.3f", avgThresh))")
         }
         
         return threshold
