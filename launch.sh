@@ -8,7 +8,7 @@ DESTINATION="platform=iOS Simulator,name=iPhone 17"
 DERIVED_DATA=".build"
 
 echo "🧹 Cleaning hidden file metadata..."
-xattr -cr .
+# xattr -cr .
 
 echo "🛠️  Building $SCHEME..."
 
