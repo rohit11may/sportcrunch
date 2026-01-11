@@ -1,0 +1,33 @@
+{
+  "configurations": [
+    {
+      "id": "REGRESSION_CONFIG",
+      "name": "Regression Tests",
+      "options": {
+        "testTimeoutsEnabled": true,
+        "maximumTestExecutionTimeAllowance": 1800,
+        "defaultTestExecutionTimeAllowance": 120
+      }
+    }
+  ],
+  "defaultOptions": {
+    "testTimeoutsEnabled": true,
+    "codeCoverage": {
+      "targets": [
+        {
+          "containerPath": "container:SportCrunch.xcodeproj",
+          "name": "SportCrunch"
+        }
+      ]
+    }
+  },
+  "testTargets": [
+    {
+      "target": {
+        "containerPath": "container:SportCrunch.xcodeproj",
+        "name": "SportCrunchTests"
+      }
+    }
+  ],
+  "version": 1
+}
