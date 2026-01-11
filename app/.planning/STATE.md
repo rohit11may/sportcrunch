@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-01-10)
 ## Current Position
 
 Phase: 1 of 6 (Test Infrastructure & Baseline)
-Plan: 1 of 3 in current phase
-Status: In progress
-Last activity: 2026-01-11 — Completed 01-01-PLAN.md
+Plan: 2 of 3 in current phase
+Status: In progress (blocked - needs Xcode configuration)
+Last activity: 2026-01-11 — Completed 01-02-PLAN.md
 
-Progress: █░░░░░ 17% (1 of 6 phases started)
+Progress: ██░░░░░ 33% (2 of 3 plans in phase 1 complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 7 min
-- Total execution time: 0.12 hours
+- Total plans completed: 2
+- Average duration: 7.5 min
+- Total execution time: 0.25 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Test Infrastructure & Baseline | 1 | 7 min | 7 min |
+| 1. Test Infrastructure & Baseline | 2 | 15 min | 7.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 7 min
-- Trend: Baseline established
+- Last 5 plans: 7 min, 8 min
+- Trend: Consistent velocity
 
 ## Accumulated Context
 
@@ -45,6 +45,8 @@ Recent decisions affecting current work:
 | 01 | IoU threshold default: 0.5 | Standard threshold for object detection tasks, can tune per-test in Phase 2 |
 | 01 | FP/FN guardrails: <15% FP, <10% FN | Stricter on false negatives - missing segments worse than including extra |
 | 01 | Ground truth format: JSON | Human-readable, easy to create manually, Codable for Swift integration |
+| 01 | Use real VideoProcessingService for E2E tests | Validates full pipeline integration vs mocking |
+| 01 | Always output FPR/FNR metrics in tests | Provides visibility into detection quality over time |
 
 ### Deferred Issues
 
@@ -52,10 +54,21 @@ None yet.
 
 ### Blockers/Concerns
 
-None yet.
+**Plan 01-02 - Test Resource Bundling:**
+- Test resources exist on disk but aren't in Xcode test bundle
+- Requires manual Xcode project configuration (add TestResources folder to project)
+- Cannot run E2E test to completion until resolved
+- Impact: Cannot validate test pattern, cannot configure FPR/FNR thresholds
+- **Action required:** User must add TestResources directory to Xcode project with "Create folder references" option
 
 ## Session Continuity
 
-Last session: 2026-01-11
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-01-11T22:46:03Z
+Stopped at: Completed 01-02-PLAN.md (blocked on test resource bundling)
 Resume file: None
+
+**To resume:**
+1. Add TestResources folder to Xcode project
+2. Run test to get FPR/FNR values
+3. Configure pass/fail thresholds
+4. Proceed to 01-03-PLAN.md
