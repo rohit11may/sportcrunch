@@ -82,11 +82,10 @@ const Labeller: React.FC = () => {
 
     const handleOpenSplitModal = () => {
         if (!currentSession) return;
-        // Find all sessions that share the same actual video file
-        const related = sessions.filter(s => s.videoFilename === currentSession.videoFilename);
+        // Find all sessions that share the same actual source video file
+        const related = sessions.filter(s => s.sourceVideo === currentSession.sourceVideo);
 
         // Construct existing parts from sessions
-        // If related has 1 item and it has no start/end or start=0,end=dur => just one part
         let parts = related.map((sess, idx) => ({
             id: sess.id.includes('__') ? sess.id.split('__')[1] : `part${idx + 1}`,
             name: sess.displayName,
@@ -105,15 +104,13 @@ const Labeller: React.FC = () => {
 
     const handleSaveSplits = async () => {
         if (!currentSession) return;
-        // Validate
-        // Call API
         try {
-            await api.saveSplit(currentSession.videoFilename, splitParts);
+            await api.saveSplit(currentSession.sourceVideo, splitParts);
             setIsSplitModalOpen(false);
             await loadSessions(); // Reload to see changes
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            alert('Failed to save splits');
+            alert(e.message || 'Failed to save splits');
         }
     };
 
@@ -336,6 +333,8 @@ const Labeller: React.FC = () => {
                                 <VideoPlayer
                                     ref={videoRef}
                                     src={getVideoUrl(currentSession.videoFilename)}
+                                    startTime={currentSession.startTime}
+                                    endTime={currentSession.endTime}
                                     onTimeUpdate={setCurrentTime}
                                     onDurationChange={setVideoDuration}
                                 />
@@ -356,7 +355,7 @@ const Labeller: React.FC = () => {
 
                                 {pendingStart !== null && (
                                     <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-500/90 text-white px-4 py-1 rounded-full text-sm animate-pulse">
-                                        Recording Segment... (Start: {pendingStart.toFixed(2)}s)
+                                        Recording Segment... (Start: {(pendingStart - (currentSession?.startTime || 0)).toFixed(2)}s)
                                     </div>
                                 )}
                             </div>
@@ -378,7 +377,7 @@ const Labeller: React.FC = () => {
                                     onClick={() => videoRef.current?.seek(seg.start)}
                                 >
                                     <div className="text-sm font-mono text-blue-300">
-                                        {seg.start.toFixed(2)}s <ArrowRight size={12} className="inline text-slate-500" /> {seg.end.toFixed(2)}s
+                                        {(seg.start - (currentSession?.startTime || 0)).toFixed(2)}s <ArrowRight size={12} className="inline text-slate-500" /> {(seg.end - (currentSession?.startTime || 0)).toFixed(2)}s
                                     </div>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setSegments(segments.filter((_, idx) => idx !== i)); }}

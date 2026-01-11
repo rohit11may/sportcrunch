@@ -13,6 +13,7 @@ export interface AnnotationData {
 export interface VideoSession {
     id: string; // Unique identifier (e.g., "video.mp4" or "video.mp4::part1")
     videoFilename: string; // The actual video file path/name to play
+    sourceVideo: string; // The original video file name
     displayName: string; // User friendly name
     startTime?: number; // Optional start time in seconds
     endTime?: number; // Optional end time in seconds

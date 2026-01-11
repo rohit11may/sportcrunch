@@ -3,6 +3,7 @@ sample-debug-reports/
 .build
 build
 node_modules/
+labeller/data/
 
 # --- Dependencies ---
 node_modules/

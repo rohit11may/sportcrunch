@@ -5,15 +5,17 @@ const API_BASE = 'http://localhost:3001/api';
 export const api = {
     getSessions: async (): Promise<VideoSession[]> => {
         const res = await fetch(`${API_BASE}/session`);
+        if (!res.ok) throw new Error(`Failed to load sessions: ${res.statusText}`);
         return res.json();
     },
 
     saveAnnotation: async (data: AnnotationData): Promise<void> => {
-        await fetch(`${API_BASE}/save`, {
+        const res = await fetch(`${API_BASE}/save`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
         });
+        if (!res.ok) throw new Error(`Failed to save annotation: ${res.statusText}`);
     },
 
     uploadVideo: async (file: File): Promise<string> => {
@@ -28,11 +30,15 @@ export const api = {
     },
 
     saveSplit: async (videoFilename: string, parts: any[]): Promise<void> => {
-        await fetch(`${API_BASE}/split`, {
+        const res = await fetch(`${API_BASE}/split`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ videoFilename, parts }),
         });
+        if (!res.ok) {
+            const error = await res.json().catch(() => ({ error: res.statusText }));
+            throw new Error(error.error || 'Failed to save splits');
+        }
     },
 
     deleteSession: async (id: string): Promise<void> => {
