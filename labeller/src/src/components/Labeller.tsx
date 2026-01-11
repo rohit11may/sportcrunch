@@ -2,22 +2,25 @@ import { useEffect, useState, useRef } from 'react';
 import { api, getVideoUrl } from '../api';
 import type { VideoSession, AnnotationData, Segment } from '../types';
 import VideoPlayer, { type VideoPlayerHandle } from './VideoPlayer';
-import { Save, Video as VideoIcon, Plus, Trash2, ArrowRight } from 'lucide-react';
+import { Save, Video as VideoIcon, Plus, Trash2, ArrowRight, Scissors, X } from 'lucide-react';
 import clsx from 'clsx';
 
 const Labeller: React.FC = () => {
     const [sessions, setSessions] = useState<VideoSession[]>([]);
     const [currentSessionIndex, setCurrentSessionIndex] = useState<number>(-1);
-    const [sport, setSport] = useState<'tennis' | 'cricket' | 'custom'>('tennis'); // Allow custom initially or just type
+    const [sport, setSport] = useState<'tennis' | 'cricket' | 'custom'>('tennis');
     const [mode, setMode] = useState<string>('rally');
     const [segments, setSegments] = useState<Segment[]>([]);
 
-    // Transient state for "current segment being recorded"
     const [pendingStart, setPendingStart] = useState<number | null>(null);
-
     const [loading, setLoading] = useState(true);
     const [, setCurrentTime] = useState(0);
+    const [videoDuration, setVideoDuration] = useState(0); // Track duration
     const videoRef = useRef<VideoPlayerHandle>(null);
+
+    // Split Modal State
+    const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
+    const [splitParts, setSplitParts] = useState<{ id: string, name: string, start: number, end: number }[]>([]);
 
     const currentSession = currentSessionIndex >= 0 ? sessions[currentSessionIndex] : null;
 
@@ -31,8 +34,6 @@ const Labeller: React.FC = () => {
             const data = await api.getSessions();
             setSessions(data);
             if (data.length > 0 && currentSessionIndex === -1) {
-                // Auto-select first if none selected
-                // But generally wait for user or select index 0
                 setCurrentSessionIndex(0);
             }
         } finally {
@@ -50,39 +51,98 @@ const Labeller: React.FC = () => {
             } else {
                 setSegments([]);
                 setPendingStart(null);
-                // Keep previous sport/mode settings or reset? User might want persistence.
+            }
+            // Auto-seek to start range if applicable
+            if (currentSession.startTime !== undefined && videoRef.current) {
+                videoRef.current.seek(currentSession.startTime);
             }
         }
-    }, [currentSessionIndex, currentSession]); // Depend on index to trigger reload if same session object changed deep? No, just session.
+    }, [currentSessionIndex, currentSession?.id]);
 
     const handleSave = async () => {
         if (!currentSession) return;
+        // Use currentSession.id (which handles split IDs correctly e.g. "vid__part1")
+        // But backend expects "videoFilename" in body as the identifier. 
+        // We will pass currentSession.id as videoFilename property to api.saveAnnotation
+        // Wait, types says videoFilename. 
         const annotation: AnnotationData = {
-            videoFilename: currentSession.filename,
+            videoFilename: currentSession.id, // This ensures we save to vid__part1.json
             sport: sport as any,
             mode: mode as any,
             segments
         };
         await api.saveAnnotation(annotation);
-        // Optimistically update local session
+
+        // Optimistically update
         const newSessions = [...sessions];
         newSessions[currentSessionIndex].annotation = annotation;
         setSessions(newSessions);
         alert('Saved!');
     };
 
-    // Hotkeys
+    const handleOpenSplitModal = () => {
+        if (!currentSession) return;
+        // Find all sessions that share the same actual video file
+        const related = sessions.filter(s => s.videoFilename === currentSession.videoFilename);
+
+        // Construct existing parts from sessions
+        // If related has 1 item and it has no start/end or start=0,end=dur => just one part
+        let parts = related.map((sess, idx) => ({
+            id: sess.id.includes('__') ? sess.id.split('__')[1] : `part${idx + 1}`,
+            name: sess.displayName,
+            start: sess.startTime || 0,
+            end: sess.endTime || videoDuration || 0
+        }));
+
+        // If simple session, might default to:
+        if (parts.length === 0) {
+            parts = [{ id: 'part1', name: 'Part 1', start: 0, end: videoDuration }];
+        }
+
+        setSplitParts(parts);
+        setIsSplitModalOpen(true);
+    };
+
+    const handleSaveSplits = async () => {
+        if (!currentSession) return;
+        // Validate
+        // Call API
+        try {
+            await api.saveSplit(currentSession.videoFilename, splitParts);
+            setIsSplitModalOpen(false);
+            await loadSessions(); // Reload to see changes
+        } catch (e) {
+            console.error(e);
+            alert('Failed to save splits');
+        }
+    };
+
+    const addNewSplit = () => {
+        const last = splitParts[splitParts.length - 1];
+        const newStart = last ? last.end : 0;
+        setSplitParts([...splitParts, {
+            id: `part${splitParts.length + 1}`,
+            name: `Part ${splitParts.length + 1}`,
+            start: newStart,
+            end: videoDuration
+        }]);
+    };
+
+    const updateSplit = (idx: number, field: keyof typeof splitParts[0], value: any) => {
+        const newParts = [...splitParts];
+        newParts[idx] = { ...newParts[idx], [field]: value };
+        setSplitParts(newParts);
+    };
+
+    // Hotkeys (unchanged mostly)
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
-            // Ignore if typing in input (if we had any)
             if (e.target instanceof HTMLInputElement) return;
-
             switch (e.key) {
                 case '[':
                     if (videoRef.current) {
                         const time = videoRef.current.getCurrentTime();
                         setPendingStart(time);
-                        console.log('Start set at', time);
                     }
                     break;
                 case ']':
@@ -91,7 +151,6 @@ const Labeller: React.FC = () => {
                         if (end > pendingStart) {
                             setSegments(prev => [...prev, { start: pendingStart, end }].sort((a, b) => a.start - b.start));
                             setPendingStart(null);
-                            console.log('Segment added', pendingStart, end);
                         }
                     }
                     break;
@@ -103,23 +162,33 @@ const Labeller: React.FC = () => {
                     e.preventDefault();
                     videoRef.current?.stepFrame(1);
                     break;
-                case 'ArrowUp':
-                    // Optional: Navigate videos?
-                    break;
-                case 'ArrowDown':
-                    break;
             }
         };
-
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, [pendingStart, currentSessionIndex]); // Need pendingStart in deps? Yes, inside closure.
+    }, [pendingStart, currentSessionIndex]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             await api.uploadVideo(e.target.files[0]);
             await loadSessions();
+        }
+    };
+
+    const handleDeleteSession = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (window.confirm('Are you sure you want to delete this video/part?')) {
+            try {
+                await api.deleteSession(id);
+                await loadSessions();
+                if (currentSession?.id === id) {
+                    setCurrentSessionIndex(-1);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Failed to delete');
+            }
         }
     };
 
@@ -142,24 +211,36 @@ const Labeller: React.FC = () => {
 
                 <div className="flex-1 overflow-y-auto p-2 space-y-1">
                     {sessions.map((s, idx) => (
-                        <button
-                            key={s.filename}
-                            onClick={() => setCurrentSessionIndex(idx)}
+                        <div
+                            key={s.id}
                             className={clsx(
-                                "w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2 transition-colors",
+                                "group relative w-full flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors cursor-pointer",
                                 idx === currentSessionIndex ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800"
                             )}
+                            onClick={() => setCurrentSessionIndex(idx)}
                         >
-                            <VideoIcon size={14} />
-                            <span className="truncate">{s.filename}</span>
-                            {s.annotation && <span className="ml-auto w-2 h-2 rounded-full bg-green-400"></span>}
-                        </button>
+                            <VideoIcon size={14} className="flex-shrink-0" />
+                            <span className="truncate flex-1">{s.displayName || s.videoFilename}</span>
+                            <div className="flex items-center gap-1.5">
+                                {s.annotation && <span className="w-2 h-2 rounded-full bg-green-400"></span>}
+                                <button
+                                    onClick={(e) => handleDeleteSession(e, s.id)}
+                                    className={clsx(
+                                        "p-1 rounded hover:bg-black/20 text-slate-400 hover:text-red-400 transition-opacity",
+                                        idx === currentSessionIndex ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                                    )}
+                                    title="Delete video"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                        </div>
                     ))}
                 </div>
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden relative">
                 {/* Header */}
                 <div className="h-14 border-b border-slate-700 flex items-center justify-between px-6 bg-slate-900">
                     <div className="flex items-center gap-4">
@@ -188,12 +269,21 @@ const Labeller: React.FC = () => {
                         </div>
                     </div>
 
-                    <button
-                        onClick={handleSave}
-                        className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded font-medium text-sm transition-transform active:scale-95"
-                    >
-                        <Save size={16} /> Save
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleOpenSplitModal}
+                            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded text-sm transition"
+                            title="Split into parts"
+                        >
+                            <Scissors size={16} /> Split
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded font-medium text-sm transition-transform active:scale-95"
+                        >
+                            <Save size={16} /> Save
+                        </button>
+                    </div>
                 </div>
 
                 {/* Workspace */}
@@ -204,15 +294,20 @@ const Labeller: React.FC = () => {
                             <div className="w-full max-w-4xl">
                                 <VideoPlayer
                                     ref={videoRef}
-                                    src={getVideoUrl(currentSession.filename)}
+                                    src={getVideoUrl(currentSession.videoFilename)}
                                     onTimeUpdate={setCurrentTime}
-                                    onDurationChange={() => { }}
+                                    onDurationChange={setVideoDuration}
                                 />
                                 <div className="mt-4 text-center text-slate-400 text-sm">
                                     <span className="px-2 py-1 bg-slate-800 rounded mx-1 text-slate-200">[</span> Start Segment
                                     <span className="px-2 py-1 bg-slate-800 rounded mx-1 text-slate-200">]</span> End Segment
                                     <span className="px-2 py-1 bg-slate-800 rounded mx-1 text-slate-200">←/→</span> Step Frame
                                 </div>
+                                {currentSession.startTime !== undefined && (
+                                    <div className="mt-2 text-center text-xs text-yellow-400">
+                                        Part Range: {currentSession.startTime}s - {currentSession.endTime}s
+                                    </div>
+                                )}
 
                                 {pendingStart !== null && (
                                     <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-500/90 text-white px-4 py-1 rounded-full text-sm animate-pulse">
@@ -225,7 +320,7 @@ const Labeller: React.FC = () => {
                         )}
                     </div>
 
-                    {/* Segment List (Right Panel) */}
+                    {/* Segment List */}
                     <div className="w-72 bg-slate-900 border-l border-slate-700 flex flex-col">
                         <div className="p-3 border-b border-slate-700 bg-slate-900 font-medium text-slate-300">
                             Segments ({segments.length})
@@ -248,14 +343,79 @@ const Labeller: React.FC = () => {
                                     </button>
                                 </div>
                             ))}
-                            {segments.length === 0 && (
-                                <div className="text-center text-slate-600 mt-10 text-sm italic">
-                                    No segments yet. Use [ and ] to add.
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
+
+                {/* Split Modal */}
+                {isSplitModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                        <div className="bg-slate-900 border border-slate-700 p-6 rounded-xl w-[600px] shadow-2xl overflow-hidden max-h-[80vh] flex flex-col">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold text-white">Manage Video Splits</h2>
+                                <button onClick={() => setIsSplitModalOpen(false)} className="text-slate-400 hover:text-white"><X size={20} /></button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto space-y-3 mb-6 pr-2">
+                                {splitParts.map((part, i) => (
+                                    <div key={i} className="flex gap-3 items-center bg-slate-800/50 p-3 rounded border border-slate-700">
+                                        <input
+                                            value={part.name}
+                                            onChange={(e) => updateSplit(i, 'name', e.target.value)}
+                                            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white flex-1 min-w-0"
+                                            placeholder="Part Name"
+                                        />
+                                        <div className="flex items-center gap-1">
+                                            <input
+                                                type="number"
+                                                value={part.start}
+                                                onChange={(e) => updateSplit(i, 'start', parseFloat(e.target.value))}
+                                                className="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-center font-mono"
+                                            />
+                                            <span className="text-slate-500">-</span>
+                                            <input
+                                                type="number"
+                                                value={part.end}
+                                                onChange={(e) => updateSplit(i, 'end', parseFloat(e.target.value))}
+                                                className="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-center font-mono"
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={() => setSplitParts(splitParts.filter((_, idx) => idx !== i))}
+                                            className="p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-red-400 transition"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                ))}
+                                {splitParts.length === 0 && <div className="text-center text-slate-500 italic p-4">No parts defined.</div>}
+                            </div>
+
+                            <div className="flex justify-between items-center pt-4 border-t border-slate-800">
+                                <button
+                                    onClick={addNewSplit}
+                                    className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium"
+                                >
+                                    <Plus size={16} /> Add Split
+                                </button>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setIsSplitModalOpen(false)}
+                                        className="px-4 py-2 rounded text-slate-300 hover:bg-slate-800 transition text-sm"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSaveSplits}
+                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-medium text-sm shadow-lg shadow-blue-500/20"
+                                    >
+                                        Apply Splits
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

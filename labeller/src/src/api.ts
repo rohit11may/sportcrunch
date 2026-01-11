@@ -25,6 +25,20 @@ export const api = {
         });
         const data = await res.json();
         return data.filename;
+    },
+
+    saveSplit: async (videoFilename: string, parts: any[]): Promise<void> => {
+        await fetch(`${API_BASE}/split`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ videoFilename, parts }),
+        });
+    },
+
+    deleteSession: async (id: string): Promise<void> => {
+        await fetch(`${API_BASE}/session/${id}`, {
+            method: 'DELETE',
+        });
     }
 };
 
