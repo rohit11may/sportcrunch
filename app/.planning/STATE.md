@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-10)
 
 ## Current Position
 
-Phase: 1 of 7 (Test Infrastructure & Baseline)
+Phase: 1 of 6 (Test Infrastructure & Baseline)
 Plan: 1 of 3 in current phase
 Status: In progress
 Last activity: 2026-01-11 — Completed 01-01-PLAN.md
 
-Progress: █░░░░░░░░░ 14% (1 of 7 phases started)
+Progress: █░░░░░ 17% (1 of 6 phases started)
 
 ## Performance Metrics
 

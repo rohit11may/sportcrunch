@@ -17,12 +17,11 @@ None
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Test Infrastructure & Baseline** - Set up XCTest framework and establish E2E test patterns (1/3 plans complete)
-- [ ] **Phase 2: Golden Test Suite** - Build test videos + ground truth segments + evaluation function
-- [ ] **Phase 3: Core E2E Test Coverage** - Export flows, UI navigation, error handling tests
-- [ ] **Phase 4: Debugging System Refactor** - Extract debug logging from algorithm code
-- [ ] **Phase 5: Service Layer Cleanup** - Refactor services with test safety net
-- [ ] **Phase 6: Algorithm Readability** - Clean up detection algorithm code
-- [ ] **Phase 7: Validation & Documentation** - Full suite validation and pattern documentation
+- [ ] **Phase 2: Core E2E Test Coverage** - Export flows, UI navigation, error handling tests
+- [ ] **Phase 3: Debugging System Refactor** - Extract debug logging from algorithm code
+- [ ] **Phase 4: Service Layer Cleanup** - Refactor services with test safety net
+- [ ] **Phase 5: Algorithm Readability** - Clean up detection algorithm code
+- [ ] **Phase 6: Validation & Documentation** - Full suite validation and pattern documentation
 
 ## Phase Details
 
@@ -36,16 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - TBD (determined during phase planning)
 
-### Phase 2: Golden Test Suite
-**Goal**: Build test video dataset with ground truth segments and evaluation function (fuzzy matching, FP/FN rate guardrails)
-**Depends on**: Phase 1
-**Research**: Unlikely (applying test infrastructure to algorithm validation)
-**Plans**: TBD
-
-Plans:
-- TBD (determined during phase planning)
-
-### Phase 3: Core E2E Test Coverage
+### Phase 2: Core E2E Test Coverage
 **Goal**: Build tests for export flows, UI navigation, and error handling paths
 **Depends on**: Phase 1
 **Research**: Unlikely (following Phase 1 patterns)
@@ -54,36 +44,36 @@ Plans:
 Plans:
 - TBD (determined during phase planning)
 
-### Phase 4: Debugging System Refactor
+### Phase 3: Debugging System Refactor
 **Goal**: Extract debug logging infrastructure from algorithm code without losing any detail or functionality
-**Depends on**: Phase 2, Phase 3 (safety net in place)
+**Depends on**: Phase 2 (safety net in place)
 **Research**: Unlikely (internal refactoring, moving existing code)
 **Plans**: TBD
 
 Plans:
 - TBD (determined during phase planning)
 
-### Phase 5: Service Layer Cleanup
+### Phase 4: Service Layer Cleanup
 **Goal**: Refactor service protocols and implementations for clarity and separation of concerns
-**Depends on**: Phase 4
+**Depends on**: Phase 3
 **Research**: Unlikely (internal refactoring with test coverage)
 **Plans**: TBD
 
 Plans:
 - TBD (determined during phase planning)
 
-### Phase 6: Algorithm Readability
+### Phase 5: Algorithm Readability
 **Goal**: Clean up detection algorithm code (easier now that debug code is separated)
-**Depends on**: Phase 5
+**Depends on**: Phase 4
 **Research**: Unlikely (internal cleanup following established patterns)
 **Plans**: TBD
 
 Plans:
 - TBD (determined during phase planning)
 
-### Phase 7: Validation & Documentation
+### Phase 6: Validation & Documentation
 **Goal**: Run full test suite, validate no regressions, document patterns for future work
-**Depends on**: Phase 6
+**Depends on**: Phase 5
 **Research**: Unlikely (validating existing work, documenting patterns)
 **Plans**: TBD
 
@@ -93,14 +83,13 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Test Infrastructure & Baseline | 1/3 | In progress | - |
-| 2. Golden Test Suite | 0/TBD | Not started | - |
-| 3. Core E2E Test Coverage | 0/TBD | Not started | - |
-| 4. Debugging System Refactor | 0/TBD | Not started | - |
-| 5. Service Layer Cleanup | 0/TBD | Not started | - |
-| 6. Algorithm Readability | 0/TBD | Not started | - |
-| 7. Validation & Documentation | 0/TBD | Not started | - |
+| 2. Core E2E Test Coverage | 0/TBD | Not started | - |
+| 3. Debugging System Refactor | 0/TBD | Not started | - |
+| 4. Service Layer Cleanup | 0/TBD | Not started | - |
+| 5. Algorithm Readability | 0/TBD | Not started | - |
+| 6. Validation & Documentation | 0/TBD | Not started | - |
