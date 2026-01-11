@@ -162,6 +162,47 @@ const Labeller: React.FC = () => {
                     e.preventDefault();
                     videoRef.current?.stepFrame(1);
                     break;
+                case ' ':
+                    e.preventDefault();
+                    videoRef.current?.togglePlay();
+                    break;
+                case 'z':
+                    if (videoRef.current) {
+                        const time = videoRef.current.getCurrentTime();
+                        videoRef.current.seek(Math.max(0, time - 5));
+                    }
+                    break;
+                case 'x':
+                    if (videoRef.current) {
+                        const time = videoRef.current.getCurrentTime();
+                        // Assume we can get duration or just use a large enough bound
+                        videoRef.current.seek(time + 5);
+                    }
+                    break;
+                case 'n':
+                    if (videoRef.current) {
+                        const time = videoRef.current.getCurrentTime();
+                        videoRef.current.seek(Math.max(0, time - 2));
+                    }
+                    break;
+                case 'm':
+                    if (videoRef.current) {
+                        const time = videoRef.current.getCurrentTime();
+                        videoRef.current.seek(time + 2);
+                    }
+                    break;
+                case 's':
+                    if (videoRef.current) {
+                        const currentRate = videoRef.current.getPlaybackRate();
+                        videoRef.current.setPlaybackRate(Math.round((currentRate - 0.1) * 10) / 10);
+                    }
+                    break;
+                case 'd':
+                    if (videoRef.current) {
+                        const currentRate = videoRef.current.getPlaybackRate();
+                        videoRef.current.setPlaybackRate(Math.round((currentRate + 0.1) * 10) / 10);
+                    }
+                    break;
             }
         };
         window.addEventListener('keydown', handler);
@@ -298,10 +339,14 @@ const Labeller: React.FC = () => {
                                     onTimeUpdate={setCurrentTime}
                                     onDurationChange={setVideoDuration}
                                 />
-                                <div className="mt-4 text-center text-slate-400 text-sm">
-                                    <span className="px-2 py-1 bg-slate-800 rounded mx-1 text-slate-200">[</span> Start Segment
-                                    <span className="px-2 py-1 bg-slate-800 rounded mx-1 text-slate-200">]</span> End Segment
-                                    <span className="px-2 py-1 bg-slate-800 rounded mx-1 text-slate-200">←/→</span> Step Frame
+                                <div className="mt-4 text-center text-slate-400 text-sm flex flex-wrap justify-center gap-x-4 gap-y-1">
+                                    <span><span className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 mx-1 text-slate-200">Space</span> Play/Pause</span>
+                                    <span><span className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 mx-1 text-slate-200">[</span> Begin</span>
+                                    <span><span className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 mx-1 text-slate-200">]</span> End</span>
+                                    <span><span className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 mx-1 text-slate-200">←/→</span> Step</span>
+                                    <span><span className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 mx-1 text-slate-200 text-xs text-blue-400">Z / X</span> ±5s</span>
+                                    <span><span className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 mx-1 text-slate-200 text-xs text-indigo-400">N / M</span> ±2s</span>
+                                    <span><span className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 mx-1 text-slate-200 text-xs text-emerald-400">S / D</span> ±0.1x</span>
                                 </div>
                                 {currentSession.startTime !== undefined && (
                                     <div className="mt-2 text-center text-xs text-yellow-400">
