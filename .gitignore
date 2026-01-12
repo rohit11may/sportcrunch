@@ -4,6 +4,7 @@ sample-debug-reports/
 build
 node_modules/
 labeller/data/
+*.mp4
 
 # --- Dependencies ---
 node_modules/
