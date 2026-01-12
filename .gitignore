@@ -4,6 +4,7 @@ sample-debug-reports/
 build
 node_modules/
 labeller/data/
+*.mp4
 
 # --- Dependencies ---
 node_modules/
@@ -47,3 +48,13 @@ Thumbs.db
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+DerivedData/
+*.moved-aside
+*.xcuserstate
+
+# Personal settings
+xcuserdata/
+
+# Test results
+*.xcresult
