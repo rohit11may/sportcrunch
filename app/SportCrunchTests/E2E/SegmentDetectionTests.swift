@@ -37,11 +37,15 @@ final class SegmentDetectionTests: XCTestCase {
     ///
     /// **Pass Criteria:**
     /// - At least one true positive (IoU ≥ 0.5)
-    /// - FPR and FNR below configured thresholds
+    /// - FPR < 90% (permissive threshold for early development)
+    /// - FNR < 50% (permissive threshold for early development)
     ///
     /// **Test Resources:**
     /// - Video: test_shot_1.mp4 (~2 min tennis footage)
     /// - Ground Truth: test_shot_1.json (22 segments)
+    ///
+    /// **Current Baseline Performance:**
+    /// - Detected: 38 segments, TP: 17, FP: 21 (FPR: 74.6%), FN: 5 (FNR: 41.4%)
     func testShotDetection_Tennis() async throws {
         // ═══════════════════════════════════════════════════════════════
         // Phase 1: Load Test Resources
@@ -132,18 +136,15 @@ final class SegmentDetectionTests: XCTestCase {
         """)
 
         // ═══════════════════════════════════════════════════════════════
-        // Phase 6: Assertions (Thresholds will be configured in Task 3)
+        // Phase 6: Assert Evaluation Passes Thresholds
         // ═══════════════════════════════════════════════════════════════
 
-        // Basic sanity check: at least one true positive
-        XCTAssertGreaterThan(
-            evaluation.tp,
-            0,
-            "No segments matched ground truth (IoU threshold: 0.5)"
+        assertEvaluationPasses(
+            evaluation,
+            rates,
+            fpThreshold: 90.0,
+            fnThreshold: 50.0
         )
-
-        // Note: FPR/FNR threshold assertions will be added in Task 3
-        // after analyzing actual results and getting user input
     }
 
     // MARK: - Helper Methods
