@@ -47,3 +47,13 @@ Thumbs.db
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+DerivedData/
+*.moved-aside
+*.xcuserstate
+
+# Personal settings
+xcuserdata/
+
+# Test results
+*.xcresult

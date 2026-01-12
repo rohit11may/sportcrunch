@@ -109,6 +109,10 @@ final class SegmentDetectionTests: XCTestCase {
         // Phase 4: Evaluate with Fuzzy Matching
         // ═══════════════════════════════════════════════════════════════
 
+        // Get video duration for FP rate calculation
+        let asset = AVAsset(url: videoURL)
+        let videoDuration = try await asset.load(.duration).seconds
+
         let evaluation = SegmentEvaluator.evaluate(
             detected: detectedRanges,
             groundTruth: groundTruthRanges,
@@ -117,7 +121,8 @@ final class SegmentDetectionTests: XCTestCase {
 
         let rates = SegmentEvaluator.calculateRates(
             detected: detectedRanges,
-            groundTruth: groundTruthRanges
+            groundTruth: groundTruthRanges,
+            videoDuration: videoDuration
         )
 
         // ═══════════════════════════════════════════════════════════════
@@ -142,7 +147,7 @@ final class SegmentDetectionTests: XCTestCase {
         assertEvaluationPasses(
             evaluation,
             rates,
-            fpThreshold: 90.0,
+            fpThreshold: 30.0,
             fnThreshold: 50.0
         )
     }

@@ -95,21 +95,24 @@ struct SegmentEvaluator {
 
     /// Calculate false positive and false negative rates as percentages
     ///
-    /// - FP Rate: Extra duration kept (not in ground truth) / total ground truth duration × 100
+    /// - FP Rate: Extra duration kept (not in ground truth) / total video duration × 100
     /// - FN Rate: Missed duration (in ground truth but not detected) / total ground truth duration × 100
     ///
     /// - Parameters:
     ///   - detected: Array of detected segments
     ///   - groundTruth: Array of ground truth segments
+    ///   - videoDuration: Total duration of the original video in seconds
     /// - Returns: Tuple of (false positive rate %, false negative rate %)
     static func calculateRates(
         detected: [TimeRange],
-        groundTruth: [TimeRange]
+        groundTruth: [TimeRange],
+        videoDuration: Double
     ) -> (fpRate: Double, fnRate: Double) {
         // Calculate total ground truth duration
         let totalGroundTruthDuration = groundTruth.reduce(0.0) { $0 + $1.duration }
 
-        // Handle edge case: zero ground truth duration
+        // Handle edge cases
+        guard videoDuration > 0 else { return (0.0, 0.0) }
         guard totalGroundTruthDuration > 0 else { return (0.0, 0.0) }
 
         // Calculate total detected duration
@@ -138,7 +141,7 @@ struct SegmentEvaluator {
 
         // False positive: extra duration kept (detected but not in ground truth)
         let extraDuration = max(0, totalDetectedDuration - totalOverlap)
-        let fpRate = (extraDuration / totalGroundTruthDuration) * 100
+        let fpRate = (extraDuration / videoDuration) * 100
 
         // False negative: missed duration (in ground truth but not detected)
         let missedDuration = max(0, totalGroundTruthDuration - totalOverlap)
