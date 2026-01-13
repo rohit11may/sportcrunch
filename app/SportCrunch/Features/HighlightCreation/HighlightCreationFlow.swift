@@ -40,7 +40,7 @@ struct HighlightCreationFlow: View {
         NavigationStack {
             ZStack {
                 Color.scBackground.ignoresSafeArea()
-                
+
                 switch viewModel.currentStep {
                 case .selectVideo:
                     VideoSelectionView(viewModel: viewModel)
@@ -50,6 +50,7 @@ struct HighlightCreationFlow: View {
                     TennisModeSelectionView(viewModel: viewModel)
                 }
             }
+            .accessibilityIdentifier(AccessibilityID.Creation.flowContainer)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -61,6 +62,7 @@ struct HighlightCreationFlow: View {
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundStyle(Color.scTextPrimary)
                         }
+                        .accessibilityIdentifier(AccessibilityID.Creation.backButton)
                     }
                 }
                 
@@ -82,6 +84,7 @@ struct HighlightCreationFlow: View {
                             .background(Color.scSurface)
                             .clipShape(Circle())
                     }
+                    .accessibilityIdentifier(AccessibilityID.Creation.closeButton)
                 }
             }
             .toolbarBackground(Color.scBackground, for: .navigationBar)

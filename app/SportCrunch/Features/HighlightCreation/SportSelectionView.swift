@@ -35,12 +35,13 @@ struct SportSelectionView: View {
                         isSelected: hoveredSport == sport
                     ) {
                         hoveredSport = sport
-                        
+
                         // Brief delay before proceeding
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             viewModel.selectSport(sport)
                         }
                     }
+                    .accessibilityIdentifier(sport == .tennis ? AccessibilityID.Creation.sportTennisButton : AccessibilityID.Creation.sportCricketButton)
                 }
             }
             .padding(.horizontal, Spacing.md)
@@ -98,8 +99,9 @@ struct SportSelectionView: View {
             RoundedRectangle(cornerRadius: CornerRadius.large)
                 .stroke(Color.scSurfaceElevated, lineWidth: 1)
         )
+        .accessibilityIdentifier(AccessibilityID.Creation.videoPreview)
     }
-    
+
     // MARK: - Info Card
     
     private var infoCard: some View {

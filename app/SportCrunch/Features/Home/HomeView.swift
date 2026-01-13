@@ -128,6 +128,7 @@ struct HomeView: View {
                             .foregroundStyle(Color.scTextSecondary)
                     )
             }
+            .accessibilityIdentifier(AccessibilityID.Home.settingsButton)
         }
     }
     
@@ -171,8 +172,9 @@ struct HomeView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(AccessibilityID.Home.createHighlightButton)
     }
-    
+
     // MARK: - Empty State
     
     private var emptyStateView: some View {
@@ -206,8 +208,9 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.xxl)
+        .accessibilityIdentifier(AccessibilityID.Home.emptyStateView)
     }
-    
+
     // MARK: - Recent Projects Section
     
     private var recentProjectsSection: some View {
@@ -233,6 +236,7 @@ struct HomeView: View {
                             showDeleteConfirmation = true
                         }
                     )
+                    .accessibilityIdentifier(AccessibilityID.Home.projectCard(id: project.id.uuidString))
                 }
             }
         }

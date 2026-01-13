@@ -46,6 +46,7 @@ struct TennisModeSelectionView: View {
                             selectedMode = mode
                         }
                     }
+                    .accessibilityIdentifier(mode == .rally ? AccessibilityID.Creation.modeRallyButton : AccessibilityID.Creation.modeShotButton)
                 }
             }
             .padding(.horizontal, Spacing.md)
@@ -72,6 +73,7 @@ struct TennisModeSelectionView: View {
                 CrunchButton(glowPhase: glowPhase) {
                     viewModel.selectTennisMode(mode)
                 }
+                .accessibilityIdentifier(AccessibilityID.Creation.crunchButton)
                 .transition(.asymmetric(
                     insertion: .move(edge: .bottom).combined(with: .opacity),
                     removal: .opacity

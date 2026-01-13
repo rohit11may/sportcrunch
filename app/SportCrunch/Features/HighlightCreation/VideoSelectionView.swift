@@ -52,6 +52,7 @@ struct VideoSelectionView: View {
                 .background(AppGradient.primary)
                 .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
             }
+            .accessibilityIdentifier(AccessibilityID.Creation.videoLibraryButton)
             .onChange(of: viewModel.selectedVideoItem) { _, newItem in
                 if let item = newItem {
                     viewModel.selectVideo(item)

@@ -91,18 +91,22 @@ struct CompletedProjectSheet: View {
                 VStack(spacing: 0) {
                     // Video player area
                     videoPlayerArea
-                    
+                        .accessibilityIdentifier(AccessibilityID.Project.videoPlayer)
+
                     // Progress bar for scrubbing
                     progressBarSection
-                    
+                        .accessibilityIdentifier(AccessibilityID.Project.progressBar)
+
                     // Original video summary (static visualization)
                     originalVideoSummarySection
-                    
+
                     // Segment navigator
                     segmentNavigatorSection
-                    
+                        .accessibilityIdentifier(AccessibilityID.Project.segmentNavigator)
+
                     Spacer(minLength: 0)
                 }
+                .accessibilityIdentifier(AccessibilityID.Project.sheet)
                 
                 // Floating export button
                 VStack {
@@ -346,6 +350,7 @@ struct CompletedProjectSheet: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier(AccessibilityID.Project.filterToggle)
                 } else {
                     Text("Tap ★ to star segments")
                         .font(.system(size: 11))
@@ -403,7 +408,7 @@ struct CompletedProjectSheet: View {
             HStack(spacing: Spacing.sm) {
                 Image(systemName: "square.and.arrow.up")
                     .font(.system(size: 16, weight: .semibold))
-                
+
                 Text("Export")
                     .font(.system(size: 15, weight: .bold))
             }
@@ -417,6 +422,7 @@ struct CompletedProjectSheet: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(AccessibilityID.Project.exportButton)
     }
     
     // MARK: - Helper Methods
@@ -582,7 +588,8 @@ struct CompletedProjectExportSheet: View {
                             .background(AppGradient.primary)
                             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
                         }
-                        
+                        .accessibilityIdentifier(AccessibilityID.Export.saveCameraRollButton)
+
                         // Share button
                         Button {
                             performShare()
@@ -599,12 +606,14 @@ struct CompletedProjectExportSheet: View {
                             .background(Color.scSurfaceElevated)
                             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
                         }
+                        .accessibilityIdentifier(AccessibilityID.Export.shareButton)
                     }
                 }
             }
             .padding(.horizontal, Spacing.lg)
             .padding(.vertical, Spacing.md)
             .background(Color.scBackground)
+            .accessibilityIdentifier(AccessibilityID.Export.sheet)
             .navigationTitle("Export")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -724,6 +733,7 @@ struct CompletedProjectExportSheet: View {
                 )
         )
         .animation(.spring(response: 0.3), value: onlyStarred)
+        .accessibilityIdentifier(AccessibilityID.Export.onlyStarredToggle)
     }
     
     // MARK: - Exporting Indicator
@@ -772,9 +782,10 @@ struct CompletedProjectExportSheet: View {
                     .background(Color.scSurfaceElevated)
                     .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
             }
+            .accessibilityIdentifier(AccessibilityID.Export.doneButton)
         }
     }
-    
+
     // MARK: - Actions
     
     private func performSaveToCameraRoll() {
