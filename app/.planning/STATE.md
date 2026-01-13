@@ -5,35 +5,38 @@
 See: .planning/PROJECT.md (updated 2026-01-10)
 
 **Core value:** Accurate, on-device segment detection that identifies rallies and shots without missing good moments or including dead space, while processing efficiently enough for 1-hour videos.
-**Current focus:** Phase 1 — Test Infrastructure & Baseline
+**Current focus:** Phase 2 — Core E2E Test Coverage
 
 ## Current Position
 
-Phase: 1 of 6 (Test Infrastructure & Baseline)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-01-11 — Completed 01-03-PLAN.md
+Phase: 2 of 6 (Core E2E Test Coverage)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-01-13 — Completed 02-01-PLAN.md
 
-Progress: ███░░░░ 50% (3 of 3 plans in phase 1 complete)
+Progress: ████░░░ 57% (4 of 7 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
+- Total plans completed: 4
 - Average duration: 5.3 min
-- Total execution time: 0.27 hours
+- Total execution time: 0.35 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Test Infrastructure & Baseline | 3 | 16 min | 5.3 min |
+| 2. Core E2E Test Coverage | 1 | 5 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 7 min, 8 min, 1 min
-- Trend: Increasing velocity (simple file creation tasks)
+- Last 5 plans: 7 min, 8 min, 1 min, 5 min
+- Trend: Consistent velocity
 
 ## Accumulated Context
+
+Always use iPhone 17 device for xcodebuild and any testing commands for a simulator.
 
 ### Decisions
 
@@ -50,6 +53,8 @@ Recent decisions affecting current work:
 | 01 | Smoke timeout: 5 minutes | Quick feedback loop for development |
 | 01 | Regression timeout: 30 minutes | Room for growth as test suite expands |
 | 01 | Code coverage in regression only | Not needed for quick smoke runs |
+| 02 | Symlink AccessibilityIdentifiers.swift | Share constants between app and UITests targets without duplication |
+| 02 | Screen object pattern for E2E tests | Typed properties for semantic element discovery |
 
 ### Deferred Issues
 
@@ -57,24 +62,17 @@ None yet.
 
 ### Blockers/Concerns
 
-**From Phase 1:**
-- Test resources exist on disk but aren't in Xcode test bundle
-- Requires manual Xcode project configuration (add TestResources folder to project)
-- Cannot run E2E tests to completion until resolved
-- **Impact:** Phase 1 infrastructure complete, but tests can't validate until resources bundled
-- **Action for Phase 2:** User must add TestResources directory to Xcode project with "Create folder references" option before running tests
+None
 
 ## Session Continuity
 
-Last session: 2026-01-11T23:35:08Z
-Stopped at: Completed 01-03-PLAN.md - Phase 1 complete
+Last session: 2026-01-13T12:09:18Z
+Stopped at: Completed 02-01-PLAN.md - Accessibility infrastructure
 Resume file: None
 
-**Phase 1 Status:**
-- ✅ All 3 plans complete
-- ✅ Test infrastructure baseline established
-- ⚠️ Test resources need Xcode bundling before tests can run
+**Phase 2 Status:**
+- ✅ 02-01 complete: Accessibility infrastructure
+- ⏳ 02-02 pending: E2E test implementation
 
 **Next Steps:**
-1. Consider adding TestResources to Xcode project before Phase 2
-2. Plan Phase 2 (Golden Test Suite) when ready
+1. Execute 02-02-PLAN.md (E2E tests)
