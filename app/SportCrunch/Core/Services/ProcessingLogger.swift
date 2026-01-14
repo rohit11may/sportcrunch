@@ -9,6 +9,18 @@
 import Foundation
 import Combine
 
+// MARK: - Verbosity Level
+
+enum VerbosityLevel: Int, Comparable {
+    case normal = 0   // High-level progress messages
+    case verbose = 1  // Detailed stats and configuration
+    case debug = 2    // Frame-level debug info, fingerprints
+
+    static func < (lhs: VerbosityLevel, rhs: VerbosityLevel) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+}
+
 // MARK: - Log Entry
 
 struct ProcessingLogEntry: Identifiable, Equatable {
@@ -61,9 +73,12 @@ final class ProcessingLogger: ObservableObject {
     
     /// Maximum number of entries to keep in memory
     private let maxEntries = 100
-    
+
     /// Whether to also print to console (useful for debugging)
     var printToConsole = true
+
+    /// Current verbosity level - controls which messages are logged
+    var verbosity: VerbosityLevel = .verbose
     
     // MARK: - Shared Instance
     
@@ -73,9 +88,12 @@ final class ProcessingLogger: ObservableObject {
     private init() {}
     
     // MARK: - Logging Methods
-    
-    /// Log a message with a category
-    func log(_ message: String, category: ProcessingLogEntry.LogCategory = .info) {
+
+    /// Log a message with a category and verbosity level
+    func log(_ message: String, category: ProcessingLogEntry.LogCategory = .info, level: VerbosityLevel = .normal) {
+        // Skip messages above current verbosity level
+        guard level <= verbosity else { return }
+
         let entry = ProcessingLogEntry(
             timestamp: Date(),
             message: message,
@@ -133,17 +151,53 @@ final class ProcessingLogger: ObservableObject {
     func error(_ message: String) {
         log(message, category: .error)
     }
+
+    // MARK: - Verbose Level Convenience Methods
+
+    func audioVerbose(_ message: String) {
+        log(message, category: .audio, level: .verbose)
+    }
+
+    func visualVerbose(_ message: String) {
+        log(message, category: .visual, level: .verbose)
+    }
+
+    func exportVerbose(_ message: String) {
+        log(message, category: .export, level: .verbose)
+    }
+
+    func pipelineVerbose(_ message: String) {
+        log(message, category: .pipeline, level: .verbose)
+    }
+
+    // MARK: - Debug Level Convenience Methods
+
+    func audioDebug(_ message: String) {
+        log(message, category: .audio, level: .debug)
+    }
+
+    func visualDebug(_ message: String) {
+        log(message, category: .visual, level: .debug)
+    }
+
+    func exportDebug(_ message: String) {
+        log(message, category: .export, level: .debug)
+    }
+
+    func pipelineDebug(_ message: String) {
+        log(message, category: .pipeline, level: .debug)
+    }
 }
 
 // MARK: - Async Logging Extension
 
 /// Extension for logging from async contexts (actors)
 extension ProcessingLogger {
-    
-    /// Log from an async context
-    nonisolated func logAsync(_ message: String, category: ProcessingLogEntry.LogCategory = .info) {
+
+    /// Log from an async context with verbosity level
+    nonisolated func logAsync(_ message: String, category: ProcessingLogEntry.LogCategory = .info, level: VerbosityLevel = .normal) {
         Task { @MainActor in
-            self.log(message, category: category)
+            self.log(message, category: category, level: level)
         }
     }
     
@@ -173,6 +227,42 @@ extension ProcessingLogger {
     
     nonisolated func errorAsync(_ message: String) {
         logAsync(message, category: .error)
+    }
+
+    // MARK: - Verbose Level Async Methods
+
+    nonisolated func audioVerboseAsync(_ message: String) {
+        logAsync(message, category: .audio, level: .verbose)
+    }
+
+    nonisolated func visualVerboseAsync(_ message: String) {
+        logAsync(message, category: .visual, level: .verbose)
+    }
+
+    nonisolated func exportVerboseAsync(_ message: String) {
+        logAsync(message, category: .export, level: .verbose)
+    }
+
+    nonisolated func pipelineVerboseAsync(_ message: String) {
+        logAsync(message, category: .pipeline, level: .verbose)
+    }
+
+    // MARK: - Debug Level Async Methods
+
+    nonisolated func audioDebugAsync(_ message: String) {
+        logAsync(message, category: .audio, level: .debug)
+    }
+
+    nonisolated func visualDebugAsync(_ message: String) {
+        logAsync(message, category: .visual, level: .debug)
+    }
+
+    nonisolated func exportDebugAsync(_ message: String) {
+        logAsync(message, category: .export, level: .debug)
+    }
+
+    nonisolated func pipelineDebugAsync(_ message: String) {
+        logAsync(message, category: .pipeline, level: .debug)
     }
 }
 
