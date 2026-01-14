@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-10)
 
 **Core value:** Accurate, on-device segment detection that identifies rallies and shots without missing good moments or including dead space, while processing efficiently enough for 1-hour videos.
-**Current focus:** Phase 3 — Debugging System Refactor
+**Current focus:** Phase 3 — Service Layer + UI Cleanup
 
 ## Current Position
 
-Phase: 3 of 6 (Service Layer + UI Cleanup)
-Plan: 2 of 4 in current phase
+Phase: 3 of 5 (Service Layer + UI Cleanup)
+Plan: 3 of 4 in current phase (03-03 skipped)
 Status: In progress
-Last activity: 2026-01-14 — Completed 03-02-PLAN.md
+Last activity: 2026-01-14 — Completed 03-04-PLAN.md
 
-Progress: ███████░ 78% (7 of 9 plans complete)
+Progress: ████████░ 89% (8 of 9 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 6.6 min
-- Total execution time: 0.77 hours
+- Total plans completed: 8
+- Average duration: 7.9 min
+- Total execution time: 1.05 hours
 
 **By Phase:**
 
@@ -29,11 +29,11 @@ Progress: ███████░ 78% (7 of 9 plans complete)
 |-------|-------|-------|----------|
 | 1. Test Infrastructure & Baseline | 3 | 16 min | 5.3 min |
 | 2. Core E2E Test Coverage | 2 | 13 min | 6.5 min |
-| 3. Service Layer + UI Cleanup | 2 | 17 min | 8.5 min |
+| 3. Service Layer + UI Cleanup | 3 | 35 min | 11.7 min |
 
 **Recent Trend:**
-- Last 5 plans: 5 min, 6.5 min, 6.5 min, 15 min, 2 min
-- Trend: ThumbnailService extraction was quick (simple pattern)
+- Last 5 plans: 6.5 min, 15 min, 2 min, 18 min
+- Trend: VideoLoaderService extraction with background loading enhancement
 
 ## Accumulated Context
 
@@ -59,6 +59,7 @@ Recent decisions affecting current work:
 | 03 | Actor-based ProcessingReportManager | Thread-safe debug report operations |
 | 03 | Optional dependency injection for debug manager | Backward compatibility: nil = no debug reporting |
 | 03 | Default parameter for ThumbnailService injection | Backward compatibility without changing existing call sites |
+| 03 | Background video loading | Dismiss creation flow immediately, load video in BackgroundProcessingManager |
 
 ### Deferred Issues
 
@@ -70,15 +71,15 @@ None
 
 ## Session Continuity
 
-Last session: 2026-01-14T01:46:47Z
-Stopped at: Completed 03-02-PLAN.md - ThumbnailService extraction
+Last session: 2026-01-14T02:20:00Z
+Stopped at: Completed 03-04-PLAN.md - VideoLoaderService extraction + background loading
 Resume file: None
 
 **Phase 3 Status:**
 - ✅ 03-01 complete: ProcessingReportManager extraction (VideoProcessingService 884→675 lines)
 - ✅ 03-02 complete: ThumbnailService extraction (BackgroundProcessingManager 238→212 lines)
-- ⏳ 03-03 pending: UI cleanup
-- ⏳ 03-04 pending: (see ROADMAP)
+- ⏳ 03-03 skipped: CompletedProjectSheet ViewModel extraction (can be done later)
+- ✅ 03-04 complete: VideoLoaderService extraction (HighlightCreationFlow 767→487 lines) + background loading
 
 **Next Steps:**
-1. Execute 03-03-PLAN.md
+1. Execute 03-03-PLAN.md OR proceed to Phase 4
