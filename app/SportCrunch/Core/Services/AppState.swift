@@ -52,8 +52,15 @@ final class AppState: ObservableObject {
     private let onboardingKey = "com.sportcrunch.hasCompletedOnboarding"
     private let developerModeKey = "com.sportcrunch.developerModeEnabled"
     
+    // MARK: - Test Mode Detection
+
+    /// Check if running in UI test mode with mock projects
+    static var shouldInjectMockProjects: Bool {
+        ProcessInfo.processInfo.arguments.contains("-injectMockProjects")
+    }
+
     // MARK: - Initialization
-    
+
     init(
         videoProcessingService: VideoProcessingServiceProtocol = RealVideoProcessingService(),
         projectStorageService: ProjectStorageServiceProtocol = UserDefaultsProjectStorageService()
@@ -62,9 +69,48 @@ final class AppState: ObservableObject {
         self.projectStorageService = projectStorageService
         self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: onboardingKey)
         self.developerModeEnabled = UserDefaults.standard.bool(forKey: developerModeKey)
-        
+
         // Apply developer mode setting to debug report service on init
         updateDebugReportService()
+
+        // Inject mock projects for UI testing
+        if Self.shouldInjectMockProjects {
+            injectMockProjectsForTesting()
+        }
+    }
+
+    // MARK: - Test Helpers
+
+    /// Injects mock completed projects for UI testing
+    private func injectMockProjectsForTesting() {
+        // Create a completed project with a test highlight video
+        var mockProject = Project.sampleCompleted
+
+        // Copy the sample video to the Highlights directory for testing
+        let highlightsDir = Project.highlightsDirectory
+        try? FileManager.default.createDirectory(at: highlightsDir, withIntermediateDirectories: true)
+
+        // Use the bundle's sample video as a fake highlight
+        if let sampleURL = Bundle.main.url(forResource: "sample", withExtension: "mp4") {
+            let highlightFilename = "test_highlight_\(mockProject.id.uuidString).mp4"
+            let destURL = highlightsDir.appendingPathComponent(highlightFilename)
+
+            // Remove existing file if present
+            try? FileManager.default.removeItem(at: destURL)
+            try? FileManager.default.copyItem(at: sampleURL, to: destURL)
+
+            mockProject.highlightVideoFilename = highlightFilename
+        }
+
+        // Add some starred segments for testing
+        mockProject.segments = [
+            ActionSegment(startTime: 0, endTime: 2, isStarred: true),
+            ActionSegment(startTime: 2, endTime: 4, isStarred: false),
+            ActionSegment(startTime: 4, endTime: 6, isStarred: true),
+        ]
+
+        // Save the mock project
+        projectStorageService.saveProject(mockProject)
     }
     
     // MARK: - Actions

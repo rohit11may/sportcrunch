@@ -7,6 +7,20 @@
 
 import XCTest
 
+// MARK: - XCUIElement Extensions
+
+extension XCUIElement {
+    /// Waits for the element to no longer exist in the hierarchy
+    /// - Parameter timeout: Maximum time to wait
+    /// - Returns: true if the element no longer exists within the timeout
+    func waitForNonExistence(timeout: TimeInterval) -> Bool {
+        let predicate = NSPredicate(format: "exists == false")
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
+        let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
+        return result == .completed
+    }
+}
+
 /// Base protocol for screen objects providing semantic element access
 protocol AppScreen {
     var app: XCUIApplication { get }

@@ -30,6 +30,16 @@
 		F91A921C2F1552B000688974 /* SportCrunch.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = SportCrunch.xctestplan; path = ../SportCrunch.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F91A939C2F16A20600688974 /* Exceptions for "SportCrunchUITests" folder in "SportCrunch" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Samples/sample.mp4,
+			);
+			target = 308DBA302EFEA3A4001F0B3F /* SportCrunch */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		308DBA332EFEA3A4001F0B3F /* SportCrunch */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -38,6 +48,9 @@
 		};
 		308DBA4B2EFEA3A6001F0B3F /* SportCrunchUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F91A939C2F16A20600688974 /* Exceptions for "SportCrunchUITests" folder in "SportCrunch" target */,
+			);
 			path = SportCrunchUITests;
 			sourceTree = "<group>";
 		};

@@ -50,6 +50,7 @@ struct HighlightCreationFlow: View {
                     TennisModeSelectionView(viewModel: viewModel)
                 }
             }
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.Creation.flowContainer)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -116,7 +117,7 @@ struct HighlightCreationFlow: View {
 @Observable
 final class HighlightCreationViewModel {
     // MARK: - Observable State
-    
+
     var currentStep: CreationStep = .selectVideo
     var selectedVideoItem: PhotosPickerItem?
     var selectedVideoURL: URL?
@@ -129,9 +130,14 @@ final class HighlightCreationViewModel {
     var error: ProcessingError?
     var showError = false
     var shouldDismiss = false
-    
+
     /// Whether background processing was started (flow can be dismissed)
     var isBackgroundProcessing = false
+
+    /// Check if running in UI test mode
+    var isTestingVideoFlow: Bool {
+        ProcessInfo.processInfo.arguments.contains("-isTestingVideoFlow")
+    }
     
     // MARK: - Services
     
@@ -209,19 +215,60 @@ final class HighlightCreationViewModel {
     }
     
     // MARK: - Video Selection
-    
+
     /// Stores the video reference, loads a quick thumbnail, and moves forward
     func selectVideo(_ item: PhotosPickerItem) {
         selectedVideoItem = item
-        
+
         // Move to sport selection immediately
         withAnimation(.spring(response: 0.4)) {
             currentStep = .selectSport
         }
-        
+
         // Load thumbnail in background for sport selection view
         Task {
             await loadQuickThumbnail(for: item)
+        }
+    }
+
+    /// Injects a test video from the path provided by UI tests via environment variable
+    func injectTestVideo() {
+        guard isTestingVideoFlow else { return }
+
+        // The test video path is provided by the UI test via launch environment
+        guard let testVideoPath = ProcessInfo.processInfo.environment["TEST_VIDEO_PATH"] else {
+            print("SportCrunch: TEST_VIDEO_PATH environment variable not set")
+            return
+        }
+
+        let sampleURL = URL(fileURLWithPath: testVideoPath)
+        guard FileManager.default.fileExists(atPath: testVideoPath) else {
+            print("SportCrunch: Test video not found at path: \(testVideoPath)")
+            return
+        }
+
+        print("SportCrunch: Injecting test video from: \(sampleURL)")
+
+        // Copy to temp directory to simulate a real video selection
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("mp4")
+
+        do {
+            try FileManager.default.copyItem(at: sampleURL, to: tempURL)
+            selectedVideoURL = tempURL
+
+            // Move to sport selection immediately
+            withAnimation(.spring(response: 0.4)) {
+                currentStep = .selectSport
+            }
+
+            // Load video metadata in background
+            Task {
+                try? await loadVideoMetadata(from: tempURL)
+            }
+        } catch {
+            print("SportCrunch: Failed to copy test video: \(error)")
         }
     }
     
@@ -566,13 +613,17 @@ final class HighlightCreationViewModel {
         // Start the setup and queue background task
         Task { [weak self] in
             guard let self else { return }
-            
+
             do {
-                // Step 1: Load the video file from Photos library
-                let videoURL = try await self.loadVideoFile()
-                
-                await MainActor.run {
-                    self.selectedVideoURL = videoURL
+                // Step 1: Load the video file (use existing URL if already set, e.g., from test injection)
+                let videoURL: URL
+                if let existingURL = self.selectedVideoURL {
+                    videoURL = existingURL
+                } else {
+                    videoURL = try await self.loadVideoFile()
+                    await MainActor.run {
+                        self.selectedVideoURL = videoURL
+                    }
                 }
                 
                 // Step 2: Load video metadata (duration, thumbnail)

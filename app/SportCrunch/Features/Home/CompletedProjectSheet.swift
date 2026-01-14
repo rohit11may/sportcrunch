@@ -613,6 +613,7 @@ struct CompletedProjectExportSheet: View {
             .padding(.horizontal, Spacing.lg)
             .padding(.vertical, Spacing.md)
             .background(Color.scBackground)
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.Export.sheet)
             .navigationTitle("Export")
             .navigationBarTitleDisplayMode(.inline)

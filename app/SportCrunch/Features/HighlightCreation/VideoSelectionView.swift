@@ -33,29 +33,48 @@ struct VideoSelectionView: View {
             }
             
             Spacer()
-            
-            // Select button
-            PhotosPicker(
-                selection: $viewModel.selectedVideoItem,
-                matching: .videos,
-                photoLibrary: .shared()
-            ) {
-                HStack(spacing: Spacing.xs) {
-                    Image(systemName: "photo.on.rectangle")
-                        .font(.system(size: 18, weight: .semibold))
-                    Text("Choose from Library")
-                        .font(AppFont.bodyBold())
+
+            // Select button - show debug button in test mode, PhotosPicker otherwise
+            if viewModel.isTestingVideoFlow {
+                Button {
+                    viewModel.injectTestVideo()
+                } label: {
+                    HStack(spacing: Spacing.xs) {
+                        Image(systemName: "play.rectangle.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                        Text("Use Test Video")
+                            .font(AppFont.bodyBold())
+                    }
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(AppGradient.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
                 }
-                .foregroundStyle(.black)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(AppGradient.primary)
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
-            }
-            .accessibilityIdentifier(AccessibilityID.Creation.videoLibraryButton)
-            .onChange(of: viewModel.selectedVideoItem) { _, newItem in
-                if let item = newItem {
-                    viewModel.selectVideo(item)
+                .accessibilityIdentifier(AccessibilityID.Creation.videoLibraryButton)
+            } else {
+                PhotosPicker(
+                    selection: $viewModel.selectedVideoItem,
+                    matching: .videos,
+                    photoLibrary: .shared()
+                ) {
+                    HStack(spacing: Spacing.xs) {
+                        Image(systemName: "photo.on.rectangle")
+                            .font(.system(size: 18, weight: .semibold))
+                        Text("Choose from Library")
+                            .font(AppFont.bodyBold())
+                    }
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(AppGradient.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+                }
+                .accessibilityIdentifier(AccessibilityID.Creation.videoLibraryButton)
+                .onChange(of: viewModel.selectedVideoItem) { _, newItem in
+                    if let item = newItem {
+                        viewModel.selectVideo(item)
+                    }
                 }
             }
             
