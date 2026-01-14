@@ -18,6 +18,13 @@
         "identifier" : "308DBA3D2EFEA3A6001F0B3F",
         "name" : "SportCrunchTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:SportCrunch.xcodeproj",
+        "identifier" : "308DBA472EFEA3A6001F0B3F",
+        "name" : "SportCrunchUITests"
+      }
     }
   ],
   "version" : 1
