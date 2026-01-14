@@ -138,8 +138,9 @@ final class AppState: ObservableObject {
     // MARK: - Developer Mode
     
     private func updateDebugReportService() {
-        Task {
-            await DebugReportService.shared.setEnabled(developerModeEnabled)
+        Task { [weak self] in
+            guard let self else { return }
+            await DebugReportService.shared.setEnabled(self.developerModeEnabled)
         }
     }
 }

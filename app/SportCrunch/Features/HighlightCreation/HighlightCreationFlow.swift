@@ -226,8 +226,9 @@ final class HighlightCreationViewModel {
         }
 
         // Load thumbnail in background for sport selection view
-        Task {
-            await loadQuickThumbnail(for: item)
+        Task { [weak self] in
+            guard let self else { return }
+            await self.loadQuickThumbnail(for: item)
         }
     }
 
@@ -264,8 +265,9 @@ final class HighlightCreationViewModel {
             }
 
             // Load video metadata in background
-            Task {
-                try? await loadVideoMetadata(from: tempURL)
+            Task { [weak self] in
+                guard let self else { return }
+                try? await self.loadVideoMetadata(from: tempURL)
             }
         } catch {
             print("SportCrunch: Failed to copy test video: \(error)")
@@ -431,7 +433,11 @@ final class HighlightCreationViewModel {
                     }
                     
                     // Fall back to PHImageManager on error
-                    Task {
+                    Task { [weak self] in
+                        guard let self else {
+                            continuation.resume(throwing: ProcessingError.cancelled)
+                            return
+                        }
                         do {
                             let url = try await self.loadVideoViaPHImageManager(
                                 asset: asset,
@@ -501,7 +507,11 @@ final class HighlightCreationViewModel {
                     Task { @MainActor in
                         logger.pipeline("Video requires export (slow-mo/edited), using Transferable...")
                     }
-                    Task {
+                    Task { [weak self] in
+                        guard let self else {
+                            continuation.resume(throwing: ProcessingError.cancelled)
+                            return
+                        }
                         do {
                             let url = try await self.loadVideoViaTransferable(item: item, logger: logger)
                             continuation.resume(returning: url)
@@ -512,7 +522,11 @@ final class HighlightCreationViewModel {
                 } else {
                     // Unexpected type - fall back to Transferable
                     print("SportCrunch: Unexpected AVAsset type: \(type(of: avAsset)), falling back to Transferable...")
-                    Task {
+                    Task { [weak self] in
+                        guard let self else {
+                            continuation.resume(throwing: ProcessingError.cancelled)
+                            return
+                        }
                         do {
                             let url = try await self.loadVideoViaTransferable(item: item, logger: logger)
                             continuation.resume(returning: url)
