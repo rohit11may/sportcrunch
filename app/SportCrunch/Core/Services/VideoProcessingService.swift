@@ -207,23 +207,32 @@ final class DummyVideoProcessingService: VideoProcessingServiceProtocol {
 /// Real implementation using Accelerate and Vision frameworks.
 /// Orchestrates AudioAnalyzer, VisualValidator, and VideoExporter.
 final class RealVideoProcessingService: VideoProcessingServiceProtocol {
-    
+
     // MARK: - Properties
-    
+
     private let statusSubject = CurrentValueSubject<ProcessingStatus, Never>(.pending)
     private let progressSubject = CurrentValueSubject<Double, Never>(0.0)
     private var processingTask: Task<ProcessingResult, Error>?
     private var isCancelled = false
-    
+
     // Components
     private let audioAnalyzer = AudioAnalyzer()
     private let visualValidator = VisualValidator()
     private let videoExporter = VideoExporter()
-    
+
+    // Debug reporting
+    private let reportManager: ProcessingReportManagerProtocol?
+
+    // MARK: - Initialization
+
+    init(reportManager: ProcessingReportManagerProtocol? = nil) {
+        self.reportManager = reportManager
+    }
+
     var statusPublisher: AnyPublisher<ProcessingStatus, Never> {
         statusSubject.eraseToAnyPublisher()
     }
-    
+
     var progressPublisher: AnyPublisher<Double, Never> {
         progressSubject.eraseToAnyPublisher()
     }
@@ -234,11 +243,13 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         isCancelled = false
         let pipelineStart = Date()
         let logger = ProcessingLogger.shared
-        let debugReport = DebugReportService.shared
-        
-        // Start debug report for this processing run
-        await debugReport.startReport(inputFileURL: sourceURL, sport: sport, sportMode: sportMode)
-        
+
+        // Start debug report for this processing run (if reporting enabled)
+        var debugBuilder: DebugReportBuilder? = nil
+        if let reportManager = reportManager {
+            debugBuilder = await reportManager.startReport(for: nil, sourceURL: sourceURL, sport: sport, sportMode: sportMode)
+        }
+
         // Track timing for each phase
         var audioExtractionTime: Double = 0
         var visualValidationTime: Double = 0
@@ -257,7 +268,9 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         print("⚙️ [VideoProcessor] Source: \(sourceURL.lastPathComponent)")
         print("⚙️ [VideoProcessor] Path: \(sourceURL.path)")
         print("⚙️ [VideoProcessor] Preset: padding=\(preset.paddingPreSec)s/\(preset.paddingPostSec)s, maxGap=\(preset.clusterMaxGapSec)s")
-        print("⚙️ [VideoProcessor] 📊 Debug reporting: ENABLED")
+        if reportManager != nil {
+            print("⚙️ [VideoProcessor] 📊 Debug reporting: ENABLED")
+        }
         print("")
         
         await MainActor.run {
@@ -270,7 +283,9 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             await MainActor.run {
                 logger.error("Video file not found")
             }
-            await debugReport.log(level: "error", component: "VideoProcessor", message: "File does not exist", data: ["path": sourceURL.path])
+            if let reportManager = reportManager {
+                await reportManager.log(level: "error", component: "VideoProcessor", message: "File does not exist", data: ["path": sourceURL.path])
+            }
             throw ProcessingError.invalidVideoURL
         }
         
@@ -306,26 +321,17 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             await MainActor.run {
                 logger.error("Audio analysis failed: \(error.localizedDescription)")
             }
-            await debugReport.log(level: "error", component: "AudioAnalyzer", message: "Audio analysis failed", data: ["error": error.localizedDescription])
+            if let reportManager = reportManager {
+                await reportManager.log(level: "error", component: "AudioAnalyzer", message: "Audio analysis failed", data: ["error": error.localizedDescription])
+            }
             throw ProcessingError.audioExtractionFailed
         }
         audioExtractionTime = Date().timeIntervalSince(audioPhaseStart)
-        
+
         // Record audio analysis debug data
-        if let debugData = audioResult.debugData {
-            let audioDetails = debugReport.createAudioAnalysisDetails(
-                rawSamples: debugData.rawSamples,
-                filteredSamples: debugData.filteredSamples,
-                onsetStrength: debugData.onsetStrength,
-                thresholds: debugData.thresholds,
-                peakIndices: debugData.peakIndices,
-                peakTimes: audioResult.peakTimes,
-                clusters: debugData.clusters,
-                candidateIntervals: audioResult.candidateIntervals,
-                duration: audioResult.duration,
-                framesPerSecond: debugData.framesPerSecond
-            )
-            await debugReport.recordAudioAnalysis(audioDetails)
+        if let reportManager = reportManager, var builder = debugBuilder {
+            await reportManager.recordAudioAnalysis(audioResult, to: &builder)
+            debugBuilder = builder
         }
         
         guard !isCancelled else {
@@ -343,7 +349,9 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             await MainActor.run {
                 logger.error("No action detected in audio")
             }
-            await debugReport.log(level: "error", component: "VideoProcessor", message: "No action detected in audio", data: nil)
+            if let reportManager = reportManager {
+                await reportManager.log(level: "error", component: "VideoProcessor", message: "No action detected in audio", data: nil)
+            }
             throw ProcessingError.noActionDetected
         }
         
@@ -399,21 +407,23 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
                     }
                 )
                 visualValidationTime = Date().timeIntervalSince(visualPhaseStart)
-                
+
                 // Record detailed visual validation debug data
-                await recordVisualValidationDebugData(
-                    validations: validations,
-                    preset: preset,
-                    debugReport: debugReport
-                )
-                
+                if let reportManager = reportManager, var builder = debugBuilder {
+                    let visualResult = VisualValidationResult(validations: validations, preset: preset)
+                    await reportManager.recordVisualValidation(visualResult, to: &builder)
+                    debugBuilder = builder
+                }
+
             } catch {
                 print("⚙️ [VideoProcessor] ⚠️ Visual validation failed, falling back to audio-only")
                 print("⚙️ [VideoProcessor] Error: \(error.localizedDescription)")
                 await MainActor.run {
                     logger.warning("Visual validation unavailable, using audio-only")
                 }
-                await debugReport.log(level: "warning", component: "VisualValidator", message: "Visual validation failed, using audio-only", data: ["error": error.localizedDescription])
+                if let reportManager = reportManager {
+                    await reportManager.log(level: "warning", component: "VisualValidator", message: "Visual validation failed, using audio-only", data: ["error": error.localizedDescription])
+                }
                 
                 // If visual validation fails, fall back to using audio-only results
                 let fallbackSegments = audioResult.candidateIntervals.map { interval in
@@ -432,7 +442,8 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
                     pipelineStart: pipelineStart,
                     originalFileSize: originalFileSize,
                     audioExtractionTime: audioExtractionTime,
-                    visualValidationTime: 0
+                    visualValidationTime: 0,
+                    debugBuilder: &debugBuilder
                 )
             }
             
@@ -502,12 +513,13 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             pipelineStart: pipelineStart,
             originalFileSize: originalFileSize,
             audioExtractionTime: audioExtractionTime,
-            visualValidationTime: visualValidationTime
+            visualValidationTime: visualValidationTime,
+            debugBuilder: &debugBuilder
         )
     }
     
     // MARK: - Export Helper
-    
+
     private func exportSegments(
         sourceURL: URL,
         intervals: [(start: TimeInterval, end: TimeInterval)],
@@ -515,10 +527,10 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         pipelineStart: Date,
         originalFileSize: Int64,
         audioExtractionTime: Double = 0,
-        visualValidationTime: Double = 0
+        visualValidationTime: Double = 0,
+        debugBuilder: inout DebugReportBuilder?
     ) async throws -> ProcessingResult {
         let logger = ProcessingLogger.shared
-        let debugReport = DebugReportService.shared
         
         print("⚙️ [VideoProcessor] ┌─────────────────────────────────────────┐")
         print("⚙️ [VideoProcessor] │  PHASE 3/3: VIDEO EXPORT                │")
@@ -563,7 +575,9 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             await MainActor.run {
                 logger.error("Export failed: \(error.localizedDescription)")
             }
-            await debugReport.log(level: "error", component: "VideoExporter", message: "Export failed", data: ["error": error.localizedDescription])
+            if let reportManager = reportManager {
+                await reportManager.log(level: "error", component: "VideoExporter", message: "Export failed", data: ["error": error.localizedDescription])
+            }
             throw ProcessingError.exportFailed
         }
         let exportTime = Date().timeIntervalSince(exportPhaseStart)
@@ -607,151 +621,28 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             let mb = Double(size) / 1024 / 1024
             print("⚙️ [VideoProcessor]    • Highlight size: \(String(format: "%.1f", mb)) MB")
         }
-        
-        // Record export details to debug report - convert from ExportDebugData to ExportDetails
-        let exportDetails: ExportDetails
-        if let debugData = exportResult.debugData {
-            // Convert debug data to the report format
-            let sourceProps: SourceVideoProperties? = {
-                let src = debugData.sourceVideoProperties
-                return SourceVideoProperties(
-                    duration: src.duration,
-                    durationCMTime: src.durationCMTime.debugString,
-                    nominalFrameRate: src.nominalFrameRate,
-                    minFrameDuration: src.minFrameDuration.debugString,
-                    naturalTimeScale: src.naturalTimeScale,
-                    videoTrackCount: src.videoTrackCount,
-                    audioTrackCount: src.audioTrackCount,
-                    naturalSize: "\(Int(src.naturalSize.width))x\(Int(src.naturalSize.height))",
-                    preferredTransform: "a=\(src.preferredTransform.a),b=\(src.preferredTransform.b),c=\(src.preferredTransform.c),d=\(src.preferredTransform.d)",
-                    isVideoPortrait: src.isVideoPortrait,
-                    colorPrimaries: src.colorPrimaries,
-                    transferFunction: src.transferFunction,
-                    ycbcrMatrix: src.ycbcrMatrix,
-                    videoCodecType: src.videoCodecType,
-                    videoCodecName: src.videoCodecType,
-                    hasVariableFrameRate: src.hasVariableFrameRate
-                )
-            }()
-            
-            let compConfig: CompositionConfig? = {
-                let cfg = debugData.compositionConfig
-                return CompositionConfig(
-                    exportPreset: cfg.exportPreset,
-                    outputFileType: cfg.outputFileType,
-                    shouldOptimizeForNetworkUse: cfg.shouldOptimizeForNetworkUse,
-                    usedVideoComposition: cfg.usedVideoComposition,
-                    renderSize: cfg.renderSize != nil ? "\(Int(cfg.renderSize!.width))x\(Int(cfg.renderSize!.height))" : nil,
-                    frameDuration: cfg.frameDuration?.debugString,
-                    frameRate: cfg.frameRate,
-                    colorPrimariesApplied: cfg.colorPrimariesApplied,
-                    transferFunctionApplied: cfg.transferFunctionApplied,
-                    ycbcrMatrixApplied: cfg.ycbcrMatrixApplied,
-                    appliedTransform: cfg.appliedTransform != nil ? "a=\(cfg.appliedTransform!.a),b=\(cfg.appliedTransform!.b),c=\(cfg.appliedTransform!.c),d=\(cfg.appliedTransform!.d)" : nil
-                )
-            }()
-            
-            let segmentTimings: [SegmentTimingDetail]? = debugData.segmentTimingDetails.map { detail in
-                SegmentTimingDetail(
-                    segmentIndex: detail.segmentIndex,
-                    requestedStartTime: detail.requestedStartTime,
-                    requestedEndTime: detail.requestedEndTime,
-                    requestedDuration: detail.requestedDuration,
-                    startCMTime: detail.startCMTime.debugString,
-                    endCMTime: detail.endCMTime.debugString,
-                    durationCMTime: detail.durationCMTime.debugString,
-                    insertionPosition: detail.insertionPosition.debugString,
-                    insertedSuccessfully: detail.insertedSuccessfully,
-                    errorMessage: detail.errorMessage,
-                    timeRangeValid: detail.timeRangeValid,
-                    clampedToVideoBounds: detail.clampedToVideoBounds
-                )
-            }
-            
-            let outputVerification: OutputVideoVerification? = {
-                guard let ver = debugData.outputVerification else { return nil }
-                return OutputVideoVerification(
-                    duration: ver.duration,
-                    durationCMTime: ver.durationCMTime.debugString,
-                    expectedDuration: ver.expectedDuration,
-                    durationMismatch: ver.durationMismatch,
-                    durationMismatchPercent: ver.durationMismatchPercent,
-                    nominalFrameRate: ver.nominalFrameRate,
-                    frameRateMismatch: ver.frameRateMismatch,
-                    sourceFrameRate: ver.sourceFrameRate,
-                    naturalSize: ver.naturalSize != nil ? "\(Int(ver.naturalSize!.width))x\(Int(ver.naturalSize!.height))" : nil,
-                    videoCodecType: ver.videoCodecType,
-                    timingAccurate: ver.timingAccurate,
-                    timingIssueDescription: ver.timingIssueDescription
-                )
-            }()
-            
-            exportDetails = debugReport.createExportDetails(
-                outputFileName: exportResult.outputURL.lastPathComponent,
-                outputFilePath: exportResult.outputURL.path,
-                outputFileSizeBytes: highlightFileSize,
-                outputDuration: exportResult.outputDuration,
-                segmentsExported: segments.count,
+
+        // Record debug report data
+        if let reportManager = reportManager, var builder = debugBuilder {
+            // Record export details
+            await reportManager.recordExport(exportResult, originalFileSize: originalFileSize, to: &builder)
+
+            // Record timing information
+            await reportManager.recordTiming(
+                totalTime: totalElapsed,
+                audioTime: audioExtractionTime,
+                visualTime: visualValidationTime,
+                exportTime: exportTime,
+                to: &builder
+            )
+
+            // Finalize report
+            try? await reportManager.finalizeReport(
+                builder,
+                segments: segments,
                 inputDuration: exportResult.inputDuration,
-                sourceVideoProperties: sourceProps,
-                compositionConfig: compConfig,
-                segmentTimingDetails: segmentTimings,
-                outputVideoVerification: outputVerification
+                outputDuration: exportResult.outputDuration
             )
-        } else {
-            // No debug data - use basic export details
-            exportDetails = ExportDetails(
-                outputFileName: exportResult.outputURL.lastPathComponent,
-                outputFilePath: exportResult.outputURL.path,
-                outputFileSizeBytes: highlightFileSize,
-                outputFileSizeMB: Double(highlightFileSize) / 1024 / 1024,
-                outputDuration: exportResult.outputDuration,
-                segmentsExported: segments.count,
-                compressionRatio: exportResult.compressionRatio,
-                sourceVideoProperties: nil,
-                compositionConfig: nil,
-                segmentTimingDetails: nil,
-                outputVideoVerification: nil
-            )
-        }
-        await debugReport.recordExport(exportDetails)
-        
-        // Record timing information
-        let timing = TimingInfo(
-            totalProcessingTime: totalElapsed,
-            audioExtractionTime: audioExtractionTime,
-            audioFilteringTime: 0,  // Included in audioExtractionTime
-            onsetDetectionTime: 0,  // Included in audioExtractionTime
-            peakDetectionTime: 0,   // Included in audioExtractionTime
-            clusteringTime: 0,      // Included in audioExtractionTime
-            visualValidationTime: visualValidationTime,
-            exportTime: exportTime
-        )
-        await debugReport.recordTiming(timing)
-        
-        // Record final results
-        let processingResults = ProcessingResults(
-            success: true,
-            errorMessage: nil,
-            inputDuration: exportResult.inputDuration,
-            outputDuration: exportResult.outputDuration,
-            reductionPercent: exportResult.compressionRatio,
-            segmentCount: segments.count,
-            segments: segments.enumerated().map { index, segment in
-                SegmentResult(
-                    index: index,
-                    startTime: segment.startTime,
-                    endTime: segment.endTime,
-                    duration: segment.duration,
-                    confidence: segment.confidence
-                )
-            }
-        )
-        await debugReport.recordResults(processingResults)
-        
-        // Finalize and save the debug report
-        if let reportURL = try? await debugReport.finalizeReport() {
-            print("📊 [VideoProcessor] Debug report saved: \(reportURL.lastPathComponent)")
         }
         
         return ProcessingResult(
@@ -772,106 +663,6 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
     }
     
     // MARK: - Debug Data Recording
-    
-    /// Record detailed visual validation debug data to the debug report.
-    private func recordVisualValidationDebugData(
-        validations: [SegmentValidation],
-        preset: AnalysisPreset,
-        debugReport: DebugReportService
-    ) async {
-        // Build frame processing info
-        let frameProcessingInfo = FrameProcessingInfo(
-            thumbnailWidth: preset.videoThumbSize.width,
-            thumbnailHeight: preset.videoThumbSize.height,
-            pixelCount: preset.videoThumbSize.width * preset.videoThumbSize.height,
-            frameStride: preset.videoSampleStride,
-            motionPixelThreshold: preset.motionPixelThreshold,
-            motionAreaThreshold: preset.motionAreaThreshold,
-            sourceVideoFPS: 0, // Will be updated from actual video
-            sourceVideoResolution: "unknown"
-        )
-        
-        // Build segment validation details from the debug data
-        var segmentDetails: [SegmentValidationDetail] = []
-        var allMotionScores: [Double] = []
-        
-        for (index, validation) in validations.enumerated() {
-            // Collect all motion scores for aggregate stats
-            if let debugData = validation.debugData {
-                allMotionScores.append(contentsOf: debugData.allFrameScores)
-                
-                // Convert frame pair debug data to the report format
-                var framePairDetails: [FramePairDetail]? = nil
-                if !debugData.framePairDetails.isEmpty {
-                    framePairDetails = debugData.framePairDetails.map { pair in
-                        FramePairDetail(
-                            pairIndex: pair.pairIndex,
-                            frameATime: pair.frameATime,
-                            frameBTime: pair.frameBTime,
-                            frameAWidth: pair.frameAWidth,
-                            frameAHeight: pair.frameAHeight,
-                            frameBWidth: pair.frameBWidth,
-                            frameBHeight: pair.frameBHeight,
-                            frameAGrayscaleMean: pair.frameAGrayscaleMean,
-                            frameAGrayscaleStdDev: pair.frameAGrayscaleStdDev,
-                            frameBGrayscaleMean: pair.frameBGrayscaleMean,
-                            frameBGrayscaleStdDev: pair.frameBGrayscaleStdDev,
-                            rawDiffSum: pair.rawDiffSum,
-                            rawDiffMean: pair.rawDiffMean,
-                            rawDiffMax: pair.rawDiffMax,
-                            pixelsAboveThreshold: pair.pixelsAboveThreshold,
-                            motionScore: pair.motionScore
-                        )
-                    }
-                }
-                
-                let detail = debugReport.createSegmentValidationDetail(
-                    segmentIndex: index,
-                    startTime: validation.start,
-                    endTime: validation.end,
-                    framesRequested: debugData.framesRequested,
-                    framesExtracted: debugData.framesExtracted,
-                    motionScore: validation.motionScore,
-                    threshold: preset.motionAreaThreshold,
-                    isValid: validation.isValid,
-                    usedEarlyExit: debugData.usedEarlyExit,
-                    framesProcessedBeforeDecision: debugData.framesProcessedBeforeDecision,
-                    allFrameScores: debugData.allFrameScores,
-                    framePairDetails: framePairDetails,
-                    extractionErrors: debugData.extractionErrors.isEmpty ? nil : debugData.extractionErrors
-                )
-                segmentDetails.append(detail)
-            } else {
-                // No debug data available - create minimal entry
-                let detail = debugReport.createSegmentValidationDetail(
-                    segmentIndex: index,
-                    startTime: validation.start,
-                    endTime: validation.end,
-                    framesRequested: 0,
-                    framesExtracted: 0,
-                    motionScore: validation.motionScore,
-                    threshold: preset.motionAreaThreshold,
-                    isValid: validation.isValid,
-                    usedEarlyExit: false,
-                    framesProcessedBeforeDecision: 0,
-                    allFrameScores: [],
-                    framePairDetails: nil,
-                    extractionErrors: nil
-                )
-                segmentDetails.append(detail)
-            }
-        }
-        
-        // Create and record the visual validation details
-        let visualDetails = debugReport.createVisualValidationDetails(
-            segmentResults: segmentDetails,
-            frameProcessingInfo: frameProcessingInfo,
-            allMotionScores: allMotionScores
-        )
-        
-        await debugReport.recordVisualValidation(visualDetails)
-    }
-    
     // MARK: - Cancellation
     
     func cancel() {

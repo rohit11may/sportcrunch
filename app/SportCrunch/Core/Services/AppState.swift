@@ -62,13 +62,24 @@ final class AppState: ObservableObject {
     // MARK: - Initialization
 
     init(
-        videoProcessingService: VideoProcessingServiceProtocol = RealVideoProcessingService(),
+        videoProcessingService: VideoProcessingServiceProtocol? = nil,
         projectStorageService: ProjectStorageServiceProtocol = UserDefaultsProjectStorageService()
     ) {
-        self.videoProcessingService = videoProcessingService
+        // Initialize stored properties first
         self.projectStorageService = projectStorageService
         self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: onboardingKey)
-        self.developerModeEnabled = UserDefaults.standard.bool(forKey: developerModeKey)
+
+        // Load developer mode setting
+        let developerMode = UserDefaults.standard.bool(forKey: developerModeKey)
+        self.developerModeEnabled = developerMode
+
+        // Create video processing service with report manager if in developer mode
+        if let customService = videoProcessingService {
+            self.videoProcessingService = customService
+        } else {
+            let reportManager = developerMode ? RealProcessingReportManager() : nil
+            self.videoProcessingService = RealVideoProcessingService(reportManager: reportManager)
+        }
 
         // Apply developer mode setting to debug report service on init
         updateDebugReportService()
