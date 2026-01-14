@@ -172,41 +172,42 @@ actor VisualValidator {
         )
         
         let startTime = Date()
-        print("👁️ [VisualValidator] ═══════════════════════════════════════════")
-        print("👁️ [VisualValidator] Starting visual validation for \(sport.displayName)")
-        print("👁️ [VisualValidator] Source: \(videoURL.lastPathComponent)")
-        print("👁️ [VisualValidator] Segments to validate: \(candidates.count)")
-        print("👁️ [VisualValidator] ───────────────────────────────────────────")
-        print("👁️ [VisualValidator] Preset Configuration:")
-        print("👁️ [VisualValidator]   • Thumbnail size: \(preset.videoThumbSize.width)x\(preset.videoThumbSize.height)")
-        print("👁️ [VisualValidator]   • Frame stride: every \(preset.videoSampleStride) frames")
-        print("👁️ [VisualValidator]   • Pixel threshold: \(preset.motionPixelThreshold)")
-        print("👁️ [VisualValidator]   • Area threshold: \(Int(preset.motionAreaThreshold)) pixels")
-        print("👁️ [VisualValidator]   • Batch size: \(segmentBatchSize) segments")
-        print("👁️ [VisualValidator] ───────────────────────────────────────────")
-        print("👁️ [VisualValidator] 🚀 OPTIMIZED: Batched processing + controlled parallelism")
-        
+
+        // Normal level: High-level progress
         logger.visualAsync("Starting motion validation for \(candidates.count) segments...")
+
+        // Verbose level: Configuration details
+        logger.visualVerboseAsync("═══════════════════════════════════════════")
+        logger.visualVerboseAsync("Source: \(videoURL.lastPathComponent)")
+        logger.visualVerboseAsync("Segments to validate: \(candidates.count)")
+        logger.visualVerboseAsync("───────────────────────────────────────────")
+        logger.visualVerboseAsync("Preset Configuration:")
+        logger.visualVerboseAsync("  • Thumbnail size: \(preset.videoThumbSize.width)x\(preset.videoThumbSize.height)")
+        logger.visualVerboseAsync("  • Frame stride: every \(preset.videoSampleStride) frames")
+        logger.visualVerboseAsync("  • Pixel threshold: \(preset.motionPixelThreshold)")
+        logger.visualVerboseAsync("  • Area threshold: \(Int(preset.motionAreaThreshold)) pixels")
+        logger.visualVerboseAsync("  • Batch size: \(segmentBatchSize) segments")
+        logger.visualVerboseAsync("───────────────────────────────────────────")
+        logger.visualVerboseAsync("🚀 OPTIMIZED: Batched processing + controlled parallelism")
         
         let asset = AVURLAsset(url: videoURL)
         
         // Verify video track exists
         guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
-            print("👁️ [VisualValidator] ❌ ERROR: No video track found")
             logger.errorAsync("No video track found")
             throw VisualValidatorError.noVideoTrack
         }
-        
+
         let fps = try await videoTrack.load(.nominalFrameRate)
-        print("👁️ [VisualValidator] Video FPS: \(String(format: "%.2f", fps))")
-        
+
         // Calculate time tolerance based on frame stride to avoid duplicate frames
-        // The tolerance should be less than the interval between sampled frames
-        // to ensure each request returns a distinct frame
-        let frameInterval = Double(preset.videoSampleStride) / Double(fps)  // e.g., 15/120 = 0.125s
-        let timeTolerance = max(0.05, frameInterval * 0.4)  // 40% of frame interval, min 50ms
-        print("👁️ [VisualValidator] Frame interval: \(String(format: "%.3f", frameInterval))s (stride \(preset.videoSampleStride) @ \(String(format: "%.0f", fps))fps)")
-        print("👁️ [VisualValidator] Time tolerance: \(String(format: "%.3f", timeTolerance))s (40% of interval to avoid duplicates)")
+        let frameInterval = Double(preset.videoSampleStride) / Double(fps)
+        let timeTolerance = max(0.05, frameInterval * 0.4)
+
+        // Verbose level: Video and timing details
+        logger.visualVerboseAsync("Video FPS: \(String(format: "%.2f", fps))")
+        logger.visualVerboseAsync("Frame interval: \(String(format: "%.3f", frameInterval))s (stride \(preset.videoSampleStride) @ \(String(format: "%.0f", fps))fps)")
+        logger.visualVerboseAsync("Time tolerance: \(String(format: "%.3f", timeTolerance))s (40% of interval to avoid duplicates)")
         
         // Process segments in batches to avoid overwhelming the decoder
         var allValidations: [SegmentValidation] = []
@@ -216,8 +217,8 @@ actor VisualValidator {
             let batchStart = batchIndex * segmentBatchSize
             let batchEnd = min(batchStart + segmentBatchSize, candidates.count)
             let batchCandidates = Array(candidates[batchStart..<batchEnd])
-            
-            print("👁️ [VisualValidator] Processing batch \(batchIndex + 1)/\(totalBatches): segments \(batchStart + 1)-\(batchEnd)")
+
+            logger.visualVerboseAsync("Processing batch \(batchIndex + 1)/\(totalBatches): segments \(batchStart + 1)-\(batchEnd)")
             
             let batchValidations = try await withThrowingTaskGroup(of: (Int, SegmentValidation).self) { group in
                 for (localIndex, candidate) in batchCandidates.enumerated() {
@@ -242,7 +243,7 @@ actor VisualValidator {
                         )
                         
                         let status = validation.isValid ? "✅ VALID" : "⚪️ LOW MOTION"
-                        print("👁️ [VisualValidator]   → Segment \(globalIndex + 1) motion score: \(Int(validation.motionScore)) \(status)")
+                        ProcessingLogger.shared.visualVerboseAsync("  → Segment \(globalIndex + 1) motion score: \(Int(validation.motionScore)) \(status)")
                         
                         return (globalIndex, validation)
                     }
@@ -261,7 +262,7 @@ actor VisualValidator {
             // Report progress after each batch
             let batchProgress = Double(batchIndex + 1) / Double(totalBatches)
             progressHandler?(batchProgress)
-            print("👁️ [VisualValidator] Batch \(batchIndex + 1)/\(totalBatches) complete (\(Int(batchProgress * 100))%)")
+            logger.visualVerboseAsync("Batch \(batchIndex + 1)/\(totalBatches) complete (\(Int(batchProgress * 100))%)")
             
             // Small delay between batches to let decoder recover
             if batchIndex < totalBatches - 1 {
@@ -271,16 +272,18 @@ actor VisualValidator {
         
         let validCount = allValidations.filter { $0.isValid }.count
         let elapsed = Date().timeIntervalSince(startTime)
-        
-        print("👁️ [VisualValidator] ═══════════════════════════════════════════")
-        print("👁️ [VisualValidator] ✅ VALIDATION COMPLETE in \(String(format: "%.2f", elapsed))s")
-        print("👁️ [VisualValidator] 📊 Results:")
-        print("👁️ [VisualValidator]    • Valid segments: \(validCount)/\(candidates.count)")
-        print("👁️ [VisualValidator]    • Rejected (low motion): \(candidates.count - validCount)")
-        print("👁️ [VisualValidator]    • Batches processed: \(totalBatches)")
-        print("👁️ [VisualValidator] ═══════════════════════════════════════════")
-        
+
+        // Normal level: Final results summary
         logger.successAsync("Motion validation complete: \(validCount)/\(candidates.count) segments verified in \(String(format: "%.1f", elapsed))s")
+
+        // Verbose level: Detailed results
+        logger.visualVerboseAsync("═══════════════════════════════════════════")
+        logger.visualVerboseAsync("✅ VALIDATION COMPLETE in \(String(format: "%.2f", elapsed))s")
+        logger.visualVerboseAsync("📊 Results:")
+        logger.visualVerboseAsync("   • Valid segments: \(validCount)/\(candidates.count)")
+        logger.visualVerboseAsync("   • Rejected (low motion): \(candidates.count - validCount)")
+        logger.visualVerboseAsync("   • Batches processed: \(totalBatches)")
+        logger.visualVerboseAsync("═══════════════════════════════════════════")
         
         return allValidations
     }
@@ -535,11 +538,11 @@ actor VisualValidator {
                 receivedCount += 1
                 
                 if receivedCount >= expectedCount {
-                    // Log extraction stats if there were failures
+                    // Debug level: Log extraction stats if there were failures
                     if !errors.isEmpty {
                         let successRate = Double(frames.count) / Double(expectedCount) * 100
-                        print("👁️ [VisualValidator] ⚠️ Frame extraction: \(frames.count)/\(expectedCount) succeeded (\(String(format: "%.0f", successRate))%)")
-                        print("👁️ [VisualValidator]   First failure: \(errors.first ?? "unknown")")
+                        ProcessingLogger.shared.visualDebugAsync("⚠️ Frame extraction: \(frames.count)/\(expectedCount) succeeded (\(String(format: "%.0f", successRate))%)")
+                        ProcessingLogger.shared.visualDebugAsync("  First failure: \(errors.first ?? "unknown")")
                     }
                     continuation.resume(returning: FrameExtractionResult(frames: frames, errors: errors))
                 }
