@@ -27,7 +27,7 @@ struct SegmentNavigator: View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Spacing.sm) {
-                    ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
+                    ForEach(Array(segments.enumerated()), id: \.element.stableIdentity) { index, segment in
                         // Use provided display index if available, otherwise use enumeration index + 1
                         let displayNumber = displayIndices?[safe: index] ?? (index + 1)
                         

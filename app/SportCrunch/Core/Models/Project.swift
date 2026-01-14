@@ -293,6 +293,12 @@ struct ActionSegment: Identifiable, Codable, Equatable, Sendable {
     var duration: TimeInterval {
         endTime - startTime
     }
+
+    /// Stable identity that includes starred state for SwiftUI diffing
+    /// This ensures ForEach re-renders when isStarred changes
+    var stableIdentity: String {
+        "\(id.uuidString)-\(isStarred)"
+    }
     
     init(
         id: UUID = UUID(),
