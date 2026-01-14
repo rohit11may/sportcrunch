@@ -320,10 +320,19 @@ struct CompletedProjectSheet: View {
             viewModel.toggleStarred(segment: segment)
           }
         },
+        showDuration: shouldShowSegmentDuration,
         displayIndices: viewModel.displayedSegmentIndices
       )
     }
     .padding(.vertical, Spacing.sm)
+  }
+
+  private var shouldShowSegmentDuration: Bool {
+    // Hide duration for Tennis Shot Mode (Individual)
+    if let mode = viewModel.project.sportMode, case .tennis(.individual) = mode {
+      return false
+    }
+    return true
   }
 
 }
