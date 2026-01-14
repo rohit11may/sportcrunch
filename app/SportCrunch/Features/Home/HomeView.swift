@@ -215,7 +215,7 @@ struct HomeView: View {
         .font(AppFont.headline())
         .foregroundStyle(Color.scTextPrimary)
 
-      VStack(spacing: Spacing.md) {
+      LazyVStack(spacing: Spacing.md) {
         ForEach(viewModel.projects) { project in
           let isProcessing = appState.backgroundProcessingManager.isProcessing(
             projectId: project.id)
