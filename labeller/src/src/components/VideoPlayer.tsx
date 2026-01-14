@@ -4,10 +4,8 @@ import clsx from 'clsx';
 
 interface VideoPlayerProps {
     src: string;
-    startTime?: number;
-    endTime?: number;
     onTimeUpdate: (time: number) => void;
-    onDurationChange: (duration: number) => void;
+    onDurationChange?: (duration: number) => void;
     className?: string;
 }
 
@@ -20,7 +18,7 @@ export interface VideoPlayerHandle {
     setPlaybackRate: (rate: number) => void;
 }
 
-const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, startTime, endTime, onTimeUpdate, onDurationChange, className }, ref) => {
+const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, onTimeUpdate, onDurationChange, className }, ref) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [playbackRate, setPlaybackRate] = useState(1);
@@ -31,19 +29,14 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, star
         getCurrentTime: () => videoRef.current?.currentTime || 0,
         seek: (time: number) => {
             if (videoRef.current) {
-                const minTime = startTime ?? 0;
-                const maxTime = endTime ?? videoRef.current.duration;
-                videoRef.current.currentTime = Math.min(Math.max(time, minTime), maxTime);
+                videoRef.current.currentTime = Math.min(Math.max(time, 0), videoRef.current.duration);
             }
         },
         stepFrame: (frames: number) => {
             if (videoRef.current) {
-                // Assumes 30fps roughly for stepping if simpler, or 1/30
-                const FRAME_TIME = 1 / 30; // Standard approximation
+                const FRAME_TIME = 1 / 30;
                 const newTime = videoRef.current.currentTime + (frames * FRAME_TIME);
-                const minTime = startTime ?? 0;
-                const maxTime = endTime ?? videoRef.current.duration;
-                videoRef.current.currentTime = Math.min(Math.max(newTime, minTime), maxTime);
+                videoRef.current.currentTime = Math.min(Math.max(newTime, 0), videoRef.current.duration);
             }
         },
         togglePlay: () => togglePlay(),
@@ -60,13 +53,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, star
         }
     }, [playbackRate]);
 
-    // Handle startTime changes
-    useEffect(() => {
-        if (videoRef.current) {
-            videoRef.current.currentTime = startTime ?? 0;
-        }
-    }, [src, startTime]);
-
     const togglePlay = () => {
         if (videoRef.current) {
             if (isPlaying) {
@@ -80,15 +66,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, star
 
     const handleTimeUpdate = () => {
         if (videoRef.current) {
-            const time = videoRef.current.currentTime;
-
-            // Limit playback to endTime
-            if (endTime !== undefined && time >= endTime) {
-                videoRef.current.pause();
-                videoRef.current.currentTime = endTime;
-                setIsPlaying(false);
-            }
-
             setCurrentTime(videoRef.current.currentTime);
             onTimeUpdate(videoRef.current.currentTime);
         }
@@ -97,7 +74,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, star
     const handleLoadedMetadata = () => {
         if (videoRef.current) {
             setDuration(videoRef.current.duration);
-            onDurationChange(videoRef.current.duration);
+            onDurationChange?.(videoRef.current.duration);
         }
     };
 
@@ -116,8 +93,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, star
             <div className="relative group/seekbar px-1">
                 <input
                     type="range"
-                    min={startTime ?? 0}
-                    max={endTime ?? duration ?? 0}
+                    min={0}
+                    max={duration || 0}
                     step={0.01}
                     value={currentTime}
                     onChange={(e) => {
@@ -137,11 +114,11 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, star
                     </button>
                     <div className="font-mono text-xs flex gap-1">
                         <span className="text-blue-400">
-                            {startTime !== undefined ? (currentTime - startTime).toFixed(2) : currentTime.toFixed(2)}s
+                            {currentTime.toFixed(2)}s
                         </span>
                         <span className="text-gray-600">/</span>
                         <span className="text-gray-400">
-                            {startTime !== undefined && endTime !== undefined ? (endTime - startTime).toFixed(2) : duration.toFixed(2)}s
+                            {duration.toFixed(2)}s
                         </span>
                     </div>
                 </div>

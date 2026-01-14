@@ -29,18 +29,6 @@ export const api = {
         return data.filename;
     },
 
-    saveSplit: async (videoFilename: string, parts: any[]): Promise<void> => {
-        const res = await fetch(`${API_BASE}/split`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ videoFilename, parts }),
-        });
-        if (!res.ok) {
-            const error = await res.json().catch(() => ({ error: res.statusText }));
-            throw new Error(error.error || 'Failed to save splits');
-        }
-    },
-
     deleteSession: async (id: string): Promise<void> => {
         await fetch(`${API_BASE}/session/${id}`, {
             method: 'DELETE',

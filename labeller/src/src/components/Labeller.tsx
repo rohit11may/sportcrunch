@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { api, getVideoUrl } from '../api';
 import type { VideoSession, AnnotationData, Segment } from '../types';
 import VideoPlayer, { type VideoPlayerHandle } from './VideoPlayer';
-import { Save, Video as VideoIcon, Plus, Trash2, ArrowRight, Scissors, X } from 'lucide-react';
+import { Save, Video as VideoIcon, Plus, Trash2, ArrowRight } from 'lucide-react';
 import clsx from 'clsx';
 
 const Labeller: React.FC = () => {
@@ -15,12 +15,10 @@ const Labeller: React.FC = () => {
     const [pendingStart, setPendingStart] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [, setCurrentTime] = useState(0);
-    const [videoDuration, setVideoDuration] = useState(0); // Track duration
+
     const videoRef = useRef<VideoPlayerHandle>(null);
 
-    // Split Modal State
-    const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
-    const [splitParts, setSplitParts] = useState<{ id: string, name: string, start: number, end: number }[]>([]);
+
 
     const currentSession = currentSessionIndex >= 0 ? sessions[currentSessionIndex] : null;
 
@@ -52,21 +50,14 @@ const Labeller: React.FC = () => {
                 setSegments([]);
                 setPendingStart(null);
             }
-            // Auto-seek to start range if applicable
-            if (currentSession.startTime !== undefined && videoRef.current) {
-                videoRef.current.seek(currentSession.startTime);
-            }
+
         }
     }, [currentSessionIndex, currentSession?.id]);
 
     const handleSave = async () => {
         if (!currentSession) return;
-        // Use currentSession.id (which handles split IDs correctly e.g. "vid__part1")
-        // But backend expects "videoFilename" in body as the identifier. 
-        // We will pass currentSession.id as videoFilename property to api.saveAnnotation
-        // Wait, types says videoFilename. 
         const annotation: AnnotationData = {
-            videoFilename: currentSession.id, // This ensures we save to vid__part1.json
+            videoFilename: currentSession.id,
             sport: sport as any,
             mode: mode as any,
             segments
@@ -80,56 +71,7 @@ const Labeller: React.FC = () => {
         alert('Saved!');
     };
 
-    const handleOpenSplitModal = () => {
-        if (!currentSession) return;
-        // Find all sessions that share the same actual source video file
-        const related = sessions.filter(s => s.sourceVideo === currentSession.sourceVideo);
 
-        // Construct existing parts from sessions
-        let parts = related.map((sess, idx) => ({
-            id: sess.id.includes('__') ? sess.id.split('__')[1] : `part${idx + 1}`,
-            name: sess.displayName,
-            start: sess.startTime || 0,
-            end: sess.endTime || videoDuration || 0
-        }));
-
-        // If simple session, might default to:
-        if (parts.length === 0) {
-            parts = [{ id: 'part1', name: 'Part 1', start: 0, end: videoDuration }];
-        }
-
-        setSplitParts(parts);
-        setIsSplitModalOpen(true);
-    };
-
-    const handleSaveSplits = async () => {
-        if (!currentSession) return;
-        try {
-            await api.saveSplit(currentSession.sourceVideo, splitParts);
-            setIsSplitModalOpen(false);
-            await loadSessions(); // Reload to see changes
-        } catch (e: any) {
-            console.error(e);
-            alert(e.message || 'Failed to save splits');
-        }
-    };
-
-    const addNewSplit = () => {
-        const last = splitParts[splitParts.length - 1];
-        const newStart = last ? last.end : 0;
-        setSplitParts([...splitParts, {
-            id: `part${splitParts.length + 1}`,
-            name: `Part ${splitParts.length + 1}`,
-            start: newStart,
-            end: videoDuration
-        }]);
-    };
-
-    const updateSplit = (idx: number, field: keyof typeof splitParts[0], value: any) => {
-        const newParts = [...splitParts];
-        newParts[idx] = { ...newParts[idx], [field]: value };
-        setSplitParts(newParts);
-    };
 
     // Hotkeys (unchanged mostly)
     useEffect(() => {
@@ -308,13 +250,7 @@ const Labeller: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={handleOpenSplitModal}
-                            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded text-sm transition"
-                            title="Split into parts"
-                        >
-                            <Scissors size={16} /> Split
-                        </button>
+
                         <button
                             onClick={handleSave}
                             className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded font-medium text-sm transition-transform active:scale-95"
@@ -333,10 +269,7 @@ const Labeller: React.FC = () => {
                                 <VideoPlayer
                                     ref={videoRef}
                                     src={getVideoUrl(currentSession.videoFilename)}
-                                    startTime={currentSession.startTime}
-                                    endTime={currentSession.endTime}
                                     onTimeUpdate={setCurrentTime}
-                                    onDurationChange={setVideoDuration}
                                 />
                                 <div className="mt-4 text-center text-slate-400 text-sm flex flex-wrap justify-center gap-x-4 gap-y-1">
                                     <span><span className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 mx-1 text-slate-200">Space</span> Play/Pause</span>
@@ -347,15 +280,11 @@ const Labeller: React.FC = () => {
                                     <span><span className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 mx-1 text-slate-200 text-xs text-indigo-400">N / M</span> ±2s</span>
                                     <span><span className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 mx-1 text-slate-200 text-xs text-emerald-400">S / D</span> ±0.1x</span>
                                 </div>
-                                {currentSession.startTime !== undefined && (
-                                    <div className="mt-2 text-center text-xs text-yellow-400">
-                                        Part Range: {currentSession.startTime}s - {currentSession.endTime}s
-                                    </div>
-                                )}
+
 
                                 {pendingStart !== null && (
                                     <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-500/90 text-white px-4 py-1 rounded-full text-sm animate-pulse">
-                                        Recording Segment... (Start: {(pendingStart - (currentSession?.startTime || 0)).toFixed(2)}s)
+                                        Recording Segment... (Start: {pendingStart.toFixed(2)}s)
                                     </div>
                                 )}
                             </div>
@@ -377,7 +306,7 @@ const Labeller: React.FC = () => {
                                     onClick={() => videoRef.current?.seek(seg.start)}
                                 >
                                     <div className="text-sm font-mono text-blue-300">
-                                        {(seg.start - (currentSession?.startTime || 0)).toFixed(2)}s <ArrowRight size={12} className="inline text-slate-500" /> {(seg.end - (currentSession?.startTime || 0)).toFixed(2)}s
+                                        {seg.start.toFixed(2)}s <ArrowRight size={12} className="inline text-slate-500" /> {seg.end.toFixed(2)}s
                                     </div>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setSegments(segments.filter((_, idx) => idx !== i)); }}
@@ -391,75 +320,7 @@ const Labeller: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Split Modal */}
-                {isSplitModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-                        <div className="bg-slate-900 border border-slate-700 p-6 rounded-xl w-[600px] shadow-2xl overflow-hidden max-h-[80vh] flex flex-col">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-bold text-white">Manage Video Splits</h2>
-                                <button onClick={() => setIsSplitModalOpen(false)} className="text-slate-400 hover:text-white"><X size={20} /></button>
-                            </div>
 
-                            <div className="flex-1 overflow-y-auto space-y-3 mb-6 pr-2">
-                                {splitParts.map((part, i) => (
-                                    <div key={i} className="flex gap-3 items-center bg-slate-800/50 p-3 rounded border border-slate-700">
-                                        <input
-                                            value={part.name}
-                                            onChange={(e) => updateSplit(i, 'name', e.target.value)}
-                                            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white flex-1 min-w-0"
-                                            placeholder="Part Name"
-                                        />
-                                        <div className="flex items-center gap-1">
-                                            <input
-                                                type="number"
-                                                value={part.start}
-                                                onChange={(e) => updateSplit(i, 'start', parseFloat(e.target.value))}
-                                                className="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-center font-mono"
-                                            />
-                                            <span className="text-slate-500">-</span>
-                                            <input
-                                                type="number"
-                                                value={part.end}
-                                                onChange={(e) => updateSplit(i, 'end', parseFloat(e.target.value))}
-                                                className="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-center font-mono"
-                                            />
-                                        </div>
-                                        <button
-                                            onClick={() => setSplitParts(splitParts.filter((_, idx) => idx !== i))}
-                                            className="p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-red-400 transition"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                ))}
-                                {splitParts.length === 0 && <div className="text-center text-slate-500 italic p-4">No parts defined.</div>}
-                            </div>
-
-                            <div className="flex justify-between items-center pt-4 border-t border-slate-800">
-                                <button
-                                    onClick={addNewSplit}
-                                    className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium"
-                                >
-                                    <Plus size={16} /> Add Split
-                                </button>
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() => setIsSplitModalOpen(false)}
-                                        className="px-4 py-2 rounded text-slate-300 hover:bg-slate-800 transition text-sm"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={handleSaveSplits}
-                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-medium text-sm shadow-lg shadow-blue-500/20"
-                                    >
-                                        Apply Splits
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );
