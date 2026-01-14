@@ -87,120 +87,112 @@ actor AudioAnalyzer {
         let logger = ProcessingLogger.shared
         let modeDescription = (sportMode as? TennisMode)?.displayName ?? "Default"
         
-        print("🎵 [AudioAnalyzer] ═══════════════════════════════════════════")
-        print("🎵 [AudioAnalyzer] Starting audio analysis for \(sport.displayName) (\(modeDescription))")
-        print("🎵 [AudioAnalyzer] Source: \(videoURL.lastPathComponent)")
-        print("🎵 [AudioAnalyzer] ───────────────────────────────────────────")
-        print("🎵 [AudioAnalyzer] Preset Configuration:")
-        print("🎵 [AudioAnalyzer]   • Sample rate: \(Int(preset.sampleRate)) Hz")
-        print("🎵 [AudioAnalyzer]   • Bandpass: \(Int(preset.bandpassLow))-\(Int(preset.bandpassHigh)) Hz")
-        print("🎵 [AudioAnalyzer]   • Threshold λ: \(preset.onsetThresholdLambda) (lower = more sensitive)")
-        print("🎵 [AudioAnalyzer]   • Min peak distance: \(preset.peakMinDistanceSec)s")
-        print("🎵 [AudioAnalyzer]   • Cluster max gap: \(preset.clusterMaxGapSec)s")
-        print("🎵 [AudioAnalyzer]   • Cluster min hits: \(preset.clusterMinHits)")
-        print("🎵 [AudioAnalyzer]   • Padding: \(preset.paddingPreSec)s before, \(preset.paddingPostSec)s after")
-        print("🎵 [AudioAnalyzer] ───────────────────────────────────────────")
-        
+        // Normal level: High-level progress
         logger.audioAsync("Starting audio analysis for \(sport.displayName) (\(modeDescription))...")
+
+        // Verbose level: Preset configuration details
+        logger.audioVerboseAsync("═══════════════════════════════════════════")
+        logger.audioVerboseAsync("Source: \(videoURL.lastPathComponent)")
+        logger.audioVerboseAsync("───────────────────────────────────────────")
+        logger.audioVerboseAsync("Preset Configuration:")
+        logger.audioVerboseAsync("  • Sample rate: \(Int(preset.sampleRate)) Hz")
+        logger.audioVerboseAsync("  • Bandpass: \(Int(preset.bandpassLow))-\(Int(preset.bandpassHigh)) Hz")
+        logger.audioVerboseAsync("  • Threshold λ: \(preset.onsetThresholdLambda) (lower = more sensitive)")
+        logger.audioVerboseAsync("  • Min peak distance: \(preset.peakMinDistanceSec)s")
+        logger.audioVerboseAsync("  • Cluster max gap: \(preset.clusterMaxGapSec)s")
+        logger.audioVerboseAsync("  • Cluster min hits: \(preset.clusterMinHits)")
+        logger.audioVerboseAsync("  • Padding: \(preset.paddingPreSec)s before, \(preset.paddingPostSec)s after")
+        logger.audioVerboseAsync("───────────────────────────────────────────")
         
         // Step 1: Extract audio samples
-        print("🎵 [AudioAnalyzer] Step 1/5: Extracting audio at \(Int(preset.sampleRate)) Hz...")
-        logger.audioAsync("Extracting audio at \(Int(preset.sampleRate)) Hz...")
+        logger.audioAsync("Step 1/5: Extracting audio at \(Int(preset.sampleRate)) Hz...")
         let (samples, duration) = try await extractAudio(from: videoURL, sampleRate: preset.sampleRate)
-        
+
         guard !samples.isEmpty else {
-            print("🎵 [AudioAnalyzer] ❌ ERROR: No audio samples extracted")
             logger.errorAsync("No audio samples extracted")
             throw AudioAnalyzerError.audioExtractionFailed
         }
-        
+
         let sampleCount = samples.count
-        print("🎵 [AudioAnalyzer] ✓ Extracted \(formatNumber(sampleCount)) samples")
-        print("🎵 [AudioAnalyzer] ✓ Duration: \(formatTime(duration))")
         logger.audioAsync("Extracted \(formatNumber(sampleCount)) samples (\(formatTime(duration)))")
-        
-        // DEBUG: Compute audio fingerprint to detect extraction differences between simulator and device
-        // This helps identify if the discrepancy starts at audio extraction or later processing
+
+        // Debug level: Audio fingerprint for platform comparison
         let fingerprint = computeAudioFingerprint(samples)
-        print("🎵 [AudioAnalyzer] 🔍 DEBUG: Audio fingerprint: \(fingerprint)")
-        print("🎵 [AudioAnalyzer] 🔍 DEBUG: First 10 samples: \(samples.prefix(10).map { String(format: "%.6f", $0) }.joined(separator: ", "))")
-        print("🎵 [AudioAnalyzer] 🔍 DEBUG: Samples at 1s: \(samples.dropFirst(Int(preset.sampleRate)).prefix(5).map { String(format: "%.6f", $0) }.joined(separator: ", "))")
+        logger.audioDebugAsync("Audio fingerprint: \(fingerprint)")
+        logger.audioDebugAsync("First 10 samples: \(samples.prefix(10).map { String(format: "%.6f", $0) }.joined(separator: ", "))")
+        logger.audioDebugAsync("Samples at 1s: \(samples.dropFirst(Int(preset.sampleRate)).prefix(5).map { String(format: "%.6f", $0) }.joined(separator: ", "))")
         
         // Step 2: Apply bandpass filter
-        print("🎵 [AudioAnalyzer] Step 2/5: Applying bandpass filter (\(Int(preset.bandpassLow))-\(Int(preset.bandpassHigh)) Hz)...")
-        logger.audioAsync("Applying bandpass filter (\(Int(preset.bandpassLow))-\(Int(preset.bandpassHigh)) Hz)...")
+        logger.audioAsync("Step 2/5: Applying bandpass filter (\(Int(preset.bandpassLow))-\(Int(preset.bandpassHigh)) Hz)...")
         let filteredSamples = applyBandpassFilter(
             samples,
             lowCutoff: Float(preset.bandpassLow),
             highCutoff: Float(preset.bandpassHigh),
             sampleRate: Float(preset.sampleRate)
         )
-        print("🎵 [AudioAnalyzer] ✓ Bandpass filter applied")
-        
-        // DEBUG: Fingerprint after filtering to isolate where divergence occurs
+        logger.audioVerboseAsync("✓ Bandpass filter applied")
+
+        // Debug level: Fingerprint after filtering
         let filteredFingerprint = computeAudioFingerprint(filteredSamples)
-        print("🎵 [AudioAnalyzer] 🔍 DEBUG: Filtered audio fingerprint: \(filteredFingerprint)")
+        logger.audioDebugAsync("Filtered audio fingerprint: \(filteredFingerprint)")
         
         // Step 3: Compute onset strength (spectral flux)
-        print("🎵 [AudioAnalyzer] Step 3/5: Computing spectral flux (FFT)...")
-        logger.audioAsync("Computing spectral flux (FFT analysis)...")
+        logger.audioAsync("Step 3/5: Computing spectral flux (FFT)...")
         let onsetStrength = computeOnsetStrength(filteredSamples)
-        print("🎵 [AudioAnalyzer] ✓ Computed \(formatNumber(onsetStrength.count)) onset frames")
-        
-        // Log detailed stats about onset strength for debugging simulator vs device differences
+        logger.audioVerboseAsync("✓ Computed \(formatNumber(onsetStrength.count)) onset frames")
+
+        // Verbose level: Onset strength statistics
         if !onsetStrength.isEmpty {
             let maxOnset = onsetStrength.max() ?? 0
             let avgOnset = onsetStrength.reduce(0, +) / Float(onsetStrength.count)
             let sortedOnsets = onsetStrength.sorted(by: >)
             let top10 = sortedOnsets.prefix(10)
             let median = onsetStrength.count > 0 ? sortedOnsets[onsetStrength.count / 2] : 0
-            
-            print("🎵 [AudioAnalyzer]   Onset stats - Max: \(String(format: "%.1f", maxOnset)), Avg: \(String(format: "%.3f", avgOnset)), Median: \(String(format: "%.3f", median))")
-            print("🎵 [AudioAnalyzer]   Top 10 onset values: \(top10.map { String(format: "%.1f", $0) }.joined(separator: ", "))")
-            
+
+            logger.audioVerboseAsync("Onset stats - Max: \(String(format: "%.1f", maxOnset)), Avg: \(String(format: "%.3f", avgOnset)), Median: \(String(format: "%.3f", median))")
+            logger.audioVerboseAsync("Top 10 onset values: \(top10.map { String(format: "%.1f", $0) }.joined(separator: ", "))")
+
             #if targetEnvironment(simulator)
-            print("🎵 [AudioAnalyzer]   ⚡ RUNNING ON SIMULATOR (x86_64)")
+            logger.audioVerboseAsync("⚡ RUNNING ON SIMULATOR (x86_64)")
             #else
-            print("🎵 [AudioAnalyzer]   📱 RUNNING ON DEVICE (ARM)")
+            logger.audioVerboseAsync("📱 RUNNING ON DEVICE (ARM)")
             #endif
         }
         
         // Step 4: Compute adaptive threshold and find peaks
-        print("🎵 [AudioAnalyzer] Step 4/5: Finding peaks with adaptive threshold (λ=\(preset.onsetThresholdLambda))...")
-        logger.audioAsync("Detecting impact sounds...")
+        logger.audioAsync("Step 4/5: Finding peaks with adaptive threshold (λ=\(preset.onsetThresholdLambda))...")
         let (peakIndices, thresholds) = findPeaksWithThresholds(
             onsetStrength: onsetStrength,
             sampleRate: preset.sampleRate,
             thresholdLambda: preset.onsetThresholdLambda,
             minDistanceSec: preset.peakMinDistanceSec
         )
-        
+
         // Convert peak indices to timestamps
         let framesPerSecond = preset.sampleRate / Double(hopLength)
         let peakTimes = peakIndices.map { Double($0) / framesPerSecond }
-        print("🎵 [AudioAnalyzer] ✓ Detected \(peakTimes.count) potential hits")
         logger.audioAsync("Detected \(peakTimes.count) potential \(sport.displayName.lowercased()) hits")
-        
-        // DEBUG: Log peak onset strengths for comparison between simulator and device
-        print("🎵 [AudioAnalyzer] 🔍 DEBUG: Peak indices and their onset strengths:")
+
+        // Verbose level: First few peak times
+        if !peakTimes.isEmpty {
+            let firstFew = peakTimes.prefix(5).map { formatTime($0) }.joined(separator: ", ")
+            logger.audioVerboseAsync("First hits at: \(firstFew)\(peakTimes.count > 5 ? "..." : "")")
+        }
+
+        // Debug level: Detailed peak information
+        logger.audioDebugAsync("Peak indices and their onset strengths:")
         for (i, peakIdx) in peakIndices.prefix(20).enumerated() {
             let peakStrength = onsetStrength[peakIdx]
             let threshold = peakIdx < thresholds.count ? thresholds[peakIdx] : 0
             let peakTime = Double(peakIdx) / framesPerSecond
-            print("🎵 [AudioAnalyzer]   Peak \(i+1): t=\(String(format: "%.3f", peakTime))s, idx=\(peakIdx), strength=\(String(format: "%.2f", peakStrength)), threshold=\(String(format: "%.2f", threshold))")
+            logger.audioDebugAsync("  Peak \(i+1): t=\(String(format: "%.3f", peakTime))s, idx=\(peakIdx), strength=\(String(format: "%.2f", peakStrength)), threshold=\(String(format: "%.2f", threshold))")
         }
         if peakIndices.count > 20 {
-            print("🎵 [AudioAnalyzer]   ... and \(peakIndices.count - 20) more peaks")
-        }
-        
-        if !peakTimes.isEmpty {
-            let firstFew = peakTimes.prefix(5).map { formatTime($0) }.joined(separator: ", ")
-            print("🎵 [AudioAnalyzer]   First hits at: \(firstFew)\(peakTimes.count > 5 ? "..." : "")")
+            logger.audioDebugAsync("  ... and \(peakIndices.count - 20) more peaks")
         }
         
         // Step 5: Cluster peaks into intervals
-        print("🎵 [AudioAnalyzer] Step 5/5: Clustering peaks (max gap: \(preset.clusterMaxGapSec)s, min hits: \(preset.clusterMinHits))...")
-        logger.audioAsync("Clustering hits into action segments...")
+        logger.audioAsync("Step 5/5: Clustering peaks (max gap: \(preset.clusterMaxGapSec)s, min hits: \(preset.clusterMinHits))...")
         let (candidateIntervals, rawClusters) = clusterPeaksWithDetails(
             peakTimes: peakTimes,
             maxGapSeconds: preset.clusterMaxGapSec,
@@ -209,22 +201,25 @@ actor AudioAnalyzer {
             paddingPost: preset.paddingPostSec,
             videoDuration: duration
         )
-        
+
         let elapsed = Date().timeIntervalSince(startTime)
-        print("🎵 [AudioAnalyzer] ═══════════════════════════════════════════")
-        print("🎵 [AudioAnalyzer] ✅ ANALYSIS COMPLETE in \(String(format: "%.2f", elapsed))s")
-        print("🎵 [AudioAnalyzer] 📊 Results:")
-        print("🎵 [AudioAnalyzer]    • Video duration: \(formatTime(duration))")
-        print("🎵 [AudioAnalyzer]    • Hits detected: \(peakTimes.count)")
-        print("🎵 [AudioAnalyzer]    • Candidate segments: \(candidateIntervals.count)")
-        
+
+        // Normal level: Final results summary
+        logger.successAsync("Audio analysis complete: \(candidateIntervals.count) segments found in \(String(format: "%.1f", elapsed))s")
+
+        // Verbose level: Detailed results
+        logger.audioVerboseAsync("═══════════════════════════════════════════")
+        logger.audioVerboseAsync("✅ ANALYSIS COMPLETE in \(String(format: "%.2f", elapsed))s")
+        logger.audioVerboseAsync("📊 Results:")
+        logger.audioVerboseAsync("   • Video duration: \(formatTime(duration))")
+        logger.audioVerboseAsync("   • Hits detected: \(peakTimes.count)")
+        logger.audioVerboseAsync("   • Candidate segments: \(candidateIntervals.count)")
+
         for (i, interval) in candidateIntervals.enumerated() {
             let segDuration = interval.end - interval.start
-            print("🎵 [AudioAnalyzer]    Segment \(i+1): \(formatTime(interval.start)) → \(formatTime(interval.end)) (\(String(format: "%.1f", segDuration))s)")
+            logger.audioVerboseAsync("   Segment \(i+1): \(formatTime(interval.start)) → \(formatTime(interval.end)) (\(String(format: "%.1f", segDuration))s)")
         }
-        print("🎵 [AudioAnalyzer] ═══════════════════════════════════════════")
-        
-        logger.successAsync("Audio analysis complete: \(candidateIntervals.count) segments found in \(String(format: "%.1f", elapsed))s")
+        logger.audioVerboseAsync("═══════════════════════════════════════════")
         
         // Build debug data for comparison reports
         let debugData = AudioAnalysisDebugData(
@@ -657,12 +652,12 @@ actor AudioAnalyzer {
             threshold[i] = (rawThreshold * 100).rounded() / 100
         }
         
-        // DEBUG: Log threshold stats for simulator vs device comparison
+        // Debug level: Threshold stats for platform comparison
         if !threshold.isEmpty {
             let minThresh = threshold.min() ?? 0
             let maxThresh = threshold.max() ?? 0
             let avgThresh = threshold.reduce(0, +) / Float(threshold.count)
-            print("🎵 [AudioAnalyzer] 🔍 DEBUG: Adaptive threshold stats - Min: \(String(format: "%.3f", minThresh)), Max: \(String(format: "%.3f", maxThresh)), Avg: \(String(format: "%.3f", avgThresh))")
+            ProcessingLogger.shared.audioDebugAsync("Adaptive threshold stats - Min: \(String(format: "%.3f", minThresh)), Max: \(String(format: "%.3f", maxThresh)), Avg: \(String(format: "%.3f", avgThresh))")
         }
         
         return threshold
