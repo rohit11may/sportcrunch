@@ -34,9 +34,10 @@ final class AppState: ObservableObject {
     }
     
     // MARK: - Services
-    
+
     let videoProcessingService: VideoProcessingServiceProtocol
     let projectStorageService: ProjectStorageServiceProtocol
+    let videoLoaderService: VideoLoaderServiceProtocol
     
     /// Background processing manager for non-blocking video processing
     /// Initialized on first access on the main actor
@@ -64,10 +65,12 @@ final class AppState: ObservableObject {
 
     init(
         videoProcessingService: VideoProcessingServiceProtocol? = nil,
-        projectStorageService: ProjectStorageServiceProtocol = UserDefaultsProjectStorageService()
+        projectStorageService: ProjectStorageServiceProtocol = UserDefaultsProjectStorageService(),
+        videoLoaderService: VideoLoaderServiceProtocol = RealVideoLoaderService()
     ) {
         // Initialize stored properties first
         self.projectStorageService = projectStorageService
+        self.videoLoaderService = videoLoaderService
         self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: onboardingKey)
 
         // Load developer mode setting

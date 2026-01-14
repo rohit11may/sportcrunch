@@ -12,6 +12,7 @@
 import Foundation
 import Photos
 import PhotosUI
+import SwiftUI
 import AVFoundation
 import UniformTypeIdentifiers
 
