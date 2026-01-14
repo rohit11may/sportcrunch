@@ -805,7 +805,7 @@ actor DebugReportService {
     print("📊  INPUT FILE:")
     print("📊    • Name: \(report.inputFile.fileName)")
     print("📊    • Size: \(String(format: "%.2f", report.inputFile.fileSizeMB)) MB")
-    print("📊    • SHA256: \(report.inputFile.sha256Hash.prefix(16))...")
+
     print("📊 ───────────────────────────────────────────────────────────────")
 
     if let audio = report.audioAnalysis {
