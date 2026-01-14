@@ -52,18 +52,17 @@ struct HomeView: View {
           .environmentObject(appState)
       }
       .sheet(item: $selectedCompletedProject) { project in
-        // Create ViewModel with the selected project
-        let sheetViewModel = CompletedProjectViewModel(
+        // Use wrapper to preserve viewModel across renders
+        CompletedProjectSheetWrapper(
           project: viewModel.projects.first(where: { $0.id == project.id }) ?? project,
-          storageService: appState.projectStorageService
-        )
-        CompletedProjectSheet(viewModel: sheetViewModel)
-          .onChange(of: sheetViewModel.project) { _, updatedProject in
+          storageService: appState.projectStorageService,
+          onProjectUpdate: { updatedProject in
             // Sync changes back to viewModel.projects
             if let index = viewModel.projects.firstIndex(where: { $0.id == updatedProject.id }) {
               viewModel.projects[index] = updatedProject
             }
           }
+        )
       }
       .alert("Delete Highlight?", isPresented: $showDeleteConfirmation) {
         Button("Cancel", role: .cancel) {
@@ -271,6 +270,38 @@ struct HomeView: View {
       viewModel.deleteProject(project, using: appState.projectStorageService)
     }
     projectToDelete = nil
+  }
+}
+
+// MARK: - Completed Project Sheet Wrapper
+
+/// Wrapper view that holds the CompletedProjectViewModel in @State to prevent
+/// recreation on every SwiftUI render cycle.
+struct CompletedProjectSheetWrapper: View {
+  let project: Project
+  let storageService: ProjectStorageServiceProtocol
+  var onProjectUpdate: ((Project) -> Void)?
+
+  @State private var sheetViewModel: CompletedProjectViewModel?
+
+  var body: some View {
+    Group {
+      if let viewModel = sheetViewModel {
+        CompletedProjectSheet(viewModel: viewModel)
+          .onChange(of: viewModel.project) { _, updatedProject in
+            onProjectUpdate?(updatedProject)
+          }
+      } else {
+        ProgressView()
+          .onAppear {
+            // Create viewModel once on appear
+            sheetViewModel = CompletedProjectViewModel(
+              project: project,
+              storageService: storageService
+            )
+          }
+      }
+    }
   }
 }
 
