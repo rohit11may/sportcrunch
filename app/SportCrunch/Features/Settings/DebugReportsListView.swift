@@ -158,23 +158,23 @@ struct DebugReportsListView: View {
     
     private func loadReports() {
         isLoading = true
-        
+
         DispatchQueue.global(qos: .userInitiated).async {
             let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
             let reportsDir = documentsURL.appendingPathComponent("DebugReports", isDirectory: true)
-            
+
             var loadedReports: [DebugReportFile] = []
-            
+
             if let files = try? FileManager.default.contentsOfDirectory(atPath: reportsDir.path) {
                 for file in files where file.hasSuffix(".json") {
                     let fileURL = reportsDir.appendingPathComponent(file)
-                    
+
                     if let attrs = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
                        let modDate = attrs[.modificationDate] as? Date,
                        let size = attrs[.size] as? Int64 {
-                        
+
                         let isSimulator = file.contains("simulator")
-                        
+
                         loadedReports.append(DebugReportFile(
                             id: file,
                             fileName: file,
@@ -186,10 +186,10 @@ struct DebugReportsListView: View {
                     }
                 }
             }
-            
+
             // Sort by date, newest first
             loadedReports.sort { $0.date > $1.date }
-            
+
             DispatchQueue.main.async {
                 self.reports = loadedReports
                 self.isLoading = false
@@ -219,7 +219,14 @@ struct DebugReportFile: Identifiable {
     let date: Date
     let sizeBytes: Int64
     let isSimulator: Bool
-    
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
     var displayName: String {
         // Extract timestamp from filename: debug_report_2025-01-15_14-30-45_simulator.json
         if let range = fileName.range(of: "debug_report_") {
@@ -230,12 +237,9 @@ struct DebugReportFile: Identifiable {
         }
         return fileName
     }
-    
+
     var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
+        Self.dateFormatter.string(from: date)
     }
     
     var formattedSize: String {
@@ -537,16 +541,16 @@ struct DebugReportDetailView: View {
     
     private func loadReport() {
         isLoading = true
-        
+
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 let data = try Data(contentsOf: reportFile.url)
                 rawJSON = String(data: data, encoding: .utf8) ?? "Could not decode JSON"
-                
+
                 let decoder = JSONDecoder()
                 decoder.dateDecodingStrategy = .iso8601
                 let loadedReport = try decoder.decode(DebugReport.self, from: data)
-                
+
                 DispatchQueue.main.async {
                     self.report = loadedReport
                     self.isLoading = false

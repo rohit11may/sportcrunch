@@ -138,14 +138,22 @@ final class HighlightCreationViewModel {
     var isTestingVideoFlow: Bool {
         ProcessInfo.processInfo.arguments.contains("-isTestingVideoFlow")
     }
-    
+
     // MARK: - Services
-    
+
     private var storageService: ProjectStorageServiceProtocol?
     private var backgroundManager: BackgroundProcessingManager?
-    
+
+    // MARK: - Static Formatters
+
+    private static let titleDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter
+    }()
+
     // MARK: - Computed Properties
-    
+
     var canGoBack: Bool {
         switch currentStep {
         case .selectVideo:
@@ -156,30 +164,28 @@ final class HighlightCreationViewModel {
             return true
         }
     }
-    
+
     var formattedVideoDuration: String {
         let hours = Int(videoDuration) / 3600
         let minutes = Int(videoDuration) % 3600 / 60
         let seconds = Int(videoDuration) % 60
-        
+
         if hours > 0 {
             return String(format: "%d:%02d:%02d", hours, minutes, seconds)
         } else {
             return String(format: "%d:%02d", minutes, seconds)
         }
     }
-    
+
     /// The sport mode as SportMode protocol type (for passing to processor)
     var sportMode: SportMode? {
         selectedTennisMode
     }
-    
+
     /// Generates a default title based on the video creation date
     var defaultTitle: String {
         let date = videoCreationDate ?? Date()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, yyyy"
-        return formatter.string(from: date)
+        return Self.titleDateFormatter.string(from: date)
     }
     
     // MARK: - Setup
