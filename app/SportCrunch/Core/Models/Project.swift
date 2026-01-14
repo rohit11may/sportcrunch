@@ -8,7 +8,7 @@
 import Foundation
 
 /// Represents a highlight project created by the user
-struct Project: Identifiable, Equatable {
+struct Project: Identifiable, Equatable, Sendable {
     let id: UUID
     let sport: Sport
     let createdAt: Date
@@ -227,7 +227,7 @@ extension Project: Codable {
 
 // MARK: - Processing Status
 
-enum ProcessingStatus: String, Codable, Equatable {
+enum ProcessingStatus: String, Codable, Equatable, Sendable {
     case pending
     case loadingVideo
     case analyzingAudio
@@ -276,7 +276,7 @@ enum ProcessingStatus: String, Codable, Equatable {
 // MARK: - Action Segment
 
 /// Represents a detected action segment in the video
-struct ActionSegment: Identifiable, Codable, Equatable {
+struct ActionSegment: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
     let startTime: TimeInterval
     let endTime: TimeInterval

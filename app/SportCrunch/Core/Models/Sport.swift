@@ -20,7 +20,7 @@ protocol SportMode: Identifiable, Codable, CaseIterable, Hashable {
 // MARK: - Tennis Mode
 
 /// Tennis-specific detection modes
-enum TennisMode: String, SportMode, CaseIterable, Codable {
+enum TennisMode: String, SportMode, CaseIterable, Codable, Sendable {
     case rally
     case individual
     
@@ -51,7 +51,7 @@ enum TennisMode: String, SportMode, CaseIterable, Codable {
 // MARK: - Sport Mode Wrapper
 
 /// Type-erased wrapper for sport modes to enable storage in Project
-enum SportModeWrapper: Codable, Equatable {
+enum SportModeWrapper: Codable, Equatable, Sendable {
     case tennis(TennisMode)
     
     var displayName: String {
@@ -156,7 +156,7 @@ struct AnalysisPreset {
 // MARK: - Sport Enum
 
 /// Represents the supported sports for highlight detection
-enum Sport: String, CaseIterable, Identifiable, Codable {
+enum Sport: String, CaseIterable, Identifiable, Codable, Sendable {
     case tennis
     case cricket
     
