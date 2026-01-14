@@ -11,6 +11,7 @@ import Combine
 // MARK: - App State
 
 /// Central app state that manages navigation and shared dependencies
+@MainActor
 final class AppState: ObservableObject {
     
     // MARK: - Navigation State
