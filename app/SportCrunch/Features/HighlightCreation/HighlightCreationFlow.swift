@@ -387,87 +387,89 @@ final class HighlightCreationViewModel {
     // MARK: - Background Processing
     
     /// Starts background processing and immediately dismisses the flow.
-    /// The user can monitor progress from the home screen.
+    /// Video loading happens in background - user sees progress on home screen.
     func startBackgroundProcessing() {
         guard let sport = selectedSport,
               let manager = backgroundManager,
-              let storage = storageService,
-              let videoLoader = videoLoader else {
+              let storage = storageService else {
             return
         }
 
-        // Start the setup and queue background task
-        Task { [weak self] in
-            guard let self else { return }
-
-            do {
-                // Step 1: Load the video file (use existing URL if already set, e.g., from test injection)
-                let videoURL: URL
-                if let existingURL = self.selectedVideoURL {
-                    videoURL = existingURL
-                } else if let item = self.selectedVideoItem {
-                    let logger = ProcessingLogger.shared
-                    videoURL = try await videoLoader.loadVideo(from: item, logger: logger)
-                    await MainActor.run {
-                        self.selectedVideoURL = videoURL
-                    }
-                } else {
-                    throw ProcessingError.invalidVideoURL
-                }
-                
-                // Step 2: Load video metadata (duration, thumbnail)
-                try await self.loadVideoMetadata(from: videoURL)
-                
-                // Step 3: Create the project with .processing status
-                let sportModeWrapper: SportModeWrapper? = {
-                    if let tennisMode = self.selectedTennisMode {
-                        return .tennis(tennisMode)
-                    }
-                    return nil
-                }()
-                
-                let newProject = Project(
-                    sport: sport,
-                    sourceVideoURL: videoURL,
-                    originalDuration: self.videoDuration,
-                    title: self.defaultTitle,
-                    sportMode: sportModeWrapper
-                )
-                
-                await MainActor.run {
-                    var projectToSave = newProject
-                    projectToSave.status = .analyzingAudio  // Mark as processing
-                    self.project = projectToSave
-                    
-                    // Save project immediately so it appears on home screen
-                    storage.saveProject(projectToSave)
-                    
-                    // Queue background processing
-                    manager.queueProcessing(
-                        project: projectToSave,
-                        sourceURL: videoURL,
-                        sport: sport,
-                        sportMode: self.sportMode
-                    )
-                    
-                    self.isBackgroundProcessing = true
-                    
-                    // Dismiss the flow - processing continues in background
-                    self.shouldDismiss = true
-                }
-                
-            } catch let processingError as ProcessingError {
-                await MainActor.run {
-                    self.error = processingError
-                    self.showError = true
-                }
-            } catch {
-                await MainActor.run {
-                    self.error = .unknown(error)
-                    self.showError = true
-                }
+        // Build sport mode wrapper
+        let sportModeWrapper: SportModeWrapper? = {
+            if let tennisMode = selectedTennisMode {
+                return .tennis(tennisMode)
             }
+            return nil
+        }()
+
+        // Case 1: Video URL already loaded (test injection or pre-loaded)
+        if let existingURL = selectedVideoURL {
+            let newProject = Project(
+                sport: sport,
+                sourceVideoURL: existingURL,
+                originalDuration: videoDuration,
+                title: defaultTitle,
+                sportMode: sportModeWrapper
+            )
+
+            var projectToSave = newProject
+            projectToSave.status = .loadingVideo
+            project = projectToSave
+
+            // Save project and queue processing with URL
+            storage.saveProject(projectToSave)
+            manager.queueProcessing(
+                project: projectToSave,
+                sourceURL: existingURL,
+                sport: sport,
+                sportMode: sportMode
+            )
+
+            isBackgroundProcessing = true
+            shouldDismiss = true
+            return
         }
+
+        // Case 2: Need to load video from PhotosPickerItem (normal flow)
+        guard let pickerItem = selectedVideoItem else {
+            error = .invalidVideoURL
+            showError = true
+            return
+        }
+
+        // Create project with placeholder URL (will be updated when video loads)
+        // Use a temporary placeholder - BackgroundProcessingManager will update it
+        let placeholderURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("pending-\(UUID().uuidString).mov")
+
+        let newProject = Project(
+            sport: sport,
+            sourceVideoURL: placeholderURL,
+            originalDuration: videoDuration,  // May be 0 if not loaded yet
+            title: defaultTitle,
+            sportMode: sportModeWrapper
+        )
+
+        var projectToSave = newProject
+        projectToSave.status = .loadingVideo
+        project = projectToSave
+
+        // Save project so it appears on home screen immediately
+        storage.saveProject(projectToSave)
+
+        // Queue background processing - video loading happens in background
+        manager.queueProcessing(
+            project: projectToSave,
+            pickerItem: pickerItem,
+            sport: sport,
+            sportMode: sportMode
+        )
+
+        isBackgroundProcessing = true
+
+        // Dismiss immediately - processing continues in background
+        shouldDismiss = true
     }
     
     // MARK: - Project Management
