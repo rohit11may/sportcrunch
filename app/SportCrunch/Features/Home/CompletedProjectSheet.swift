@@ -28,10 +28,6 @@ struct CompletedProjectSheet: View {
           videoPlayerArea
             .accessibilityIdentifier(AccessibilityID.Project.videoPlayer)
 
-          // Progress bar for scrubbing
-          progressBarSection
-            .accessibilityIdentifier(AccessibilityID.Project.progressBar)
-
           // Original video summary (static visualization)
           originalVideoSummarySection
 
@@ -174,24 +170,7 @@ struct CompletedProjectSheet: View {
         }
       }
     }
-    .frame(height: UIScreen.main.bounds.height * 0.5)
-  }
-
-  // MARK: - Progress Bar Section
-
-  private var progressBarSection: some View {
-    HighlightProgressBar(
-      totalDuration: viewModel.highlightDuration,
-      segments: viewModel.allSegments,
-      accentColor: viewModel.project.sport.accentColor,
-      currentTime: $currentTime,
-      onSeek: { time in
-        currentTime = time
-      }
-    )
-    .padding(.horizontal, Spacing.lg)
-    .padding(.vertical, Spacing.sm)
-    .background(Color.scSurface)
+    .frame(height: UIScreen.main.bounds.height * 0.55)
   }
 
   // MARK: - Original Video Summary Section

@@ -22,21 +22,23 @@ struct ControllableVideoPlayer: View {
   @State private var lastReportedTime: TimeInterval = 0
 
   var body: some View {
+    // Container ensuring player state stability across gesture changes
     ZStack {
-      if let player = player {
-        VideoPlayerView(player: player)
-          .onAppear {
-            setupTimeObserver()
-          }
+      if finalScale > 1.0 {
+        playerView
+          .simultaneousGesture(magnificationGesture)
+          .highPriorityGesture(dragGesture)
       } else {
-        Rectangle()
-          .fill(Color.scSurfaceElevated)
-          .overlay(
-            ProgressView()
-              .tint(.white)
-          )
+        playerView
+          .highPriorityGesture(magnificationGesture)
       }
     }
+    .scaleEffect(currentScale * finalScale)
+    .offset(
+      x: currentOffset.width + finalOffset.width,
+      y: currentOffset.height + finalOffset.height
+    )
+    .clipShape(Rectangle())
     .onAppear {
       setupPlayer()
     }
@@ -52,8 +54,6 @@ struct ControllableVideoPlayer: View {
     }
     .onChange(of: currentTime) { oldValue, newValue in
       // Only seek if the change was external (not from our observer)
-      // Detect external changes by checking if the difference is significant
-      // and we're not currently seeking
       let timeDiff = abs(newValue - lastReportedTime)
       if timeDiff > 0.5 && !isSeeking {
         performSeek(to: newValue)
@@ -61,9 +61,80 @@ struct ControllableVideoPlayer: View {
     }
   }
 
+  private var playerView: some View {
+    ZStack {
+      if let player = player {
+        VideoPlayerView(player: player)
+      } else {
+        Rectangle()
+          .fill(Color.scSurfaceElevated)
+          .overlay(
+            ProgressView()
+              .tint(.white)
+          )
+      }
+    }
+  }
+
+  // MARK: - Gestures
+
+  private var magnificationGesture: some Gesture {
+    MagnificationGesture()
+      .onChanged { scale in
+        currentScale = scale
+      }
+      .onEnded { scale in
+        let newScale = finalScale * scale
+        // Clamp scale between 1.0 (original size) and 5.0
+        finalScale = max(1.0, min(newScale, 5.0))
+        currentScale = 1.0
+
+        // If we zoomed back out to 1.0, reset offset
+        if finalScale == 1.0 {
+          withAnimation(.spring()) {
+            finalOffset = .zero
+          }
+        }
+      }
+  }
+
+  private var dragGesture: some Gesture {
+    DragGesture()
+      .onChanged { value in
+        // Only allow panning if zoomed in
+        if finalScale > 1.0 {
+          currentOffset = value.translation
+        }
+      }
+      .onEnded { value in
+        if finalScale > 1.0 {
+          finalOffset = CGSize(
+            width: finalOffset.width + value.translation.width,
+            height: finalOffset.height + value.translation.height
+          )
+          currentOffset = .zero
+        }
+      }
+  }
+
+  // MARK: - Gesture State
+
+  @State private var currentScale: CGFloat = 1.0
+  @State private var finalScale: CGFloat = 1.0
+  @State private var currentOffset: CGSize = .zero
+  @State private var finalOffset: CGSize = .zero
+
   // MARK: - Setup
 
+  @State private var notificationObservers: [NSObjectProtocol] = []
+
   private func setupPlayer() {
+    // Ensure we clean up any existing player/observers before creating a new one
+    // This is critical to avoid "AVPlayer cannot remove a time observer..." crash
+    if player != nil || timeObserverToken != nil {
+      cleanupPlayer()
+    }
+
     // Configure Audio Session
     do {
       try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
@@ -91,7 +162,7 @@ struct ControllableVideoPlayer: View {
     player = newPlayer
 
     // Observe playback errors
-    NotificationCenter.default.addObserver(
+    let errorObserver = NotificationCenter.default.addObserver(
       forName: .AVPlayerItemFailedToPlayToEndTime,
       object: playerItem,
       queue: .main
@@ -100,9 +171,10 @@ struct ControllableVideoPlayer: View {
         print("⚠️ [ControllableVideoPlayer] Playback error: \(error.localizedDescription)")
       }
     }
+    notificationObservers.append(errorObserver)
 
     // Loop playback
-    NotificationCenter.default.addObserver(
+    let loopObserver = NotificationCenter.default.addObserver(
       forName: .AVPlayerItemDidPlayToEndTime,
       object: playerItem,
       queue: .main
@@ -112,6 +184,10 @@ struct ControllableVideoPlayer: View {
         newPlayer.play()
       }
     }
+    notificationObservers.append(loopObserver)
+
+    // Start time observation
+    setupTimeObserver()
   }
 
   private func setupTimeObserver() {
@@ -138,10 +214,20 @@ struct ControllableVideoPlayer: View {
   }
 
   private func cleanupPlayer() {
-    if let token = timeObserverToken, let player = player {
-      player.removeTimeObserver(token)
+    // Remove time observer
+    if let token = timeObserverToken {
+      // Only attempt to remove from player if it exists
+      if let player = player {
+        player.removeTimeObserver(token)
+      }
+      // Always clear the token to prevent stale references
       timeObserverToken = nil
     }
+
+    // Remove notification observers
+    notificationObservers.forEach { NotificationCenter.default.removeObserver($0) }
+    notificationObservers.removeAll()
+
     player?.pause()
     player = nil
   }
@@ -180,7 +266,7 @@ private struct VideoPlayerView: UIViewControllerRepresentable {
     let controller = AVPlayerViewController()
     controller.player = player
     controller.showsPlaybackControls = true
-    controller.videoGravity = .resizeAspect
+    controller.videoGravity = .resizeAspectFill
     return controller
   }
 
