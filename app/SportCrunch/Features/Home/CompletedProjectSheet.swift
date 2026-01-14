@@ -87,6 +87,7 @@ struct CompletedProjectSheet: View {
               .background(AppGradient.primary)
               .clipShape(Circle())
           }
+          .accessibilityLabel("Export")
           .accessibilityIdentifier(AccessibilityID.Project.exportButton)
         }
 
