@@ -278,30 +278,30 @@ struct HomeView: View {
 /// Wrapper view that holds the CompletedProjectViewModel in @State to prevent
 /// recreation on every SwiftUI render cycle.
 struct CompletedProjectSheetWrapper: View {
-  let project: Project
   let storageService: ProjectStorageServiceProtocol
   var onProjectUpdate: ((Project) -> Void)?
 
-  @State private var sheetViewModel: CompletedProjectViewModel?
+  @State private var sheetViewModel: CompletedProjectViewModel
+
+  init(
+    project: Project, storageService: ProjectStorageServiceProtocol,
+    onProjectUpdate: ((Project) -> Void)? = nil
+  ) {
+    self.storageService = storageService
+    self.onProjectUpdate = onProjectUpdate
+    // Initialize the viewModel immediately to avoid layout issues
+    _sheetViewModel = State(
+      initialValue: CompletedProjectViewModel(
+        project: project,
+        storageService: storageService
+      ))
+  }
 
   var body: some View {
-    Group {
-      if let viewModel = sheetViewModel {
-        CompletedProjectSheet(viewModel: viewModel)
-          .onChange(of: viewModel.project) { _, updatedProject in
-            onProjectUpdate?(updatedProject)
-          }
-      } else {
-        ProgressView()
-          .onAppear {
-            // Create viewModel once on appear
-            sheetViewModel = CompletedProjectViewModel(
-              project: project,
-              storageService: storageService
-            )
-          }
+    CompletedProjectSheet(viewModel: sheetViewModel)
+      .onChange(of: sheetViewModel.project) { _, updatedProject in
+        onProjectUpdate?(updatedProject)
       }
-    }
   }
 }
 

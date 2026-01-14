@@ -57,8 +57,8 @@ struct SegmentNavigator: View {
                   impact.impactOccurred()
                 } : nil
             )
-            // Use compound ID: segment.id + isStarred to force re-render when starred changes
-            .id("\(segment.id)-\(segment.isStarred)")
+            // Use stable ID for correct scrolling and animation
+            .id(segment.id)
           }
         }
         .padding(.horizontal, Spacing.lg)
@@ -101,7 +101,7 @@ struct SegmentChip: View {
     HStack(spacing: Spacing.xs) {
       // Chip body - tappable area for segment selection
       VStack(spacing: 2) {
-        Text("Segment \(index)")
+        Text("\(index)")
           .font(AppFont.captionBold())
           .foregroundStyle(isActive ? .black : Color.scTextPrimary)
 
@@ -125,7 +125,7 @@ struct SegmentChip: View {
               Image(systemName: "star.fill")
                 .font(.system(size: 16))
                 .foregroundStyle(Color.yellow)
-                .blur(radius: 5)  // Constant blur is cheap
+                .blur(radius: 2)  // Reduced blur for sharper appearance
                 .opacity(0.4 + 0.4 * starGlowPhase)  // Animate opacity instead
             }
 

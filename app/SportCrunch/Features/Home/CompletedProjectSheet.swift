@@ -23,33 +23,25 @@ struct CompletedProjectSheet: View {
       ZStack {
         Color.scBackground.ignoresSafeArea()
 
-        ScrollView {
-          VStack(spacing: 0) {
-            // Video player area
-            videoPlayerArea
-              .accessibilityIdentifier(AccessibilityID.Project.videoPlayer)
+        VStack(spacing: 0) {
+          // Video player area
+          videoPlayerArea
+            .accessibilityIdentifier(AccessibilityID.Project.videoPlayer)
 
-            // Progress bar for scrubbing
-            progressBarSection
-              .accessibilityIdentifier(AccessibilityID.Project.progressBar)
+          // Progress bar for scrubbing
+          progressBarSection
+            .accessibilityIdentifier(AccessibilityID.Project.progressBar)
 
-            // Original video summary (static visualization)
-            originalVideoSummarySection
+          // Original video summary (static visualization)
+          originalVideoSummarySection
 
-            // Segment navigator
-            segmentNavigatorSection
-              .accessibilityIdentifier(AccessibilityID.Project.segmentNavigator)
-          }
-          .padding(.bottom, 100)  // Space for floating button
+          // Segment navigator
+          segmentNavigatorSection
+            .accessibilityIdentifier(AccessibilityID.Project.segmentNavigator)
+
+          Spacer(minLength: 0)
         }
         .accessibilityIdentifier(AccessibilityID.Project.sheet)
-
-        // Floating export button
-        VStack {
-          Spacer()
-          floatingExportButton
-            .padding(.bottom, 44)
-        }
       }
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
@@ -78,20 +70,24 @@ struct CompletedProjectSheet: View {
                 .foregroundStyle(Color.scTextSecondary)
             }
           }
+          .frame(maxWidth: .infinity)
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
-          // AirPlay button
+          // Export button
           Button {
-            // AirPlay functionality would go here
+            showExportSheet = true
+            let impact = UIImpactFeedbackGenerator(style: .light)
+            impact.impactOccurred()
           } label: {
-            Image(systemName: "airplayvideo")
+            Image(systemName: "square.and.arrow.up")
               .font(.system(size: 14, weight: .medium))
-              .foregroundStyle(Color.scTextSecondary)
+              .foregroundStyle(.black)
               .frame(width: 32, height: 32)
-              .background(Color.scSurface)
+              .background(AppGradient.primary)
               .clipShape(Circle())
           }
+          .accessibilityIdentifier(AccessibilityID.Project.exportButton)
         }
 
         ToolbarItem(placement: .navigationBarTrailing) {
@@ -134,46 +130,50 @@ struct CompletedProjectSheet: View {
   // MARK: - Video Player Area
 
   private var videoPlayerArea: some View {
-    ZStack {
-      if let url = viewModel.project.highlightVideoURL,
-        FileManager.default.fileExists(atPath: url.path)
-      {
-        ControllableVideoPlayer(
-          url: url,
-          currentTime: $currentTime,
-          isPlaying: $isPlaying
-        )
-        .frame(height: 380)
-        .onAppear {
-          // Auto-play when view appears
-          isPlaying = true
-        }
-      } else {
-        // Placeholder gradient background
-        Rectangle()
-          .fill(
-            LinearGradient(
-              colors: [
-                viewModel.project.sport.accentColor.opacity(0.3),
-                viewModel.project.sport.accentColor.opacity(0.1),
-              ],
-              startPoint: .topLeading,
-              endPoint: .bottomTrailing
+    GeometryReader { geometry in
+      ZStack {
+        // Dark background to avoid any white showing through
+        Color.black
+
+        if let url = viewModel.project.highlightVideoURL,
+          FileManager.default.fileExists(atPath: url.path)
+        {
+          ControllableVideoPlayer(
+            url: url,
+            currentTime: $currentTime,
+            isPlaying: $isPlaying
+          )
+          .onAppear {
+            // Auto-play when view appears
+            isPlaying = true
+          }
+        } else {
+          // Placeholder gradient background
+          Rectangle()
+            .fill(
+              LinearGradient(
+                colors: [
+                  viewModel.project.sport.accentColor.opacity(0.3),
+                  viewModel.project.sport.accentColor.opacity(0.1),
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+              )
             )
-          )
-          .frame(height: 380)
-          .overlay(
-            VStack(spacing: Spacing.sm) {
-              Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 32))
-                .foregroundStyle(Color.scTextTertiary)
-              Text("Video unavailable")
-                .font(AppFont.caption())
-                .foregroundStyle(Color.scTextSecondary)
-            }
-          )
+            .overlay(
+              VStack(spacing: Spacing.sm) {
+                Image(systemName: "exclamationmark.triangle")
+                  .font(.system(size: 32))
+                  .foregroundStyle(Color.scTextTertiary)
+                Text("Video unavailable")
+                  .font(AppFont.caption())
+                  .foregroundStyle(Color.scTextSecondary)
+              }
+            )
+        }
       }
     }
+    .frame(height: UIScreen.main.bounds.height * 0.5)
   }
 
   // MARK: - Progress Bar Section
@@ -344,34 +344,6 @@ struct CompletedProjectSheet: View {
       )
     }
     .padding(.vertical, Spacing.sm)
-  }
-
-  // MARK: - Floating Export Button
-
-  private var floatingExportButton: some View {
-    Button {
-      showExportSheet = true
-      let impact = UIImpactFeedbackGenerator(style: .medium)
-      impact.impactOccurred()
-    } label: {
-      HStack(spacing: Spacing.sm) {
-        Image(systemName: "square.and.arrow.up")
-          .font(.system(size: 16, weight: .semibold))
-
-        Text("Export")
-          .font(.system(size: 15, weight: .bold))
-      }
-      .foregroundStyle(.black)
-      .padding(.horizontal, 28)
-      .padding(.vertical, 12)
-      .background(
-        Capsule()
-          .fill(AppGradient.primary)
-          .shadow(color: .scGradientStart.opacity(0.4), radius: 12, y: 6)
-      )
-    }
-    .buttonStyle(.plain)
-    .accessibilityIdentifier(AccessibilityID.Project.exportButton)
   }
 
 }
@@ -606,7 +578,7 @@ struct CompletedProjectExportSheet: View {
         Image(systemName: "star.fill")
           .font(.system(size: 20))
           .foregroundStyle(Color.yellow)
-          .blur(radius: onlyStarred ? 4 : 0)
+          .blur(radius: onlyStarred ? 2 : 0)
           .opacity(onlyStarred ? 0.6 : 0)
 
         Image(systemName: "star.fill")
