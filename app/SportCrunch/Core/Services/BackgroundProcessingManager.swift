@@ -8,8 +8,6 @@
 
 import Foundation
 import Combine
-import AVFoundation
-import UIKit
 
 // MARK: - Processing Job
 
@@ -43,9 +41,10 @@ final class BackgroundProcessingManager: ObservableObject {
     @Published private(set) var statusByProject: [UUID: ProcessingStatus] = [:]
     
     // MARK: - Dependencies
-    
+
     private let processingService: VideoProcessingServiceProtocol
     private let storageService: ProjectStorageServiceProtocol
+    private let thumbnailService: ThumbnailServiceProtocol
     
     // MARK: - Private State
     
@@ -53,11 +52,16 @@ final class BackgroundProcessingManager: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Initialization
-    
-    init(processingService: VideoProcessingServiceProtocol, storageService: ProjectStorageServiceProtocol) {
+
+    init(
+        processingService: VideoProcessingServiceProtocol,
+        storageService: ProjectStorageServiceProtocol,
+        thumbnailService: ThumbnailServiceProtocol = RealThumbnailService()
+    ) {
         self.processingService = processingService
         self.storageService = storageService
-        
+        self.thumbnailService = thumbnailService
+
         // Subscribe to processing service updates
         setupSubscriptions()
     }
@@ -165,8 +169,8 @@ final class BackgroundProcessingManager: ObservableObject {
                 sportMode: job.sportMode
             )
             
-            // Generate thumbnail from highlight video
-            let thumbnailData = await generateThumbnail(from: result.highlightURL)
+            // Generate thumbnail from highlight video (delegated to ThumbnailService)
+            let thumbnailData = await thumbnailService.generateThumbnail(from: result.highlightURL, maxSize: nil)
             
             // Update project with results
             await MainActor.run {
@@ -202,36 +206,7 @@ final class BackgroundProcessingManager: ObservableObject {
             }
         }
     }
-    
-    // MARK: - Thumbnail Generation
-    
-    /// Generates a thumbnail image from the middle of a video
-    /// - Parameter videoURL: URL to the video file
-    /// - Returns: JPEG data of the thumbnail, or nil if generation fails
-    private func generateThumbnail(from videoURL: URL) async -> Data? {
-        let asset = AVAsset(url: videoURL)
-        let imageGenerator = AVAssetImageGenerator(asset: asset)
-        imageGenerator.appliesPreferredTrackTransform = true
-        imageGenerator.maximumSize = CGSize(width: 400, height: 400) // Limit size for storage
-        
-        // Get video duration to find the middle
-        guard let duration = try? await asset.load(.duration) else {
-            print("⚙️ [BackgroundProcessingManager] Failed to load video duration for thumbnail")
-            return nil
-        }
-        
-        // Use the middle of the video for the thumbnail
-        let middleTime = CMTime(seconds: CMTimeGetSeconds(duration) / 2, preferredTimescale: 600)
-        
-        do {
-            let cgImage = try await imageGenerator.image(at: middleTime).image
-            let uiImage = UIImage(cgImage: cgImage)
-            print("⚙️ [BackgroundProcessingManager] Thumbnail generated from middle of highlight video")
-            return uiImage.jpegData(compressionQuality: 0.7)
-        } catch {
-            print("⚙️ [BackgroundProcessingManager] Failed to generate thumbnail: \(error.localizedDescription)")
-            return nil
-        }
-    }
 }
+
+// MARK: - Thumbnail Generation (delegated to ThumbnailService)
 
