@@ -9,8 +9,7 @@ import SwiftUI
 import AVKit
 
 struct CompletedProjectSheet: View {
-    @Binding var project: Project
-    @EnvironmentObject private var appState: AppState
+    @Bindable var viewModel: CompletedProjectViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var isPlaying = false
     @State private var currentTime: TimeInterval = 0
@@ -18,70 +17,6 @@ struct CompletedProjectSheet: View {
     @State private var showShareSheet = false
     @State private var isSavedToCameraRoll = false
     @State private var showExportSheet = false
-    @State private var showOnlyStarred = false
-    
-    // Get starred segment IDs from the project's actual segments
-    private var starredSegments: Set<UUID> {
-        Set(project.segments.filter { $0.isStarred }.map { $0.id })
-    }
-    
-    // All segments (used for calculations and export)
-    private var allSegments: [ActionSegment] {
-        project.segments
-    }
-    
-    // Segments to display (filtered if showOnlyStarred is enabled)
-    private var displayedSegments: [ActionSegment] {
-        if showOnlyStarred {
-            return project.segments.filter { $0.isStarred }
-        }
-        return project.segments
-    }
-    
-    // Original 1-based indices for displayed segments (preserves numbering when filtered)
-    private var displayedSegmentIndices: [Int] {
-        if showOnlyStarred {
-            // Return the original 1-based index for each starred segment
-            return project.segments.enumerated()
-                .filter { $0.element.isStarred }
-                .map { $0.offset + 1 }  // 1-based index
-        }
-        // When not filtered, just return sequential indices
-        return Array(1...project.segments.count)
-    }
-    
-    // Calculate segment offsets within the highlight (concatenated segments)
-    // Uses all segments regardless of filter since offsets are for the full highlight video
-    private var segmentOffsets: [(segment: ActionSegment, startOffset: TimeInterval, endOffset: TimeInterval)] {
-        var offset: TimeInterval = 0
-        return allSegments.map { segment in
-            let start = offset
-            offset += segment.duration
-            return (segment: segment, startOffset: start, endOffset: offset)
-        }
-    }
-    
-    // Offsets for displayed segments only (for navigator UI)
-    private var displayedSegmentOffsets: [(segment: ActionSegment, startOffset: TimeInterval, endOffset: TimeInterval)] {
-        segmentOffsets.filter { offsetInfo in
-            displayedSegments.contains(where: { $0.id == offsetInfo.segment.id })
-        }
-    }
-    
-    // Total highlight duration (sum of all segment durations)
-    private var highlightDuration: TimeInterval {
-        project.highlightDuration ?? project.segments.reduce(0) { $0 + $1.duration }
-    }
-    
-    // Count of starred segments
-    private var starredCount: Int {
-        starredSegments.count
-    }
-    
-    // Check if any segments are starred
-    private var hasStarredSegments: Bool {
-        !starredSegments.isEmpty
-    }
     
     var body: some View {
         NavigationStack {
@@ -121,23 +56,23 @@ struct CompletedProjectSheet: View {
                     VStack(spacing: 2) {
                         // Title with highlight duration
                         HStack(spacing: Spacing.xs) {
-                            Text(project.title ?? "Highlight")
+                            Text(viewModel.project.title ?? "Highlight")
                                 .font(AppFont.subheadline())
                                 .foregroundStyle(Color.scTextPrimary)
-                            
+
                             Text("•")
                                 .font(AppFont.caption())
                                 .foregroundStyle(Color.scTextTertiary)
-                            
-                            Text(project.formattedHighlightDuration ?? "—")
+
+                            Text(viewModel.project.formattedHighlightDuration ?? "—")
                                 .font(AppFont.subheadline())
-                                .foregroundStyle(project.sport.accentColor)
+                                .foregroundStyle(viewModel.project.sport.accentColor)
                         }
-                        
+
                         HStack(spacing: Spacing.xxs) {
-                            Text(project.sport.emoji)
+                            Text(viewModel.project.sport.emoji)
                                 .font(.system(size: 10))
-                            Text(project.sport.displayName)
+                            Text(viewModel.project.sport.displayName)
                                 .font(AppFont.caption())
                                 .foregroundStyle(Color.scTextSecondary)
                         }
@@ -176,20 +111,22 @@ struct CompletedProjectSheet: View {
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .sheet(isPresented: $showShareSheet) {
-            if let url = project.highlightVideoURL {
+            if let url = viewModel.project.highlightVideoURL {
                 ShareSheet(items: [url])
             }
         }
         .sheet(isPresented: $showExportSheet) {
             CompletedProjectExportSheet(
-                project: project,
-                starredSegments: starredSegments
+                project: viewModel.project,
+                starredSegments: viewModel.starredSegments
             )
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
         }
         .onChange(of: currentTime) { _, newTime in
-            updateCurrentSegmentIndex(for: newTime)
+            if let newIndex = viewModel.segmentIndex(for: newTime), newIndex != currentSegmentIndex {
+                currentSegmentIndex = newIndex
+            }
         }
     }
     
@@ -197,7 +134,7 @@ struct CompletedProjectSheet: View {
     
     private var videoPlayerArea: some View {
         ZStack {
-            if let url = project.highlightVideoURL,
+            if let url = viewModel.project.highlightVideoURL,
                FileManager.default.fileExists(atPath: url.path) {
                 ControllableVideoPlayer(
                     url: url,
@@ -215,8 +152,8 @@ struct CompletedProjectSheet: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                project.sport.accentColor.opacity(0.3),
-                                project.sport.accentColor.opacity(0.1)
+                                viewModel.project.sport.accentColor.opacity(0.3),
+                                viewModel.project.sport.accentColor.opacity(0.1)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -241,9 +178,9 @@ struct CompletedProjectSheet: View {
     
     private var progressBarSection: some View {
         HighlightProgressBar(
-            totalDuration: highlightDuration,
-            segments: allSegments,
-            accentColor: project.sport.accentColor,
+            totalDuration: viewModel.highlightDuration,
+            segments: viewModel.allSegments,
+            accentColor: viewModel.project.sport.accentColor,
             currentTime: $currentTime,
             onSeek: { time in
                 currentTime = time
@@ -263,26 +200,26 @@ struct CompletedProjectSheet: View {
                     Text("Original Video Summary")
                         .font(AppFont.caption())
                         .foregroundStyle(Color.scTextSecondary)
-                    
-                    Text("\(project.formattedOriginalDuration) total • \(project.segments.count) segments kept")
+
+                    Text("\(viewModel.project.formattedOriginalDuration) total • \(viewModel.project.segments.count) segments kept")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.scTextTertiary)
                 }
-                
+
                 Spacer()
-                
+
                 // Legend
                 HStack(spacing: Spacing.sm) {
-                    legendItem(color: project.sport.accentColor, label: "Kept")
+                    legendItem(color: viewModel.project.sport.accentColor, label: "Kept")
                     legendItem(color: .scSurfaceElevated, label: "Removed")
                 }
             }
-            
+
             // Static original timeline visualization
             OriginalTimelineBar(
-                segments: project.segments,
-                totalDuration: project.originalDuration,
-                accentColor: project.sport.accentColor
+                segments: viewModel.project.segments,
+                totalDuration: viewModel.project.originalDuration,
+                accentColor: viewModel.project.sport.accentColor
             )
         }
         .padding(.horizontal, Spacing.lg)
@@ -307,46 +244,46 @@ struct CompletedProjectSheet: View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             HStack {
                 HStack(spacing: Spacing.xs) {
-                    Text(showOnlyStarred ? "\(starredCount) Starred" : "\(project.segments.count) Segments")
+                    Text(viewModel.showOnlyStarred ? "\(viewModel.starredCount) Starred" : "\(viewModel.project.segments.count) Segments")
                         .font(AppFont.caption())
                         .foregroundStyle(Color.scTextSecondary)
-                    
-                    if hasStarredSegments && !showOnlyStarred {
+
+                    if viewModel.hasStarredSegments && !viewModel.showOnlyStarred {
                         Text("•")
                             .foregroundStyle(Color.scTextTertiary)
-                        
+
                         HStack(spacing: 2) {
                             Image(systemName: "star.fill")
                                 .font(.system(size: 10))
                                 .foregroundStyle(Color.yellow)
-                            Text("\(starredCount) starred")
+                            Text("\(viewModel.starredCount) starred")
                                 .font(AppFont.caption())
                                 .foregroundStyle(Color.yellow)
                         }
                     }
                 }
-                
+
                 Spacer()
-                
+
                 // Filter toggle button (only show if there are starred segments)
-                if hasStarredSegments {
+                if viewModel.hasStarredSegments {
                     Button {
                         withAnimation(.spring(response: 0.3)) {
-                            showOnlyStarred.toggle()
+                            viewModel.showOnlyStarred.toggle()
                         }
                     } label: {
                         HStack(spacing: 4) {
-                            Image(systemName: showOnlyStarred ? "star.fill" : "star")
+                            Image(systemName: viewModel.showOnlyStarred ? "star.fill" : "star")
                                 .font(.system(size: 12, weight: .medium))
-                            Text(showOnlyStarred ? "All" : "Starred")
+                            Text(viewModel.showOnlyStarred ? "All" : "Starred")
                                 .font(.system(size: 12, weight: .medium))
                         }
-                        .foregroundStyle(showOnlyStarred ? Color.yellow : Color.scTextSecondary)
+                        .foregroundStyle(viewModel.showOnlyStarred ? Color.yellow : Color.scTextSecondary)
                         .padding(.horizontal, Spacing.sm)
                         .padding(.vertical, Spacing.xxs)
                         .background(
                             Capsule()
-                                .fill(showOnlyStarred ? Color.yellow.opacity(0.15) : Color.scSurfaceElevated)
+                                .fill(viewModel.showOnlyStarred ? Color.yellow.opacity(0.15) : Color.scSurfaceElevated)
                         )
                     }
                     .buttonStyle(.plain)
@@ -358,40 +295,43 @@ struct CompletedProjectSheet: View {
                 }
             }
             .padding(.horizontal, Spacing.lg)
-            
+
             // Segment navigator - shows filtered or all segments
             SegmentNavigator(
-                segments: displayedSegments,
-                accentColor: project.sport.accentColor,
+                segments: viewModel.displayedSegments,
+                accentColor: viewModel.project.sport.accentColor,
                 currentSegmentIndex: Binding(
                     get: {
                         // Map the current segment index to the displayed segments
                         guard let index = currentSegmentIndex else { return nil }
-                        let allSegs = allSegments
+                        let allSegs = viewModel.allSegments
                         guard index < allSegs.count else { return nil }
                         let segmentId = allSegs[index].id
-                        return displayedSegments.firstIndex(where: { $0.id == segmentId })
+                        return viewModel.displayedSegments.firstIndex(where: { $0.id == segmentId })
                     },
                     set: { newIndex in
                         // Map displayed index back to all segments index
-                        guard let idx = newIndex, idx < displayedSegments.count else {
+                        guard let idx = newIndex, idx < viewModel.displayedSegments.count else {
                             currentSegmentIndex = nil
                             return
                         }
-                        let segmentId = displayedSegments[idx].id
-                        currentSegmentIndex = allSegments.firstIndex(where: { $0.id == segmentId })
+                        let segmentId = viewModel.displayedSegments[idx].id
+                        currentSegmentIndex = viewModel.allSegments.firstIndex(where: { $0.id == segmentId })
                     }
                 ),
-                onSegmentTap: { index, segment in
+                onSegmentTap: { _, segment in
                     // Jump to the segment using its actual position in all segments
-                    if let allIndex = allSegments.firstIndex(where: { $0.id == segment.id }) {
-                        jumpToSegment(at: allIndex)
+                    if let allIndex = viewModel.allSegments.firstIndex(where: { $0.id == segment.id }),
+                       let seekTime = viewModel.seekTime(for: allIndex) {
+                        currentTime = seekTime
                     }
                 },
-                onStarToggle: { index, segment in
-                    toggleStarred(segment: segment)
+                onStarToggle: { _, segment in
+                    withAnimation(.spring(response: 0.3)) {
+                        viewModel.toggleStarred(segment: segment)
+                    }
                 },
-                displayIndices: displayedSegmentIndices
+                displayIndices: viewModel.displayedSegmentIndices
             )
         }
         .padding(.vertical, Spacing.sm)
@@ -425,52 +365,6 @@ struct CompletedProjectSheet: View {
         .accessibilityIdentifier(AccessibilityID.Project.exportButton)
     }
     
-    // MARK: - Helper Methods
-    
-    private func toggleStarred(segment: ActionSegment) {
-        withAnimation(.spring(response: 0.3)) {
-            // Find the segment in the project and toggle its starred status
-            if let index = project.segments.firstIndex(where: { $0.id == segment.id }) {
-                project.segments[index].isStarred.toggle()
-                
-                // Persist the change
-                appState.projectStorageService.updateProject(project)
-            }
-        }
-    }
-    
-    private func updateCurrentSegmentIndex(for time: TimeInterval) {
-        // Find which segment contains the current time
-        for (index, offsetInfo) in segmentOffsets.enumerated() {
-            if time >= offsetInfo.startOffset && time < offsetInfo.endOffset {
-                if currentSegmentIndex != index {
-                    currentSegmentIndex = index
-                }
-                return
-            }
-        }
-        
-        // If we're past all segments, select the last one
-        if !segmentOffsets.isEmpty && time >= highlightDuration {
-            currentSegmentIndex = segmentOffsets.count - 1
-        }
-    }
-    
-    private func jumpToSegment(at index: Int) {
-        guard index >= 0 && index < segmentOffsets.count else { return }
-        let offset = segmentOffsets[index].startOffset
-        currentTime = offset
-    }
-    
-    private func saveToPhotoLibrary() {
-        guard let url = project.highlightVideoURL else { return }
-        
-        UISaveVideoAtPathToSavedPhotosAlbum(url.path, nil, nil, nil)
-        
-        withAnimation(.spring(response: 0.4)) {
-            isSavedToCameraRoll = true
-        }
-    }
 }
 
 // MARK: - Share Sheet
@@ -909,9 +803,11 @@ enum ExportError: Error, LocalizedError {
 // MARK: - Preview
 
 #Preview {
-    @Previewable @State var project = Project.sampleCompleted
-    CompletedProjectSheet(project: $project)
-        .environmentObject(AppState())
+    let viewModel = CompletedProjectViewModel(
+        project: .sampleCompleted,
+        storageService: MockProjectStorageService(withSampleData: true)
+    )
+    CompletedProjectSheet(viewModel: viewModel)
 }
 
 #Preview("Export Sheet") {
