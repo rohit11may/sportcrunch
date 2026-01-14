@@ -64,6 +64,13 @@ struct ControllableVideoPlayer: View {
   // MARK: - Setup
 
   private func setupPlayer() {
+    // Configure Audio Session
+    do {
+      try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
+      try AVAudioSession.sharedInstance().setActive(true)
+    } catch {
+      print("⚠️ [ControllableVideoPlayer] Failed to set audio session category: \(error)")
+    }
     guard FileManager.default.fileExists(atPath: url.path) else {
       print("⚠️ [ControllableVideoPlayer] Video file not found at: \(url.path)")
       return
