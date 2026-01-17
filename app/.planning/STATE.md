@@ -2,19 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-01-10)
+See: .planning/PROJECT.md (updated 2026-01-17)
 
 **Core value:** Accurate, on-device segment detection that identifies rallies and shots without missing good moments or including dead space, while processing efficiently enough for 1-hour videos.
-**Current focus:** Phase 3 — Service Layer + UI Cleanup
+**Current focus:** Project complete at v1.0
 
 ## Current Position
 
-Phase: 3 of 5 (Service Layer + UI Cleanup)
-Plan: 3 of 4 in current phase (03-03 skipped)
-Status: In progress
-Last activity: 2026-01-14 — Completed 03-04-PLAN.md
+Phase: v1.0 COMPLETE
+Plan: All plans complete (7/7, 03-03 skipped)
+Status: Milestone shipped
+Last activity: 2026-01-17 — v1.0 milestone complete
 
-Progress: ████████░ 89% (8 of 9 plans complete)
+Progress: ██████████ 100% (v1.0 shipped)
 
 ## Performance Metrics
 
@@ -39,47 +39,37 @@ Progress: ████████░ 89% (8 of 9 plans complete)
 
 Always use iPhone 17 device for xcodebuild and any testing commands for a simulator.
 
-### Decisions
+### v1.0 Summary
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
+All key decisions are now logged in PROJECT.md Key Decisions table.
 
-| Phase | Decision | Rationale |
-|-------|----------|-----------|
-| 01 | IoU threshold default: 0.5 | Standard threshold for object detection tasks, can tune per-test in Phase 2 |
-| 01 | FP/FN guardrails: <15% FP, <10% FN | Stricter on false negatives - missing segments worse than including extra |
-| 01 | Ground truth format: JSON | Human-readable, easy to create manually, Codable for Swift integration |
-| 01 | Use real VideoProcessingService for E2E tests | Validates full pipeline integration vs mocking |
-| 01 | Always output FPR/FNR metrics in tests | Provides visibility into detection quality over time |
-| 01 | Smoke timeout: 5 minutes | Quick feedback loop for development |
-| 01 | Regression timeout: 30 minutes | Room for growth as test suite expands |
-| 01 | Code coverage in regression only | Not needed for quick smoke runs |
-| 02 | Symlink AccessibilityIdentifiers.swift | Share constants between app and UITests targets without duplication |
-| 02 | Screen object pattern for E2E tests | Typed properties for semantic element discovery |
-| 03 | Actor-based ProcessingReportManager | Thread-safe debug report operations |
-| 03 | Optional dependency injection for debug manager | Backward compatibility: nil = no debug reporting |
-| 03 | Default parameter for ThumbnailService injection | Backward compatibility without changing existing call sites |
-| 03 | Background video loading | Dismiss creation flow immediately, load video in BackgroundProcessingManager |
+Major accomplishments:
+- Test infrastructure with IoU-based fuzzy matching
+- E2E UI tests with accessibility identifiers
+- Service layer extraction (ProcessingReportManager, ThumbnailService, VideoLoaderService)
+- Background video loading for immediate UI dismissal
 
-### Deferred Issues
+### Deferred to Future Work
 
-None yet.
-
-### Blockers/Concerns
-
-None
+- CompletedProjectSheet ViewModel extraction (03-03 skipped)
+- Algorithm readability improvements (Phase 4)
+- Full suite validation and documentation (Phase 5)
+- Enhanced dead space detection modes
+- Export to Photos app
+- Golden labeled test suite
+- Performance optimization for 1-hour videos
 
 ## Session Continuity
 
-Last session: 2026-01-14T02:20:00Z
-Stopped at: Completed 03-04-PLAN.md - VideoLoaderService extraction + background loading
+Last session: 2026-01-17
+Stopped at: v1.0 milestone complete
 Resume file: None
 
-**Phase 3 Status:**
-- ✅ 03-01 complete: ProcessingReportManager extraction (VideoProcessingService 884→675 lines)
-- ✅ 03-02 complete: ThumbnailService extraction (BackgroundProcessingManager 238→212 lines)
-- ⏳ 03-03 skipped: CompletedProjectSheet ViewModel extraction (can be done later)
-- ✅ 03-04 complete: VideoLoaderService extraction (HighlightCreationFlow 767→487 lines) + background loading
+**v1.0 Status:**
+- ✅ Phase 1 complete: Test Infrastructure & Baseline (3/3 plans)
+- ✅ Phase 2 complete: Core E2E Test Coverage (2/2 plans)
+- ✅ Phase 3 complete: Service Layer + UI Cleanup (3/4 plans, 03-03 skipped)
+- 🎉 v1.0 shipped: 2026-01-17
 
-**Next Steps:**
-1. Execute 03-03-PLAN.md OR proceed to Phase 4
+**Project Complete:**
+No further work planned.

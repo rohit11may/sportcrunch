@@ -27,17 +27,16 @@ Accurate, on-device segment detection that identifies rallies and shots without 
 - ✓ Project persistence with UserDefaults — existing
 - ✓ Debug reporting system for diagnostic data — existing
 - ✓ SwiftUI MVVM architecture with protocol-based services — existing
+- ✓ E2E test infrastructure with IoU-based fuzzy matching — v1.0
+- ✓ Accessibility-based UI testing with screen object pattern — v1.0
+- ✓ Service layer extraction (ProcessingReportManager, ThumbnailService, VideoLoaderService) — v1.0
+- ✓ Background video loading for immediate UI dismissal — v1.0
 
 ### Active
 
 <!-- Current scope being built toward. -->
 
-- [ ] Enhanced dead space detection with context-aware modes:
-  - Technique videos: Remove all time between gameplay for shot-by-shot compilation
-  - Rally videos: Combine audio bursts (ball hits) with visual rally detection to form complete rally segments
-- [ ] Export highlights to Photos app (standard iOS export)
-- [ ] Golden labeled test suite for algorithm accuracy validation
-- [ ] Performance optimization to handle 1-hour videos in reasonable time on real devices
+(None - project completed at v1.0)
 
 ### Out of Scope
 
@@ -47,6 +46,12 @@ Accurate, on-device segment detection that identifies rallies and shots without 
 - Cloud processing or cloud storage — all processing remains on-device for privacy and speed
 - Advanced editing features (trimming segments, filters, text overlays, effects) — keep scope focused on detection and export
 - Segment review UI with boundary editing — deferred to future milestone, focus on detection accuracy first
+- Enhanced dead space detection modes — deferred (original Active requirement)
+- Export highlights to Photos app — deferred (original Active requirement)
+- Golden labeled test suite — deferred (original Active requirement)
+- Performance optimization for 1-hour videos — deferred (original Active requirement)
+- Algorithm readability improvements — deferred (Phase 4)
+- Full suite validation and documentation — deferred (Phase 5)
 
 ## Context
 
@@ -64,6 +69,15 @@ The current detection algorithm uses:
 
 Target users are recreational tennis players who record their own matches and want to quickly create shareable highlight reels without manual editing.
 
+**v1.0 Shipped (2026-01-17):**
+- 12,459 lines of Swift code
+- 72 files modified (+10,713, -4,952)
+- Test infrastructure with IoU-based fuzzy matching
+- E2E UI tests with accessibility-based element discovery
+- Service layer refactoring (ProcessingReportManager, ThumbnailService, VideoLoaderService)
+- Background video loading for improved UX
+- 19 days from start to ship
+
 ## Constraints
 
 - **Platform**: iOS 17+ only — leverages modern SwiftUI and Swift Concurrency features
@@ -75,12 +89,16 @@ Target users are recreational tennis players who record their own matches and wa
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| On-device processing only | Privacy, speed, no upload time, works offline | — Pending |
+| On-device processing only | Privacy, speed, no upload time, works offline | ✓ Good |
 | Actor-based concurrency | Thread-safe media processing without locks | ✓ Good |
 | Protocol-based services | Enables testing with mock implementations | ✓ Good |
 | Sport-specific presets | Different sports need different clustering parameters | ✓ Good |
+| IoU-based fuzzy matching (0.5 threshold) | Algorithm timing variations require tolerance | ✓ Good (v1.0) |
+| Screen object pattern for E2E tests | Semantic element discovery vs brittle coordinates | ✓ Good (v1.0) |
+| Optional dependency injection | Backward compatibility for conditional features | ✓ Good (v1.0) |
+| Background video loading | Immediate UI dismissal improves UX | ✓ Good (v1.0) |
 | Defer segment review UI | Focus on detection accuracy before building curation UX | — Pending |
-| Golden test suite approach | Validate algorithm accuracy with labeled ground truth data | — Pending |
+| Skip CompletedProjectSheet ViewModel extraction | Low priority, can be done later | — Pending (v1.0) |
 
 ---
-*Last updated: 2026-01-10 after initialization*
+*Last updated: 2026-01-17 after v1.0 milestone completion*
