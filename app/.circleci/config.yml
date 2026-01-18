@@ -1,0 +1,57 @@
+version: 2.1
+
+jobs:
+  test:
+    machine: true # Use a self-hosted runner
+    resource_class: rohit11may/macmini
+    steps:
+      - checkout
+      - run:
+          name: "Install Dependencies"
+          command: "bundle install"
+      - run:
+          name: "Run Tests"
+          command: "bundle exec fastlane test"
+
+  deploy_internal:
+    machine: true
+    resource_class: rohit11may/macmini
+    steps:
+      - checkout
+      - run:
+          name: "Install Dependencies"
+          command: "bundle install"
+      - run:
+          name: "Deploy to Internal TestFlight"
+          command: "bundle exec fastlane deploy_internal"
+
+  deploy_external:
+    machine: true
+    resource_class: rohit11may/macmini
+    steps:
+      - checkout
+      - run:
+          name: "Install Dependencies"
+          command: "bundle install"
+      - run:
+          name: "Deploy to External TestFlight"
+          command: "bundle exec fastlane deploy_external"
+
+workflows:
+  build_and_deploy:
+    jobs:
+      - test:
+          filters:
+            branches:
+              # Run on all branches except main and dev
+              ignore:
+                - main
+                - dev
+      - deploy_internal:
+          filters:
+            branches:
+              only: dev
+      - deploy_external:
+          filters:
+            branches:
+              only: main
