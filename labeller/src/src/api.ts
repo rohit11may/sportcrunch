@@ -1,6 +1,6 @@
 import type { AnnotationData, VideoSession } from './types';
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = `http://${window.location.hostname}:3001/api`;
 
 export const api = {
     getSessions: async (): Promise<VideoSession[]> => {
@@ -36,4 +36,4 @@ export const api = {
     }
 };
 
-export const getVideoUrl = (filename: string) => `http://localhost:3001/videos/${filename}`;
+export const getVideoUrl = (filename: string) => `http://${window.location.hostname}:3001/videos/${filename}`;
