@@ -21,32 +21,70 @@ final class SegmentDetectionTests: XCTestCase {
         try await super.setUp()
         // Set execution time allowance for video processing (test video is ~2 min)
         executionTimeAllowance = 180.0  // 3 minutes max
-        continueAfterFailure = false
+        continueAfterFailure = true  // Continue testing all cases even if one fails
     }
 
     // MARK: - Shot Detection Tests
 
-    /// Tests tennis shot detection against ground truth with 22 shot segments.
+    /// Tests tennis shot detection against ground truth using all available test cases.
     ///
     /// This test validates the full detection pipeline:
-    /// 1. Loads test resources (video and ground truth)
-    /// 2. Processes video through real VideoProcessingService
+    /// 1. Dynamically discovers all tennis-shot test files
+    /// 2. Processes each video through real VideoProcessingService
     /// 3. Evaluates detected segments using IoU-based fuzzy matching
-    /// 4. Reports FPR/FNR metrics for visibility
+    /// 4. Reports FPR/FNR metrics for each test case
     /// 5. Asserts against configured pass thresholds
     ///
-    /// **Pass Criteria:**
+    /// **Pass Criteria (per test case):**
     /// - At least one true positive (IoU ≥ 0.5)
-    /// - FPR < 90% (permissive threshold for early development)
-    /// - FNR < 50% (permissive threshold for early development)
-    ///
-    /// **Test Resources:**
-    /// - Video: test_shot_1.mp4 (~2 min tennis footage)
-    /// - Ground Truth: test_shot_1.json (22 segments)
-    ///
-    /// **Current Baseline Performance:**
-    /// - Detected: 38 segments, TP: 17, FP: 21 (FPR: 74.6%), FN: 5 (FNR: 41.4%)
+    /// - FPR < 30%
+    /// - FNR < 50%
     func testShotDetection_Tennis() async throws {
+        // ═══════════════════════════════════════════════════════════════
+        // Phase 1: Discover Test Cases
+        // ═══════════════════════════════════════════════════════════════
+
+        let testCases = try discoverTestCases(prefix: "tennis-shot")
+        XCTAssertFalse(testCases.isEmpty, "No test cases found with prefix 'tennis-shot'")
+
+        print("\n🎾 Running \(testCases.count) tennis shot detection tests...\n")
+
+        // ═══════════════════════════════════════════════════════════════
+        // Phase 2: Run Each Test Case
+        // ═══════════════════════════════════════════════════════════════
+
+        for testCase in testCases {
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            print("🧪 Testing: \(testCase)")
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+            try await runShotDetectionTest(testCase: testCase)
+        }
+
+        print("\n✅ All \(testCases.count) test cases passed!\n")
+    }
+
+    /// Discovers all test cases with the given prefix in the GroundTruth folder
+    private func discoverTestCases(prefix: String) throws -> [String] {
+        let groundTruthURL = try TestResourceLoader.groundTruthDirectory()
+        let fileManager = FileManager.default
+
+        let files = try fileManager.contentsOfDirectory(
+            at: groundTruthURL,
+            includingPropertiesForKeys: nil
+        )
+
+        // Filter for JSON files matching the prefix and extract base names
+        let testCases = files
+            .filter { $0.pathExtension == "json" && $0.deletingPathExtension().lastPathComponent.hasPrefix(prefix) }
+            .map { $0.deletingPathExtension().lastPathComponent }
+            .sorted()
+
+        return testCases
+    }
+
+    /// Runs shot detection test for a specific test case
+    private func runShotDetectionTest(testCase: String) async throws {
         // ═══════════════════════════════════════════════════════════════
         // Phase 1: Load Test Resources
         // ═══════════════════════════════════════════════════════════════
@@ -55,15 +93,15 @@ final class SegmentDetectionTests: XCTestCase {
         let groundTruth: GroundTruth
 
         do {
-            videoURL = try TestResourceLoader.loadTestVideo(named: "test_shot_1.mp4")
-            groundTruth = try TestResourceLoader.loadGroundTruth(named: "test_shot_1.json")
+            videoURL = try TestResourceLoader.loadTestVideo(named: "\(testCase).mp4")
+            groundTruth = try TestResourceLoader.loadGroundTruth(named: "\(testCase).json")
         } catch {
             XCTFail("""
-            Failed to load test resources: \(error.localizedDescription)
+            [\(testCase)] Failed to load test resources: \(error.localizedDescription)
 
             Expected resources:
-            - Video: SportCrunchTests/TestResources/Videos/test_shot_1.mp4
-            - Ground Truth: SportCrunchTests/TestResources/GroundTruth/test_shot_1.json
+            - Video: SportCrunchTests/TestResources/Videos/\(testCase).mp4
+            - Ground Truth: SportCrunchTests/TestResources/GroundTruth/\(testCase).json
 
             See SportCrunchTests/TEST_RESOURCES.md for troubleshooting.
             """)
@@ -84,12 +122,12 @@ final class SegmentDetectionTests: XCTestCase {
                 sportMode: TennisMode.individual
             )
         } catch {
-            XCTFail("Video processing failed: \(error.localizedDescription)")
+            XCTFail("[\(testCase)] Video processing failed: \(error.localizedDescription)")
             return
         }
 
         // Verify we got segments
-        XCTAssertFalse(result.segments.isEmpty, "Processing should detect at least one segment")
+        XCTAssertFalse(result.segments.isEmpty, "[\(testCase)] Processing should detect at least one segment")
 
         // ═══════════════════════════════════════════════════════════════
         // Phase 3: Convert to Evaluation Format
@@ -131,7 +169,7 @@ final class SegmentDetectionTests: XCTestCase {
 
         print("""
 
-        📊 Shot Detection Evaluation Results:
+        📊 Shot Detection Evaluation Results [\(testCase)]:
            Ground truth segments: \(groundTruth.segments.count)
            Detected segments: \(result.segments.count)
            True positives: \(evaluation.tp)
@@ -145,6 +183,7 @@ final class SegmentDetectionTests: XCTestCase {
         // ═══════════════════════════════════════════════════════════════
 
         assertEvaluationPasses(
+            testCase: testCase,
             evaluation,
             rates,
             fpThreshold: 30.0,
@@ -156,14 +195,16 @@ final class SegmentDetectionTests: XCTestCase {
 
     /// Assert that evaluation results meet specified thresholds
     ///
-    /// This helper method will be used after Task 3 to enforce user-configured thresholds.
+    /// This helper method enforces user-configured thresholds for test evaluation.
     ///
     /// - Parameters:
+    ///   - testCase: Name of the test case being evaluated
     ///   - evaluation: Tuple of (tp, fp, fn) from fuzzy matching
     ///   - rates: Tuple of (fpRate, fnRate) as percentages
     ///   - fpThreshold: Maximum acceptable false positive rate (%)
     ///   - fnThreshold: Maximum acceptable false negative rate (%)
     private func assertEvaluationPasses(
+        testCase: String,
         _ evaluation: (tp: Int, fp: Int, fn: Int),
         _ rates: (fpRate: Double, fnRate: Double),
         fpThreshold: Double,
@@ -174,7 +215,7 @@ final class SegmentDetectionTests: XCTestCase {
         XCTAssertGreaterThan(
             evaluation.tp,
             0,
-            "No segments matched ground truth (IoU threshold: 0.5)",
+            "[\(testCase)] No segments matched ground truth (IoU threshold: 0.5)",
             file: file,
             line: line
         )
@@ -182,7 +223,7 @@ final class SegmentDetectionTests: XCTestCase {
         XCTAssertLessThan(
             rates.fpRate,
             fpThreshold,
-            "False positive rate: \(String(format: "%.1f", rates.fpRate))% exceeds \(String(format: "%.1f", fpThreshold))% threshold",
+            "[\(testCase)] False positive rate: \(String(format: "%.1f", rates.fpRate))% exceeds \(String(format: "%.1f", fpThreshold))% threshold",
             file: file,
             line: line
         )
@@ -190,7 +231,7 @@ final class SegmentDetectionTests: XCTestCase {
         XCTAssertLessThan(
             rates.fnRate,
             fnThreshold,
-            "False negative rate: \(String(format: "%.1f", rates.fnRate))% exceeds \(String(format: "%.1f", fnThreshold))% threshold",
+            "[\(testCase)] False negative rate: \(String(format: "%.1f", rates.fnRate))% exceeds \(String(format: "%.1f", fnThreshold))% threshold",
             file: file,
             line: line
         )

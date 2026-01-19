@@ -101,6 +101,31 @@ class TestResourceLoader {
         }
     }
 
+    // MARK: - Directory Access
+
+    /// Get the URL to the GroundTruth directory
+    ///
+    /// This can be used to discover all available ground truth files.
+    ///
+    /// - Returns: URL to the GroundTruth directory
+    /// - Throws: `LoadError.groundTruthNotFound` if directory cannot be found
+    static func groundTruthDirectory() throws -> URL {
+        let bundle = Bundle(for: Self.self)
+        guard let resourceURL = bundle.resourceURL else {
+            throw LoadError.groundTruthNotFound("TestResources/GroundTruth")
+        }
+
+        let groundTruthURL = resourceURL
+            .appendingPathComponent("TestResources", isDirectory: true)
+            .appendingPathComponent("GroundTruth", isDirectory: true)
+
+        guard FileManager.default.fileExists(atPath: groundTruthURL.path) else {
+            throw LoadError.groundTruthNotFound("TestResources/GroundTruth")
+        }
+
+        return groundTruthURL
+    }
+
     // MARK: - Validation
 
     /// Check if TestResources directory exists in the test bundle
