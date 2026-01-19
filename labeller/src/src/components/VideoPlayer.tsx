@@ -1,12 +1,14 @@
-import { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
+import { useRef, useEffect, useState, forwardRef, useImperativeHandle, useMemo } from 'react';
 import { Play, Pause } from 'lucide-react';
 import clsx from 'clsx';
+import type { Segment } from '../types';
 
 interface VideoPlayerProps {
     src: string;
     onTimeUpdate: (time: number) => void;
     onDurationChange?: (duration: number) => void;
     className?: string;
+    segments?: Segment[];
 }
 
 export interface VideoPlayerHandle {
@@ -18,12 +20,17 @@ export interface VideoPlayerHandle {
     setPlaybackRate: (rate: number) => void;
 }
 
-const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, onTimeUpdate, onDurationChange, className }, ref) => {
+const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, onTimeUpdate, onDurationChange, className, segments = [] }, ref) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [playbackRate, setPlaybackRate] = useState(1);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+
+    // Check if current time is within any recorded segment
+    const isInSegment = useMemo(() => {
+        return segments.some(seg => currentTime >= seg.start && currentTime <= seg.end);
+    }, [segments, currentTime]);
 
     useImperativeHandle(ref, () => ({
         getCurrentTime: () => videoRef.current?.currentTime || 0,
@@ -80,17 +87,44 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, onTi
 
     return (
         <div className={clsx("flex flex-col gap-2 rounded-lg bg-black/90 p-2", className)}>
-            <video
-                ref={videoRef}
-                src={src}
-                className="w-full rounded bg-black"
-                onTimeUpdate={handleTimeUpdate}
-                onLoadedMetadata={handleLoadedMetadata}
-                onEnded={() => setIsPlaying(false)}
-                onClick={togglePlay}
-            />
+            {/* Video with red overlay when playing through recorded segments */}
+            <div className="relative">
+                <video
+                    ref={videoRef}
+                    src={src}
+                    className="w-full rounded bg-black"
+                    onTimeUpdate={handleTimeUpdate}
+                    onLoadedMetadata={handleLoadedMetadata}
+                    onEnded={() => setIsPlaying(false)}
+                    onClick={togglePlay}
+                />
+                {/* Red overlay when current time is within a recorded segment */}
+                {isInSegment && (
+                    <div
+                        className="absolute inset-0 bg-red-500/30 rounded pointer-events-none"
+                        aria-hidden="true"
+                    />
+                )}
+            </div>
 
+            {/* Scrubber with segment highlights */}
             <div className="relative group/seekbar px-1">
+                {/* Segment highlight bars */}
+                {duration > 0 && segments.map((seg, index) => {
+                    const leftPercent = (seg.start / duration) * 100;
+                    const widthPercent = ((seg.end - seg.start) / duration) * 100;
+                    return (
+                        <div
+                            key={index}
+                            className="absolute top-0 bottom-0 bg-green-500/50 rounded pointer-events-none"
+                            style={{
+                                left: `${leftPercent}%`,
+                                width: `${widthPercent}%`,
+                            }}
+                            aria-hidden="true"
+                        />
+                    );
+                })}
                 <input
                     type="range"
                     min={0}
@@ -103,7 +137,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, onTi
                             videoRef.current.currentTime = time;
                         }
                     }}
-                    className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500 hover:h-2 transition-all outline-none"
+                    className="relative z-10 w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500 hover:h-2 transition-all outline-none"
                 />
             </div>
 
