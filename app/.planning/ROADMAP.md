@@ -54,7 +54,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 04-01-PLAN.md — SegmentationMethod protocol + SpectralFluxMethod implementation + service wiring
+- [x] 04-01-PLAN.md — SegmentationMethod protocol + SpectralFluxMethod implementation + service wiring
 
 #### Phase 5: Method Variants & Intermediate Data
 **Goal**: Extend method framework with variants and observable processing data
@@ -121,7 +121,7 @@ Phases execute in numeric order: 4 -> 5 -> 6 -> 7 -> 8
 | 1. Test Infrastructure & Baseline | v1.0 | 3/3 | Complete | 2026-01-14 |
 | 2. Core E2E Test Coverage | v1.0 | 2/2 | Complete | 2026-01-15 |
 | 3. Service Layer + UI Cleanup | v1.0 | 3/4 | Complete | 2026-01-17 |
-| 4. Method Protocol Foundation | v1.1 | 0/1 | Planned | - |
+| 4. Method Protocol Foundation | v1.1 | 1/1 | Complete | 2026-01-20 |
 | 5. Method Variants & Intermediate Data | v1.1 | 0/? | Not started | - |
 | 6. Data Export | v1.1 | 0/? | Not started | - |
 | 7. Browser Tool Core | v1.1 | 0/? | Not started | - |

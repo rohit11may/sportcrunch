@@ -62,8 +62,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| METH-01 | Phase 4 | Pending |
-| METH-02 | Phase 4 | Pending |
+| METH-01 | Phase 4 | Complete |
+| METH-02 | Phase 4 | Complete |
 | METH-03 | Phase 5 | Pending |
 | METH-04 | Phase 5 | Pending |
 | EXPRT-01 | Phase 6 | Pending |
