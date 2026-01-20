@@ -2,19 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-01-17)
+See: .planning/PROJECT.md (updated 2026-01-20)
 
 **Core value:** Accurate, on-device segment detection that identifies rallies and shots without missing good moments or including dead space, while processing efficiently enough for 1-hour videos.
-**Current focus:** Project complete at v1.0
+**Current focus:** v1.1 DevX for Algorithm Iteration
 
 ## Current Position
 
-Phase: v1.0 COMPLETE
-Plan: All plans complete (7/7, 03-03 skipped)
-Status: Milestone shipped
-Last activity: 2026-01-17 — v1.0 milestone complete
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-01-20 — Milestone v1.1 started
 
-Progress: ██████████ 100% (v1.0 shipped)
+Progress: ░░░░░░░░░░ 0%
 
 ## Performance Metrics
 

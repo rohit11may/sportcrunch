@@ -36,7 +36,22 @@ Accurate, on-device segment detection that identifies rallies and shots without 
 
 <!-- Current scope being built toward. -->
 
-(None - project completed at v1.0)
+- [ ] Method abstraction layer — refactor algorithm into swappable "Method" protocol
+- [ ] Intermediate data export — JSON output with processing steps (waveform, spectral flux, segments)
+- [ ] Browser-based comparison tool — local web UI triggering xcodebuild, visualizing results
+- [ ] Audio-only method variant — spectral flux without visual validation for comparison
+- [ ] Parameter tuning workflow — adjust thresholds, re-run, see impact on detections
+
+## Current Milestone: v1.1 DevX for Algorithm Iteration
+
+**Goal:** Enable rapid comparison and tuning of detection methods through browser-based visualization of iOS processing results.
+
+**Target features:**
+- Method abstraction that makes algorithm implementations swappable
+- JSON export of intermediate processing data from iOS tests
+- Browser tool that triggers xcodebuild and visualizes results
+- Side-by-side comparison of current method vs. audio-only variant
+- Parameter adjustment with immediate feedback on detection quality
 
 ### Out of Scope
 
@@ -101,4 +116,4 @@ Target users are recreational tennis players who record their own matches and wa
 | Skip CompletedProjectSheet ViewModel extraction | Low priority, can be done later | — Pending (v1.0) |
 
 ---
-*Last updated: 2026-01-17 after v1.0 milestone completion*
+*Last updated: 2026-01-20 after v1.1 milestone start*
