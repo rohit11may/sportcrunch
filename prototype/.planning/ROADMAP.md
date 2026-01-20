@@ -17,7 +17,9 @@
 **Plans:** 1 plan
 
 Plans:
-- [ ] 01-01-PLAN.md — Core framework (ABC, dataclasses, registry, stub method)
+- [x] 01-01-PLAN.md — Core framework (ABC, dataclasses, registry, stub method)
+
+**Status:** Complete (2026-01-20)
 
 **Deliverables:**
 - `SegmentationMethod` ABC with required interface
