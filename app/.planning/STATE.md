@@ -9,7 +9,7 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Phase: 4 of 7 (Method Protocol Foundation)
+Phase: 4 of 8 (Method Protocol Foundation)
 Plan: Not started
 Status: Ready to plan
 Last activity: 2026-01-20 — Roadmap created for v1.1 milestone
@@ -66,4 +66,5 @@ Resume file: None
 - Phase 4: Method Protocol Foundation - Ready to plan
 - Phase 5: Method Variants & Intermediate Data - Not started
 - Phase 6: Data Export - Not started
-- Phase 7: Browser Visualization Tool - Not started
+- Phase 7: Browser Tool Core - Not started
+- Phase 8: Visualization & Comparison - Not started
