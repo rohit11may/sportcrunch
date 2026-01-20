@@ -14,6 +14,11 @@
 
 **Requirements:** FRAME-01, FRAME-02, FRAME-03
 
+**Plans:** 1 plan
+
+Plans:
+- [ ] 01-01-PLAN.md — Core framework (ABC, dataclasses, registry, stub method)
+
 **Deliverables:**
 - `SegmentationMethod` ABC with required interface
 - `MethodResult` dataclass with FSM state timeline validation
