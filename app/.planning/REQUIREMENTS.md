@@ -62,25 +62,25 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| METH-01 | TBD | Pending |
-| METH-02 | TBD | Pending |
-| METH-03 | TBD | Pending |
-| METH-04 | TBD | Pending |
-| EXPRT-01 | TBD | Pending |
-| EXPRT-02 | TBD | Pending |
-| EXPRT-03 | TBD | Pending |
-| EXPRT-04 | TBD | Pending |
-| BROW-01 | TBD | Pending |
-| BROW-02 | TBD | Pending |
-| BROW-03 | TBD | Pending |
-| BROW-04 | TBD | Pending |
-| BROW-05 | TBD | Pending |
+| METH-01 | Phase 4 | Pending |
+| METH-02 | Phase 4 | Pending |
+| METH-03 | Phase 5 | Pending |
+| METH-04 | Phase 5 | Pending |
+| EXPRT-01 | Phase 6 | Pending |
+| EXPRT-02 | Phase 6 | Pending |
+| EXPRT-03 | Phase 6 | Pending |
+| EXPRT-04 | Phase 6 | Pending |
+| BROW-01 | Phase 7 | Pending |
+| BROW-02 | Phase 7 | Pending |
+| BROW-03 | Phase 7 | Pending |
+| BROW-04 | Phase 8 | Pending |
+| BROW-05 | Phase 8 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 13 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 13
+- Mapped to phases: 13
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-20*
-*Last updated: 2026-01-20 after initial definition*
+*Last updated: 2026-01-20 after roadmap creation*

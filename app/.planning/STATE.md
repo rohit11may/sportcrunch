@@ -4,17 +4,17 @@
 
 See: .planning/PROJECT.md (updated 2026-01-20)
 
-**Core value:** Accurate, on-device segment detection that identifies rallies and shots without missing good moments or including dead space, while processing efficiently enough for 1-hour videos.
-**Current focus:** v1.1 DevX for Algorithm Iteration
+**Core value:** Accurate, on-device segment detection that identifies rallies and shots without missing good moments or including dead space.
+**Current focus:** v1.1 DevX for Algorithm Iteration - Phase 4 Method Protocol Foundation
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-01-20 — Milestone v1.1 started
+Phase: 4 of 7 (Method Protocol Foundation)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-01-20 — Roadmap created for v1.1 milestone
 
-Progress: ░░░░░░░░░░ 0%
+Progress: ████████░░░░░░░░░░░░ 38% (v1.0 complete, v1.1 starting)
 
 ## Performance Metrics
 
@@ -33,43 +33,37 @@ Progress: ░░░░░░░░░░ 0%
 
 **Recent Trend:**
 - Last 5 plans: 6.5 min, 15 min, 2 min, 18 min
-- Trend: VideoLoaderService extraction with background loading enhancement
+- Trend: Stable
 
 ## Accumulated Context
 
 Always use iPhone 17 device for xcodebuild and any testing commands for a simulator.
 
-### v1.0 Summary
+### Decisions
 
-All key decisions are now logged in PROJECT.md Key Decisions table.
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
 
-Major accomplishments:
-- Test infrastructure with IoU-based fuzzy matching
-- E2E UI tests with accessibility identifiers
-- Service layer extraction (ProcessingReportManager, ThumbnailService, VideoLoaderService)
-- Background video loading for immediate UI dismissal
+- [v1.0]: IoU-based fuzzy matching for segment tests
+- [v1.0]: Service layer extraction pattern (Manager/Service naming)
+- [v1.0]: Background video loading for immediate UI dismissal
 
-### Deferred to Future Work
+### Pending Todos
 
-- CompletedProjectSheet ViewModel extraction (03-03 skipped)
-- Algorithm readability improvements (Phase 4)
-- Full suite validation and documentation (Phase 5)
-- Enhanced dead space detection modes
-- Export to Photos app
-- Golden labeled test suite
-- Performance optimization for 1-hour videos
+None yet.
+
+### Blockers/Concerns
+
+None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-17
-Stopped at: v1.0 milestone complete
+Last session: 2026-01-20
+Stopped at: v1.1 roadmap created
 Resume file: None
 
-**v1.0 Status:**
-- ✅ Phase 1 complete: Test Infrastructure & Baseline (3/3 plans)
-- ✅ Phase 2 complete: Core E2E Test Coverage (2/2 plans)
-- ✅ Phase 3 complete: Service Layer + UI Cleanup (3/4 plans, 03-03 skipped)
-- 🎉 v1.0 shipped: 2026-01-17
-
-**Project Complete:**
-No further work planned.
+**v1.1 Status:**
+- Phase 4: Method Protocol Foundation - Ready to plan
+- Phase 5: Method Variants & Intermediate Data - Not started
+- Phase 6: Data Export - Not started
+- Phase 7: Browser Visualization Tool - Not started
