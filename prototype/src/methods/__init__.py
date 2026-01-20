@@ -4,3 +4,4 @@ Imports all method submodules to trigger registration.
 """
 
 from . import stub
+from . import audio_onset
