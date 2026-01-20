@@ -7,6 +7,7 @@ using Intersection over Union (IoU) based matching.
 
 from .evaluator import SegmentEvaluator, TimeRange, EvaluationMetrics
 from .ground_truth import GroundTruth, GroundTruthLoader, Segment
+from .harness import TestHarness, HarnessResult, MethodVideoResult
 
 __all__ = [
     "SegmentEvaluator",
@@ -15,4 +16,7 @@ __all__ = [
     "GroundTruth",
     "GroundTruthLoader",
     "Segment",
+    "TestHarness",
+    "HarnessResult",
+    "MethodVideoResult",
 ]
