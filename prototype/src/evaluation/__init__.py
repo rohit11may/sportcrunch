@@ -6,5 +6,13 @@ using Intersection over Union (IoU) based matching.
 """
 
 from .evaluator import SegmentEvaluator, TimeRange, EvaluationMetrics
+from .ground_truth import GroundTruth, GroundTruthLoader, Segment
 
-__all__ = ["SegmentEvaluator", "TimeRange", "EvaluationMetrics"]
+__all__ = [
+    "SegmentEvaluator",
+    "TimeRange",
+    "EvaluationMetrics",
+    "GroundTruth",
+    "GroundTruthLoader",
+    "Segment",
+]
