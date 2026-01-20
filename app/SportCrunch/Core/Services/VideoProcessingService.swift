@@ -216,8 +216,7 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
     private var isCancelled = false
 
     // Components
-    private let audioAnalyzer = AudioAnalyzer()
-    private let visualValidator = VisualValidator()
+    private let method: any SegmentationMethod
     private let videoExporter = VideoExporter()
 
     // Debug reporting
@@ -225,7 +224,11 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
 
     // MARK: - Initialization
 
-    init(reportManager: ProcessingReportManagerProtocol? = nil) {
+    init(
+        method: (any SegmentationMethod)? = nil,
+        reportManager: ProcessingReportManagerProtocol? = nil
+    ) {
+        self.method = method ?? SpectralFluxMethod()
         self.reportManager = reportManager
     }
 
@@ -251,8 +254,7 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         }
 
         // Track timing for each phase
-        var audioExtractionTime: Double = 0
-        var visualValidationTime: Double = 0
+        var detectionTime: Double = 0
         var exportTime: Double = 0
         
         // Get the preset for this sport/mode combination
@@ -301,205 +303,84 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             }
         }
         print("")
-        
+
         // ═══════════════════════════════════════════════════════════════
-        // Phase 1: Audio Analysis (0-50% progress)
+        // Phase 1-2: Segment Detection (0-75% progress)
         // ═══════════════════════════════════════════════════════════════
         print("⚙️ [VideoProcessor] ┌─────────────────────────────────────────┐")
-        print("⚙️ [VideoProcessor] │  PHASE 1/3: AUDIO ANALYSIS              │")
+        print("⚙️ [VideoProcessor] │  PHASE 1-2/3: SEGMENT DETECTION         │")
+        print("⚙️ [VideoProcessor] │  Method: \(method.name)                 │")
         print("⚙️ [VideoProcessor] └─────────────────────────────────────────┘")
-        
+
         statusSubject.send(.analyzingAudio)
         progressSubject.send(0.05)
-        
-        let audioPhaseStart = Date()
-        let audioResult: AudioAnalysisResult
+
+        let detectionPhaseStart = Date()
+        let segments: [ActionSegment]
+
         do {
-            audioResult = try await audioAnalyzer.analyze(videoURL: sourceURL, sport: sport, sportMode: sportMode)
+            // Update progress through detection phases
+            statusSubject.send(.detectingAction)
+            progressSubject.send(0.40)
+
+            segments = try await method.detectSegments(
+                videoURL: sourceURL,
+                sport: sport,
+                sportMode: sportMode
+            )
+
+            detectionTime = Date().timeIntervalSince(detectionPhaseStart)
+
+            // Log detection results
+            if let reportManager = reportManager {
+                await reportManager.log(
+                    level: "info",
+                    component: "SegmentationMethod",
+                    message: "Detection complete using \(method.name)",
+                    data: ["segmentCount": "\(segments.count)", "duration": "\(detectionTime)"]
+                )
+            }
+
         } catch {
-            print("⚙️ [VideoProcessor] ❌ Audio analysis failed: \(error.localizedDescription)")
+            print("⚙️ [VideoProcessor] ❌ Segment detection failed: \(error.localizedDescription)")
             await MainActor.run {
-                logger.error("Audio analysis failed: \(error.localizedDescription)")
+                logger.error("Segment detection failed: \(error.localizedDescription)")
             }
             if let reportManager = reportManager {
-                await reportManager.log(level: "error", component: "AudioAnalyzer", message: "Audio analysis failed", data: ["error": error.localizedDescription])
+                await reportManager.log(
+                    level: "error",
+                    component: "SegmentationMethod",
+                    message: "Detection failed",
+                    data: ["error": error.localizedDescription, "method": method.name]
+                )
             }
-            throw ProcessingError.audioExtractionFailed
+            throw error
         }
-        audioExtractionTime = Date().timeIntervalSince(audioPhaseStart)
 
-        // Record audio analysis debug data
-        if let reportManager = reportManager, var builder = debugBuilder {
-            await reportManager.recordAudioAnalysis(audioResult, to: &builder)
-            debugBuilder = builder
-        }
-        
         guard !isCancelled else {
-            print("⚙️ [VideoProcessor] ⚠️ Cancelled during audio analysis")
+            print("⚙️ [VideoProcessor] ⚠️ Cancelled during segment detection")
             await MainActor.run {
                 logger.warning("Processing cancelled")
             }
             throw ProcessingError.cancelled
         }
-        progressSubject.send(0.50)
-        
-        // Check if any candidates were found
-        guard !audioResult.candidateIntervals.isEmpty else {
-            print("⚙️ [VideoProcessor] ❌ No action detected in audio analysis")
+
+        guard !segments.isEmpty else {
+            print("⚙️ [VideoProcessor] ❌ No action detected")
             await MainActor.run {
-                logger.error("No action detected in audio")
-            }
-            if let reportManager = reportManager {
-                await reportManager.log(level: "error", component: "VideoProcessor", message: "No action detected in audio", data: nil)
+                logger.error("No action detected")
             }
             throw ProcessingError.noActionDetected
         }
-        
-        print("")
-        
-        // ═══════════════════════════════════════════════════════════════
-        // Phase 2: Visual Validation (50-75% progress)
-        // ═══════════════════════════════════════════════════════════════
-        print("⚙️ [VideoProcessor] ┌─────────────────────────────────────────┐")
-        print("⚙️ [VideoProcessor] │  PHASE 2/3: VISUAL VALIDATION           │")
-        print("⚙️ [VideoProcessor] └─────────────────────────────────────────┘")
-        
-        statusSubject.send(.detectingAction)
-        progressSubject.send(0.55)
-        
-        let finalIntervals: [(start: TimeInterval, end: TimeInterval)]
-        let segments: [ActionSegment]
-        
-        // Check if visual validation should be skipped for this sport/mode
-        if preset.skipVisualValidation {
-            print("⚙️ [VideoProcessor] ✓ Skipping visual validation for \(sport.displayName) (audio-only mode)")
-            await MainActor.run {
-                logger.success("Using audio-only mode for \(sport.displayName) (visual validation skipped)")
-            }
-            
-            // Use audio results directly with high confidence
-            finalIntervals = audioResult.candidateIntervals
-            segments = finalIntervals.map { interval in
-                ActionSegment(
-                    startTime: interval.start,
-                    endTime: interval.end,
-                    confidence: 0.9  // High confidence for audio-only tennis
-                )
-            }
-            progressSubject.send(0.75)
-        } else {
-            // Perform visual validation for sports that need it
-            let visualPhaseStart = Date()
-            let validations: [SegmentValidation]
-            do {
-                // Progress during visual validation: 0.55 to 0.75 (range of 0.20)
-                let visualProgressBase: Double = 0.55
-                let visualProgressRange: Double = 0.20
-                
-                validations = try await visualValidator.validate(
-                    videoURL: sourceURL,
-                    candidates: audioResult.candidateIntervals,
-                    sport: sport,
-                    sportMode: sportMode,
-                    progressHandler: { [weak self] batchProgress in
-                        let overallProgress = visualProgressBase + (batchProgress * visualProgressRange)
-                        self?.progressSubject.send(overallProgress)
-                    }
-                )
-                visualValidationTime = Date().timeIntervalSince(visualPhaseStart)
 
-                // Record detailed visual validation debug data
-                if let reportManager = reportManager, var builder = debugBuilder {
-                    let visualResult = VisualValidationResult(validations: validations, preset: preset)
-                    await reportManager.recordVisualValidation(visualResult, to: &builder)
-                    debugBuilder = builder
-                }
+        progressSubject.send(0.75)
+        print("⚙️ [VideoProcessor] ✓ Detected \(segments.count) segments using \(method.name)")
+        await MainActor.run {
+            logger.success("\(segments.count) segments detected")
+        }
 
-            } catch {
-                print("⚙️ [VideoProcessor] ⚠️ Visual validation failed, falling back to audio-only")
-                print("⚙️ [VideoProcessor] Error: \(error.localizedDescription)")
-                await MainActor.run {
-                    logger.warning("Visual validation unavailable, using audio-only")
-                }
-                if let reportManager = reportManager {
-                    await reportManager.log(level: "warning", component: "VisualValidator", message: "Visual validation failed, using audio-only", data: ["error": error.localizedDescription])
-                }
-                
-                // If visual validation fails, fall back to using audio-only results
-                let fallbackSegments = audioResult.candidateIntervals.map { interval in
-                    ActionSegment(
-                        startTime: interval.start,
-                        endTime: interval.end,
-                        confidence: 0.8
-                    )
-                }
-                
-                // Skip to export phase
-                return try await exportSegments(
-                    sourceURL: sourceURL,
-                    intervals: audioResult.candidateIntervals,
-                    segments: fallbackSegments,
-                    pipelineStart: pipelineStart,
-                    originalFileSize: originalFileSize,
-                    audioExtractionTime: audioExtractionTime,
-                    visualValidationTime: 0,
-                    debugBuilder: &debugBuilder
-                )
-            }
-            
-            guard !isCancelled else {
-                print("⚙️ [VideoProcessor] ⚠️ Cancelled during visual validation")
-                await MainActor.run {
-                    logger.warning("Processing cancelled")
-                }
-                throw ProcessingError.cancelled
-            }
-            progressSubject.send(0.75)
-            
-            // Filter to only valid (motion-confirmed) segments
-            let validIntervals = validations
-                .filter { $0.isValid }
-                .map { (start: $0.start, end: $0.end) }
-            
-            // If no segments validated, try using all audio candidates with lower confidence
-            if validIntervals.isEmpty {
-                print("⚙️ [VideoProcessor] ⚠️ No segments passed visual validation, using audio-only results")
-                await MainActor.run {
-                    logger.warning("Low motion detected, using audio-only results")
-                }
-                finalIntervals = audioResult.candidateIntervals
-                segments = audioResult.candidateIntervals.map { interval in
-                    ActionSegment(
-                        startTime: interval.start,
-                        endTime: interval.end,
-                        confidence: 0.6
-                    )
-                }
-            } else {
-                print("⚙️ [VideoProcessor] ✓ \(validIntervals.count) segments validated with motion")
-                await MainActor.run {
-                    logger.success("\(validIntervals.count) segments verified with motion")
-                }
-                finalIntervals = validIntervals
-                segments = validations.filter { $0.isValid }.map { validation in
-                    let normalizedScore = min(1.0, validation.motionScore / 2000.0)
-                    let confidence = 0.7 + (normalizedScore * 0.3)
-                    return ActionSegment(
-                        startTime: validation.start,
-                        endTime: validation.end,
-                        confidence: confidence
-                    )
-                }
-            }
-        }
-        
-        guard !finalIntervals.isEmpty else {
-            print("⚙️ [VideoProcessor] ❌ No action detected after validation")
-            await MainActor.run {
-                logger.error("No action detected after validation")
-            }
-            throw ProcessingError.noActionDetected
-        }
+        // Build intervals for export
+        let finalIntervals = segments.map { (start: $0.startTime, end: $0.endTime) }
         
         print("")
         
@@ -512,8 +393,7 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             segments: segments,
             pipelineStart: pipelineStart,
             originalFileSize: originalFileSize,
-            audioExtractionTime: audioExtractionTime,
-            visualValidationTime: visualValidationTime,
+            detectionTime: detectionTime,
             debugBuilder: &debugBuilder
         )
     }
@@ -526,8 +406,7 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         segments: [ActionSegment],
         pipelineStart: Date,
         originalFileSize: Int64,
-        audioExtractionTime: Double = 0,
-        visualValidationTime: Double = 0,
+        detectionTime: Double = 0,
         debugBuilder: inout DebugReportBuilder?
     ) async throws -> ProcessingResult {
         let logger = ProcessingLogger.shared
@@ -630,8 +509,8 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             // Record timing information
             await reportManager.recordTiming(
                 totalTime: totalElapsed,
-                audioTime: audioExtractionTime,
-                visualTime: visualValidationTime,
+                audioTime: detectionTime,  // Detection time (was audio + visual)
+                visualTime: 0,  // No longer separated
                 exportTime: exportTime,
                 to: &builder
             )
