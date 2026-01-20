@@ -42,6 +42,12 @@ Plans:
 
 **Requirements:** EVAL-01, EVAL-02, EVAL-03, FRAME-04
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Core evaluation components (evaluator, ground truth, video loader)
+- [ ] 02-02-PLAN.md — Test harness and verification
+
 **Deliverables:**
 - `SegmentEvaluator` class (ported from Swift)
 - `GroundTruthLoader` reading from iOS TestResources
