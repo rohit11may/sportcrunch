@@ -45,7 +45,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Core evaluation components (evaluator, ground truth, video loader)
+- [x] 02-01-PLAN.md — Core evaluation components (evaluator, ground truth, video loader)
 - [ ] 02-02-PLAN.md — Test harness and verification
 
 **Deliverables:**
@@ -71,6 +71,11 @@ Plans:
 
 **Requirements:** METH-01
 
+**Plans:** 1 plan
+
+Plans:
+- [ ] 03-01-PLAN.md — AudioOnsetMethod wrapper with FSM extraction and viz hooks
+
 **Deliverables:**
 - `AudioOnsetMethod` implementing `SegmentationMethod`
 - FSM state extraction from pipeline stages
@@ -79,8 +84,9 @@ Plans:
 
 **Key Files:**
 - `src/methods/audio_onset/method.py`
-- `src/methods/audio_onset/config.py`
-- Move existing: `audio_analyzer.py`, `video_validator.py`, `pipeline.py`
+- `src/methods/audio_onset/audio_analyzer.py`
+- `src/methods/audio_onset/video_validator.py`
+- `src/methods/audio_onset/pipeline.py`
 
 **Verification:** AV-Funnel runs through test harness on all 6 videos, produces valid results.
 
