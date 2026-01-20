@@ -2,12 +2,12 @@
 
 ## Current Position
 
-Phase: 1 of 5 (Framework Foundation)
-Plan: 1 of 1 completed
-Status: Phase 1 complete
-Last activity: 2026-01-20 — Completed 01-01-PLAN.md (Core framework)
+Phase: 2 of 5 (Evaluation Infrastructure)
+Plan: 1 of 2 completed
+Status: In progress
+Last activity: 2026-01-20 — Completed 02-01-PLAN.md (Evaluation foundation)
 
-Progress: [████░░░░░░░░░░░░░░░░] 1/5 phases (20%)
+Progress: [████████░░░░░░░░░░░░] 2/5 phases (40%)
 
 ## Accumulated Context
 
@@ -22,6 +22,9 @@ Building a multi-method comparison framework for tennis segment detection algori
 - Method registry stores classes (not instances) - instantiate per-use
 - FSM timeline validation: must cover [0, duration], sorted, contain active/inactive states
 - Decorator-based registration with explicit imports (not entry_points or dynamic discovery)
+- Virtual environment (venv/) for Python dependencies due to externally-managed system Python
+- Path resolution to iOS resources: 4 levels up from module to sportcrunch root
+- Ground truth segments convert to TimeRange via as_time_ranges() for evaluator compatibility
 
 **Test Corpus:**
 - 6 annotated tennis videos in iOS app's TestResources
@@ -35,9 +38,9 @@ Building a multi-method comparison framework for tennis segment detection algori
 
 ## Session Continuity
 
-Last session: 2026-01-20 10:48 UTC
-Stopped at: Completed 01-01-PLAN.md
-Resume file: None (phase complete)
+Last session: 2026-01-20 13:08 UTC
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None (plan complete)
 
 ---
 *State tracking for: Tennis Rally Detector v1.0*
