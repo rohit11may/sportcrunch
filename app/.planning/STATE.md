@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-01-21)
 ## Current Position
 
 Phase: 6 of 9 (Dashboard Backend & Web Core)
-Plan: 2 of 3
-Status: In progress
-Last activity: 2026-01-21 — Completed 06-02-PLAN.md
+Plan: 3 of 3
+Status: Phase complete
+Last activity: 2026-01-21 — Completed 06-03-PLAN.md
 
-Progress: ████████▓░░░░░░░░░░░ 46% (13 of 28 plans complete)
+Progress: █████████░░░░░░░░░░░ 50% (14 of 28 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
-- Average duration: 6.5 min
+- Total plans completed: 14
+- Average duration: 6.1 min
 - Total execution time: 1.4 hours
 
 **By Phase:**
@@ -32,11 +32,11 @@ Progress: ████████▓░░░░░░░░░░░ 46% (13 o
 | 3. Service Layer + UI Cleanup | 3 | 35 min | 11.7 min |
 | 4. Method Protocol Foundation | 1 | 9 min | 9.0 min |
 | 5. iOS Runner Core | 3 | 4 min | 1.3 min |
-| 6. Dashboard Backend & Web Core | 2 | 7 min | 3.5 min |
+| 6. Dashboard Backend & Web Core | 3 | 10 min | 3.3 min |
 
 **Recent Trend:**
-- Last 5 plans: 9 min, 4 min, 2 min, 5 min
-- Trend: Stable (Phase 6 plans averaging 3-4 min with clear specs)
+- Last 5 plans: 4 min, 2 min, 5 min, 3 min
+- Trend: Excellent (Phase 6 complete at 3.3 min avg, clear specs paying off)
 
 ## Accumulated Context
 
@@ -68,6 +68,10 @@ Recent decisions affecting current work:
 - [06-02]: Vite for React build tooling with /api proxy
 - [06-02]: 2-second status polling interval for run monitoring
 - [06-02]: 4-minute timeout for long-running video processing
+- [06-03]: Horizontal timeline bars for segment visualization
+- [06-03]: Toggle button for rejected segments view
+- [06-03]: Static file serving for videos via /videos/ and /uploads/
+- [06-03]: 800px fixed timeline width with 30-second time axis intervals
 
 ### Pending Todos
 
@@ -84,7 +88,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Completed 06-02-PLAN.md (React Dashboard)
+Stopped at: Completed 06-03-PLAN.md (Results View)
 Resume file: None
 
 **v1.1 Status (post-pivot):**
@@ -93,10 +97,10 @@ Resume file: None
   - ✅ 05-01: HTTP Server Foundation
   - ✅ 05-02: Run Execution Pipeline
   - ✅ 05-03: Filesystem Video Transfer
-- Phase 6: Dashboard Backend & Web Core - In progress (2/3 plans done)
+- Phase 6: Dashboard Backend & Web Core - Complete (3/3 plans done)
   - ✅ 06-01: Node.js Backend & iOS Runner Proxy
   - ✅ 06-02: React Dashboard (video selection, run triggering)
-  - ⏳ 06-03: Results View (timeline visualization, video player)
+  - ✅ 06-03: Results View (timeline visualization, video player)
 - Phase 7: Method Registry - Not started (JSON definitions, dynamic config forms)
 - Phase 8: Comparison & Ground Truth - Not started (ground truth overlay, metrics)
 - Phase 9: Intermediate Visualization & Polish - Not started (spectral flux viz, device support)
