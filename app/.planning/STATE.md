@@ -2,26 +2,26 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-01-20)
+See: .planning/PROJECT.md (updated 2026-01-21)
 
 **Core value:** Accurate, on-device segment detection that identifies rallies and shots without missing good moments or including dead space.
-**Current focus:** v1.1 DevX for Algorithm Iteration - Phase 5 Method Variants & Intermediate Data
+**Current focus:** v1.1 DevX for Algorithm Iteration - Phase 5 iOS Runner Core
 
 ## Current Position
 
-Phase: 5 of 8 (Method Variants & Intermediate Data)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-01-20 — Phase 4 complete, verified
+Phase: 5 of 9 (iOS Runner Core)
+Plan: 05-02 complete, 2 of 3 plans done in Phase 5
+Status: In progress
+Last activity: 2026-01-21 — Run Execution Pipeline complete
 
-Progress: ██████████░░░░░░░░░░ 50% (Phase 4 complete)
+Progress: ██████░░░░░░░░░░░░░░ 30% (Phase 4 complete + 2 plans in Phase 5, 4.3 phases remaining)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 8.1 min
-- Total execution time: 1.2 hours
+- Total plans completed: 10
+- Average duration: 7.6 min
+- Total execution time: 1.3 hours
 
 **By Phase:**
 
@@ -31,10 +31,11 @@ Progress: ██████████░░░░░░░░░░ 50% (Phas
 | 2. Core E2E Test Coverage | 2 | 13 min | 6.5 min |
 | 3. Service Layer + UI Cleanup | 3 | 35 min | 11.7 min |
 | 4. Method Protocol Foundation | 1 | 9 min | 9.0 min |
+| 5. iOS Runner Core | 2 | 4 min | 2.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 15 min, 2 min, 18 min, 9 min
-- Trend: Stable (averaging ~11 min/plan)
+- Last 5 plans: 2 min, 18 min, 9 min, 4 min
+- Trend: Improving (recent plans faster due to clear specifications)
 
 ## Accumulated Context
 
@@ -51,6 +52,15 @@ Recent decisions affecting current work:
 - [04-01]: Protocol-based method abstraction for algorithm swapping
 - [04-01]: SpectralFluxMethod as final class (not actor) with actor components
 - [04-01]: Progress reporting stays in service layer, not method layer
+- [v1.1 pivot]: iOS Runner with Swifter HTTP server (not xcodebuild)
+- [v1.1 pivot]: Same project, new target (SportCrunchRunner)
+- [v1.1 pivot]: Node.js backend + React frontend
+- [v1.1 pivot]: Filesystem transfer for simulator, HTTP for device
+- [v1.1 pivot]: Bespoke visualizations per method (no generic framework)
+- [v1.1 pivot]: JSON method registry in methods/*.json
+- [05-02]: ExportedSegment naming to avoid DebugReportService collision
+- [05-02]: DispatchSemaphore for async/sync bridging in HTTP handlers
+- [05-02]: Timestamp-method artifact naming (YYYYMMDD-HHMMSS-Method-segments.json)
 
 ### Pending Todos
 
@@ -66,13 +76,17 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-20
-Stopped at: Completed Phase 4 Plan 01 (Method Protocol Foundation)
+Last session: 2026-01-21
+Stopped at: Plan 05-02 complete, ready for 05-03 (filesystem video transfer)
 Resume file: None
 
-**v1.1 Status:**
-- Phase 4: Method Protocol Foundation - ✅ Complete (1/1 plans done)
-- Phase 5: Method Variants & Intermediate Data - Ready to start
-- Phase 6: Data Export - Not started
-- Phase 7: Browser Tool Core - Not started
-- Phase 8: Visualization & Comparison - Not started
+**v1.1 Status (post-pivot):**
+- Phase 4: Method Protocol Foundation - Complete (1/1 plans done)
+- Phase 5: iOS Runner Core - In progress (2/3 plans done)
+  - ✅ 05-01: HTTP Server Foundation
+  - ✅ 05-02: Run Execution Pipeline
+  - ⏳ 05-03: Filesystem Video Transfer (pending)
+- Phase 6: Dashboard Backend & Web Core - Not started (Node.js, React, run triggering)
+- Phase 7: Method Registry - Not started (JSON definitions, dynamic config forms)
+- Phase 8: Comparison & Ground Truth - Not started (ground truth overlay, metrics)
+- Phase 9: Intermediate Visualization & Polish - Not started (spectral flux viz, device support)
