@@ -85,7 +85,7 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md — SegmentationMethod protocol + SpectralFluxMethod implementation + service wiring
 
-#### Phase 5: iOS Runner Core
+#### Phase 5: iOS Runner Core ✅
 **Goal**: Create dedicated iOS Runner target with embedded Swifter HTTP server
 **Depends on**: Phase 4
 **Requirements**: RUN-01, RUN-02, RUN-03, RUN-04
@@ -114,12 +114,12 @@ Plans:
   3. Dashboard displays run status and detected segments
   4. Timeline visualization shows kept/rejected segments
   5. Video player plays segmented output alongside timeline
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: Node.js backend + Runner communication
-- [ ] 06-02: React dashboard + run triggering UI
-- [ ] 06-03: Segment timeline + video player integration
+- [ ] 06-01-PLAN.md — Node.js backend + Runner communication
+- [ ] 06-02-PLAN.md — React dashboard + run triggering UI
+- [ ] 06-03-PLAN.md — Segment timeline + video player integration
 
 #### Phase 7: Method Registry
 **Goal**: JSON-based method definitions with dynamic configuration
