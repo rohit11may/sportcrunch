@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 const RUNNER_URL = process.env.RUNNER_URL || 'http://localhost:8080';
 
 // Path to test videos
-const TEST_VIDEOS_PATH = path.resolve(__dirname, '../SportCrunchTests/TestResources/Videos');
+const TEST_VIDEOS_PATH = path.resolve(__dirname, '../../app/SportCrunchTests/TestResources/Videos');
 const UPLOADS_PATH = path.resolve(__dirname, 'uploads');
 
 // Create Express app

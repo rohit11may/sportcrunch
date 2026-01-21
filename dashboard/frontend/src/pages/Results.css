@@ -1,0 +1,144 @@
+.results-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    color: #fff;
+}
+
+.results-page h2 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    color: #f3f4f6;
+    font-weight: 600;
+}
+
+.results-page h3 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    color: #e5e7eb;
+}
+
+/* Loading & Error States */
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    color: #9ca3af;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    border-top-color: #60a5fa;
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.error-box {
+    background-color: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.error-box h3 {
+    color: #f87171;
+    margin-top: 0;
+}
+
+.error-box p {
+    color: #fca5a5;
+    margin-bottom: 0;
+}
+
+/* Run Info Grid */
+.run-info {
+    background-color: #1f2937;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid #374151;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.info-label {
+    font-size: 0.875rem;
+    color: #9ca3af;
+}
+
+.info-value {
+    font-size: 1rem;
+    color: #f3f4f6;
+    font-weight: 500;
+}
+
+/* Status Badges */
+.status-completed {
+    color: #34d399;
+}
+
+.status-failed {
+    color: #f87171;
+}
+
+.status-processing,
+.status-running {
+    color: #60a5fa;
+}
+
+.status-pending {
+    color: #fbbf24;
+}
+
+/* Sections */
+.video-section,
+.timeline-section {
+    margin-bottom: 3rem;
+}
+
+/* Placeholders */
+.placeholder-box {
+    background-color: #111827;
+    border: 1px dashed #374151;
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.placeholder-text {
+    font-size: 1.1rem;
+    color: #e5e7eb;
+    margin-bottom: 0.5rem;
+}
+
+.placeholder-hint {
+    font-size: 0.875rem;
+    color: #6b7280;
+}

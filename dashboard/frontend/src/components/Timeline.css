@@ -1,0 +1,180 @@
+.timeline-container {
+    background-color: #1a1a1a;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    border: 1px solid #333;
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-header h4 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.timeline-toggle {
+    background: transparent;
+    border: 1px solid #444;
+    color: #ccc;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.timeline-toggle:hover {
+    background: #333;
+    color: #fff;
+    border-color: #666;
+}
+
+.timeline-wrapper {
+    position: relative;
+    height: 120px;
+    margin: 0 auto;
+    user-select: none;
+}
+
+.timeline-axis {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    border-top: 1px solid #444;
+}
+
+.timeline-tick {
+    position: absolute;
+    bottom: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.timeline-tick-mark {
+    width: 1px;
+    height: 6px;
+    background-color: #666;
+    margin-bottom: 4px;
+}
+
+.timeline-tick-label {
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.timeline-segments {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    background-color: #222;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.segment-bar {
+    position: absolute;
+    height: 100%;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+}
+
+.segment-kept {
+    background-color: rgba(16, 185, 129, 0.6);
+    /* Green for kept */
+    border-left: 1px solid rgba(16, 185, 129, 0.8);
+    border-right: 1px solid rgba(16, 185, 129, 0.8);
+}
+
+.segment-rejected {
+    background-color: rgba(239, 68, 68, 0.3);
+    /* Red for rejected */
+    border-left: 1px solid rgba(239, 68, 68, 0.5);
+    border-right: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.segment-bar:hover {
+    opacity: 0.8;
+    z-index: 20;
+}
+
+/* Tooltip on Hover */
+.segment-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    background-color: #333;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #fff;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    border: 1px solid #444;
+}
+
+.segment-bar:hover .segment-tooltip,
+.segment-bar:focus .segment-tooltip {
+    opacity: 1;
+}
+
+.timeline-info {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.timeline-divider {
+    color: #444;
+}
+
+.segment-kept-label {
+    color: #34d399;
+}
+
+.segment-rejected-label {
+    color: #f87171;
+}
+
+.timeline-position-indicator {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 2px;
+    background-color: #fff;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+    z-index: 50;
+    transform: translateX(-50%);
+}
+
+.timeline-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+    color: #666;
+}

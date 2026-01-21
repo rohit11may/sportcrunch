@@ -67,10 +67,10 @@ function Home() {
       )
 
       // Poll for completion
-      await pollRunStatus(result.runId)
+      await pollRunStatus(result.id)
 
       // Navigate to results page
-      navigate(`/results/${result.runId}`)
+      navigate(`/results/${result.id}`)
     } catch (err) {
       setError(err.message || 'Failed to process video')
       setIsProcessing(false)

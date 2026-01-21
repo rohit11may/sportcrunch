@@ -65,35 +65,48 @@ class RunEndpoints {
     store: RunStore,
     executor: RunExecutor
   ) async -> HttpResponse {
+    print("📥 [RunEndpoints] POST /runs - Received request")
+
     do {
       // Parse JSON body
       guard let bodyData = Data(bytes: request.body, count: request.body.count) as Data?,
         let json = try? JSONSerialization.jsonObject(with: bodyData) as? [String: Any]
       else {
+        print("❌ [RunEndpoints] Invalid JSON body")
         return errorResponse(message: "Invalid JSON body", statusCode: 400)
       }
 
+      print("✅ [RunEndpoints] Parsed request body: \(json)")
+
       // Extract required fields
       guard let videoPath = json["videoPath"] as? String else {
+        print("❌ [RunEndpoints] Missing videoPath")
         return errorResponse(message: "Missing required field: videoPath", statusCode: 400)
       }
 
       guard let method = json["method"] as? String else {
+        print("❌ [RunEndpoints] Missing method")
         return errorResponse(message: "Missing required field: method", statusCode: 400)
       }
 
       guard let sport = json["sport"] as? String else {
+        print("❌ [RunEndpoints] Missing sport")
         return errorResponse(message: "Missing required field: sport", statusCode: 400)
       }
 
+      print("📝 [RunEndpoints] videoPath=\(videoPath), method=\(method), sport=\(sport)")
+
       // Validate video path exists
       guard FileManager.default.fileExists(atPath: videoPath) else {
+        print("❌ [RunEndpoints] Video file not found: \(videoPath)")
         return errorResponse(message: "Video file not found: \(videoPath)", statusCode: 404)
       }
 
       // Extract optional fields
       let sportMode = json["sportMode"] as? String
       let config = json["config"] as? [String: String] ?? [:]
+
+      print("📝 [RunEndpoints] sportMode=\(sportMode ?? "nil"), config=\(config)")
 
       // Create run
       let run = Run(
@@ -104,8 +117,12 @@ class RunEndpoints {
         config: config
       )
 
+      print("✅ [RunEndpoints] Created run: \(run.id.uuidString)")
+
       // Enqueue for execution
       await executor.enqueue(run: run)
+
+      print("✅ [RunEndpoints] Enqueued run for execution")
 
       // Return 202 Accepted with run ID
       let response: [String: Any] = [
@@ -113,9 +130,11 @@ class RunEndpoints {
         "status": run.status.rawValue,
       ]
 
+      print("📤 [RunEndpoints] Returning 202 response: \(response)")
       return jsonResponse(data: response, statusCode: 202)
 
     } catch {
+      print("❌ [RunEndpoints] Exception: \(error)")
       return errorResponse(
         message: "Internal server error: \(error.localizedDescription)", statusCode: 500)
     }
@@ -124,7 +143,9 @@ class RunEndpoints {
   // MARK: - GET /runs
 
   private static func handleListRuns(store: RunStore) async -> HttpResponse {
+    print("📥 [RunEndpoints] GET /runs - Listing all runs")
     let runs = await store.getAll()
+    print("📊 [RunEndpoints] Found \(runs.count) runs")
 
     let runsJSON = runs.map { run in
       encodeRun(run)
@@ -134,23 +155,35 @@ class RunEndpoints {
       "runs": runsJSON
     ]
 
+    print("📤 [RunEndpoints] Returning list of \(runsJSON.count) runs")
     return jsonResponse(data: response)
   }
 
   // MARK: - GET /runs/:id
 
   private static func handleGetRun(request: HttpRequest, store: RunStore) async -> HttpResponse {
-    // Extract ID from path
+    print("📥 [RunEndpoints] GET /runs/:id - Received request")
+    print("   Available params: \(request.params)")
+
+    // Extract ID from path (Swifter includes the colon in the key for path patterns like "/runs/:id")
     guard let idString = request.params[":id"],
       let id = UUID(uuidString: idString)
     else {
+      print("❌ [RunEndpoints] Invalid run ID format")
+      print("   Params received (request.params): \(request.params)")
       return errorResponse(message: "Invalid run ID", statusCode: 400)
     }
 
+    print("🔍 [RunEndpoints] Looking up run: \(id.uuidString)")
+
     // Lookup run
     guard let run = await store.get(id: id) else {
+      print("❌ [RunEndpoints] Run not found: \(id.uuidString)")
       return errorResponse(message: "Run not found", statusCode: 404)
     }
+
+    print("✅ [RunEndpoints] Found run: \(id.uuidString), status: \(run.status.rawValue)")
+    print("📝 [RunEndpoints] Encoding run details...")
 
     // Return full run details
     return jsonResponse(data: encodeRun(run))
@@ -159,6 +192,8 @@ class RunEndpoints {
   // MARK: - Helpers
 
   private static func encodeRun(_ run: Run) -> [String: Any] {
+    print("🔧 [RunEndpoints] Encoding run: \(run.id.uuidString)")
+
     var json: [String: Any] = [
       "id": run.id.uuidString,
       "status": run.status.rawValue,
@@ -169,50 +204,87 @@ class RunEndpoints {
       "createdAt": ISO8601DateFormatter().string(from: run.createdAt),
     ]
 
+    print("  ✓ Added base fields (id, status, videoPath, method, sport, config, createdAt)")
+
     if let sportMode = run.sportMode {
       json["sportMode"] = sportMode
+      print("  ✓ Added sportMode: \(sportMode)")
     }
 
     if let startedAt = run.startedAt {
       json["startedAt"] = ISO8601DateFormatter().string(from: startedAt)
+      print("  ✓ Added startedAt: \(ISO8601DateFormatter().string(from: startedAt))")
     }
 
     if let completedAt = run.completedAt {
       json["completedAt"] = ISO8601DateFormatter().string(from: completedAt)
+      print("  ✓ Added completedAt: \(ISO8601DateFormatter().string(from: completedAt))")
     }
 
     if let segments = run.segments {
-      json["segments"] = segments.map { segment in
+      print("  🔄 Encoding \(segments.count) segments...")
+      let segmentsArray = segments.map { segment in
         [
           "startTime": segment.startTime,
           "endTime": segment.endTime,
           "type": segment.type,
-        ]
+        ] as [String: Any]
       }
+      json["segments"] = segmentsArray
+      print("  ✓ Added segments: \(segments.count) items")
     }
 
     if let artifactPaths = run.artifactPaths {
+      print("  🔄 Encoding artifactPaths...")
       var artifacts: [String: Any] = [
         "segmentsJSON": artifactPaths.segmentsJSON
       ]
+      print("    - segmentsJSON: \(artifactPaths.segmentsJSON)")
+
       if let highlightVideo = artifactPaths.highlightVideo {
         artifacts["highlightVideo"] = highlightVideo
+        print("    - highlightVideo: \(highlightVideo)")
+      } else {
+        print("    - highlightVideo: nil (not added)")
       }
+
       json["artifactPaths"] = artifacts
+      print("  ✓ Added artifactPaths")
     }
 
     if let error = run.error {
       json["error"] = error
+      print("  ✓ Added error: \(error)")
     }
 
+    print("🔧 [RunEndpoints] Finished encoding run, total keys: \(json.keys.count)")
     return json
   }
 
   private static func jsonResponse(data: Any, statusCode: Int = 200) -> HttpResponse {
+    print("🔄 [RunEndpoints] Creating JSON response (status: \(statusCode))")
+
+    // Validate that the data is JSON-serializable
+    guard JSONSerialization.isValidJSONObject(data) else {
+      print("❌ [RunEndpoints] Data is NOT valid JSON object!")
+      print("   Type: \(type(of: data))")
+      print("   Data: \(data)")
+
+      return .raw(500, "Internal Server Error", ["Content-Type": "application/json"]) {
+        try? $0.write(
+          Data("{\"error\":\"Serialisation error: invalidObject\"}".utf8))
+      }
+    }
+
+    print("✅ [RunEndpoints] Data is valid JSON object")
+
     do {
+      // Remove .sortedKeys option as it can cause issues with nested dictionaries
       let jsonData = try JSONSerialization.data(
-        withJSONObject: data, options: [.prettyPrinted, .sortedKeys])
+        withJSONObject: data, options: [.prettyPrinted])
       let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
+
+      print("✅ [RunEndpoints] Successfully serialized to JSON (\(jsonData.count) bytes)")
 
       return .raw(
         statusCode, statusCode == 200 ? "OK" : (statusCode == 201 ? "Created" : "Accepted"),
@@ -222,6 +294,10 @@ class RunEndpoints {
       }
     } catch {
       print("❌ [RunEndpoints] Serialisation error: \(error)")
+      print("   Error type: \(type(of: error))")
+      print("   LocalizedDescription: \(error.localizedDescription)")
+      print("   Data attempted: \(data)")
+
       return .raw(500, "Internal Server Error", ["Content-Type": "application/json"]) {
         try? $0.write(
           Data("{\"error\":\"Serialisation error: \(error.localizedDescription)\"}".utf8))
