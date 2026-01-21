@@ -41,9 +41,38 @@ Plans:
 
 ### v1.1 DevX for Algorithm Iteration (In Progress)
 
-**Milestone Goal:** Enable rapid iteration on detection algorithms through swappable methods, data export, and browser-based visualization tools.
+**Milestone Goal:** Enable rapid iteration on detection algorithms through an iOS Runner app with embedded HTTP server, a Node.js dashboard backend, and a React-based visualization tool for comparing methods against ground truth.
 
-#### Phase 4: Method Protocol Foundation
+**Architecture Overview:**
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Dashboard (React)                        │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │ Comparison  │  │  Run        │  │  Method/Config          │  │
+│  │ Views       │  │  Manager    │  │  Registry               │  │
+│  └─────────────┘  └──────┬──────┘  └─────────────────────────┘  │
+└──────────────────────────┼──────────────────────────────────────┘
+                           │ HTTP
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   Dashboard Backend (Node.js)                    │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │ Run         │  │ Artifact    │  │  Runner                 │  │
+│  │ Storage     │  │ Storage     │  │  Communication          │  │
+│  └─────────────┘  └─────────────┘  └──────────┬──────────────┘  │
+└───────────────────────────────────────────────┼─────────────────┘
+                                                │ HTTP
+                                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│        SportCrunchRunner Target (Simulator or Device)            │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │ Swifter     │  │ Segmentation│  │  Result                 │  │
+│  │ HTTP Server │  │ Engine      │  │  Exporter               │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Phase 4: Method Protocol Foundation ✅
 **Goal**: Establish swappable detection algorithm abstraction
 **Depends on**: Phase 3 (v1.0 complete)
 **Requirements**: METH-01, METH-02
@@ -56,65 +85,98 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md — SegmentationMethod protocol + SpectralFluxMethod implementation + service wiring
 
-#### Phase 5: Method Variants & Intermediate Data
-**Goal**: Extend method framework with variants and observable processing data
+#### Phase 5: iOS Runner Core
+**Goal**: Create dedicated iOS Runner target with embedded Swifter HTTP server
 **Depends on**: Phase 4
-**Requirements**: METH-03, METH-04
+**Requirements**: RUN-01, RUN-02, RUN-03, RUN-04
 **Success Criteria** (what must be TRUE):
-  1. Audio-only method variant exists (spectral flux without visual validation)
-  2. Methods emit intermediate processing data during execution
-  3. Different methods can emit different types of intermediate data
-**Plans**: TBD
+  1. SportCrunchRunner target exists in SportCrunch.xcodeproj
+  2. Swifter HTTP server runs on configurable port (default 8080)
+  3. `/health` endpoint returns `{ "status": "ready" }`
+  4. `POST /runs` triggers segmentation using SpectralFluxMethod
+  5. `GET /runs/:id` returns run status, segments, and artifact paths
+  6. Artifacts (segmented video, segments.json) written to shared Mac filesystem (simulator)
+  7. Runner UI displays current IP/port and recent run status
+**Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
+- [ ] 05-01-PLAN.md — Swifter HTTP server setup + /health endpoint
+- [ ] 05-02-PLAN.md — Run execution + result persistence + /runs endpoints
+- [ ] 05-03-PLAN.md — Runner minimal UI (IP display, run status list)
 
-#### Phase 6: Data Export
-**Goal**: Export segment results and intermediate data for external tooling
+#### Phase 6: Dashboard Backend & Web Core
+**Goal**: Node.js backend + React dashboard for triggering runs and viewing results
 **Depends on**: Phase 5
-**Requirements**: EXPRT-01, EXPRT-02, EXPRT-03, EXPRT-04
+**Requirements**: DASH-01, DASH-02, DASH-03, DASH-04
 **Success Criteria** (what must be TRUE):
-  1. XCTest runs produce JSON files with final segment results (timestamps, durations)
-  2. XCTest runs produce JSON files with intermediate data (waveform, spectral flux, method-specific)
-  3. Export outputs go to a consistent, predictable path that external tools can read
-  4. Developer can trigger export by running test command
+  1. Node.js backend serves React frontend and proxies to iOS Runner
+  2. Dashboard can trigger `POST /runs` to iOS Runner
+  3. Dashboard displays run status and detected segments
+  4. Timeline visualization shows kept/rejected segments
+  5. Video player plays segmented output alongside timeline
 **Plans**: TBD
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01: Node.js backend + Runner communication
+- [ ] 06-02: React dashboard + run triggering UI
+- [ ] 06-03: Segment timeline + video player integration
 
-#### Phase 7: Browser Tool Core
-**Goal**: Web-based tool to trigger tests and display results
+#### Phase 7: Method Registry
+**Goal**: JSON-based method definitions with dynamic configuration
 **Depends on**: Phase 6
-**Requirements**: BROW-01, BROW-02, BROW-03
+**Requirements**: REG-01, REG-02, REG-03, REG-04
 **Success Criteria** (what must be TRUE):
-  1. Local web server serves the visualization tool
-  2. Developer can trigger xcodebuild test runs from browser UI
-  3. Browser displays detected segments and test results
+  1. Method definitions stored in `methods/*.json` files
+  2. iOS Runner reads method definitions from bundle at startup
+  3. Dashboard displays available methods from registry
+  4. Dashboard generates config forms dynamically from `config_schema`
+  5. Audio-only method variant (spectral flux without visual validation) exists
 **Plans**: TBD
 
 Plans:
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
+- [ ] 07-01: Method JSON schema + initial method definitions
+- [ ] 07-02: Runner method registry loading
+- [ ] 07-03: Dashboard method selection + dynamic config forms
 
-#### Phase 8: Visualization & Comparison
-**Goal**: Rich visualization of intermediate data and method comparison
+#### Phase 8: Comparison & Ground Truth
+**Goal**: Side-by-side comparison with ground truth and metrics
 **Depends on**: Phase 7
-**Requirements**: BROW-04, BROW-05
+**Requirements**: COMP-01, COMP-02, COMP-03, COMP-04
 **Success Criteria** (what must be TRUE):
-  1. Waveform and spectral flux visualizations render for audio-based methods
-  2. Developer can view side-by-side comparison of two methods on the same video
+  1. Ground truth JSON files load and display on timeline
+  2. Timeline shows method result vs. ground truth alignment
+  3. Metrics calculated: precision, recall, IoU
+  4. Comparison view shows 2+ runs side-by-side
+  5. Run metadata includes commit hash for reproducibility
 **Plans**: TBD
 
 Plans:
-- [ ] 08-01: TBD
+- [ ] 08-01: Ground truth loading + timeline overlay
+- [ ] 08-02: Metrics calculation (precision, recall, IoU)
+- [ ] 08-03: Multi-run comparison view
+
+#### Phase 9: Intermediate Visualization & Polish
+**Goal**: Bespoke visualizations for intermediate data + device support
+**Depends on**: Phase 8
+**Requirements**: VIZ-01, VIZ-02, VIZ-03, DEV-01, DEV-02
+**Success Criteria** (what must be TRUE):
+  1. Methods emit intermediate data during execution
+  2. Spectral flux visualization component renders audio waveform + peaks
+  3. Video playback syncs with intermediate data visualization
+  4. Segment decisions annotated with peak amplitude/threshold info
+  5. HTTP artifact transfer works for physical devices
+  6. Manual IP configuration in dashboard settings
+**Plans**: TBD
+
+Plans:
+- [ ] 09-01: Intermediate data schema + method emission
+- [ ] 09-02: Spectral flux visualization component
+- [ ] 09-03: Device HTTP transfer + IP configuration
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 4 -> 5 -> 6 -> 7 -> 8
+Phases execute in numeric order: 4 -> 5 -> 6 -> 7 -> 8 -> 9
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -122,7 +184,8 @@ Phases execute in numeric order: 4 -> 5 -> 6 -> 7 -> 8
 | 2. Core E2E Test Coverage | v1.0 | 2/2 | Complete | 2026-01-15 |
 | 3. Service Layer + UI Cleanup | v1.0 | 3/4 | Complete | 2026-01-17 |
 | 4. Method Protocol Foundation | v1.1 | 1/1 | Complete | 2026-01-20 |
-| 5. Method Variants & Intermediate Data | v1.1 | 0/? | Not started | - |
-| 6. Data Export | v1.1 | 0/? | Not started | - |
-| 7. Browser Tool Core | v1.1 | 0/? | Not started | - |
-| 8. Visualization & Comparison | v1.1 | 0/? | Not started | - |
+| 5. iOS Runner Core | v1.1 | 0/3 | Planned | - |
+| 6. Dashboard Backend & Web Core | v1.1 | 0/3 | Not started | - |
+| 7. Method Registry | v1.1 | 0/3 | Not started | - |
+| 8. Comparison & Ground Truth | v1.1 | 0/3 | Not started | - |
+| 9. Intermediate Visualization & Polish | v1.1 | 0/3 | Not started | - |
