@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-01-21)
 ## Current Position
 
 Phase: 6 of 9 (Dashboard Backend & Web Core)
-Plan: Phase 5 complete, starting Phase 6 planning
-Status: Planning
-Last activity: 2026-01-21 — Phase 5 complete
+Plan: 1 of 3
+Status: In progress
+Last activity: 2026-01-21 — Completed 06-01-PLAN.md
 
-Progress: ████████░░░░░░░░░░░░ 40% (Phase 5 complete, 4 phases remaining)
+Progress: ████████▓░░░░░░░░░░░ 43% (12 of 28 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
-- Average duration: 7.1 min
+- Total plans completed: 12
+- Average duration: 6.6 min
 - Total execution time: 1.3 hours
 
 **By Phase:**
@@ -32,9 +32,10 @@ Progress: ████████░░░░░░░░░░░░ 40% (Phas
 | 3. Service Layer + UI Cleanup | 3 | 35 min | 11.7 min |
 | 4. Method Protocol Foundation | 1 | 9 min | 9.0 min |
 | 5. iOS Runner Core | 3 | 4 min | 1.3 min |
+| 6. Dashboard Backend & Web Core | 1 | 2 min | 2.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 2 min, 18 min, 9 min, 4 min
+- Last 5 plans: 18 min, 9 min, 4 min, 2 min
 - Trend: Improving (recent plans faster due to clear specifications)
 
 ## Accumulated Context
@@ -61,6 +62,9 @@ Recent decisions affecting current work:
 - [05-02]: ExportedSegment naming to avoid DebugReportService collision
 - [05-02]: DispatchSemaphore for async/sync bridging in HTTP handlers
 - [05-02]: Timestamp-method artifact naming (YYYYMMDD-HHMMSS-Method-segments.json)
+- [06-01]: Express.js backend for API layer and iOS Runner proxy
+- [06-01]: ES modules syntax for backend (type: "module")
+- [06-01]: 500MB upload limit for video files
 
 ### Pending Todos
 
@@ -77,7 +81,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Phase 5 complete, starting Phase 6 planning
+Stopped at: Completed 06-01-PLAN.md (Node.js Backend & iOS Runner Proxy)
 Resume file: None
 
 **v1.1 Status (post-pivot):**
@@ -86,7 +90,10 @@ Resume file: None
   - ✅ 05-01: HTTP Server Foundation
   - ✅ 05-02: Run Execution Pipeline
   - ✅ 05-03: Filesystem Video Transfer
-- Phase 6: Dashboard Backend & Web Core - Planning (Node.js, React, run triggering)
+- Phase 6: Dashboard Backend & Web Core - In progress (1/3 plans done)
+  - ✅ 06-01: Node.js Backend & iOS Runner Proxy
+  - ⏳ 06-02: React Dashboard (video selection, run triggering)
+  - ⏳ 06-03: Results View (timeline visualization, video player)
 - Phase 7: Method Registry - Not started (JSON definitions, dynamic config forms)
 - Phase 8: Comparison & Ground Truth - Not started (ground truth overlay, metrics)
 - Phase 9: Intermediate Visualization & Polish - Not started (spectral flux viz, device support)
