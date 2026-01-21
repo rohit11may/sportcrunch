@@ -24,3 +24,9 @@ xcodebuild test -project SportCrunch.xcodeproj -scheme SportCrunch -destination 
 
 You can also change the destination to use different simulators. To see available simulators:
 xcrun simctl list devices
+
+
+# Rules for gracefully handling changes to xcodeproj
+
+NEVER edit .xcodeproj files directly. If you think a change is required in xcode project configuration, then always defer to the human with instructions
+on what you'd like them to do.

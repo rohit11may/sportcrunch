@@ -44,11 +44,21 @@
 			);
 			target = 308DBA302EFEA3A4001F0B3F /* SportCrunch */;
 		};
+		F91A96A32F2147D900688974 /* Exceptions for "SportCrunch" folder in "SportCrunchRunner" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				SportCrunchApp.swift,
+			);
+			target = F91A95BA2F21428A00688974 /* SportCrunchRunner */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		308DBA332EFEA3A4001F0B3F /* SportCrunch */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F91A96A32F2147D900688974 /* Exceptions for "SportCrunch" folder in "SportCrunchRunner" target */,
+			);
 			path = SportCrunch;
 			sourceTree = "<group>";
 		};

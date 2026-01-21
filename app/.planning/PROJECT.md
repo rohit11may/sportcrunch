@@ -36,22 +36,30 @@ Accurate, on-device segment detection that identifies rallies and shots without 
 
 <!-- Current scope being built toward. -->
 
-- [ ] Method abstraction layer — refactor algorithm into swappable "Method" protocol
-- [ ] Intermediate data export — JSON output with processing steps (waveform, spectral flux, segments)
-- [ ] Browser-based comparison tool — local web UI triggering xcodebuild, visualizing results
-- [ ] Audio-only method variant — spectral flux without visual validation for comparison
-- [ ] Parameter tuning workflow — adjust thresholds, re-run, see impact on detections
+- [x] Method abstraction layer — refactor algorithm into swappable "Method" protocol (Phase 4 complete)
+- [ ] iOS Runner app — dedicated app target with Swifter HTTP server for on-demand segmentation
+- [ ] Dashboard backend — Node.js server proxying to iOS Runner, managing runs and artifacts
+- [ ] React dashboard — web UI for triggering runs, viewing results, comparing methods
+- [ ] Method registry — JSON-based method definitions with dynamic config schemas
+- [ ] Ground truth comparison — timeline overlay showing method vs. ground truth alignment
+- [ ] Intermediate data visualization — spectral flux curves, audio peaks, synced with video
 
 ## Current Milestone: v1.1 DevX for Algorithm Iteration
 
-**Goal:** Enable rapid comparison and tuning of detection methods through browser-based visualization of iOS processing results.
+**Goal:** Enable rapid comparison and tuning of detection methods through a dedicated iOS Runner app, Node.js dashboard backend, and React-based visualization tool.
+
+**Architecture:**
+- **iOS Runner** — SportCrunchRunner target with embedded Swifter HTTP server
+- **Dashboard Backend** — Node.js server managing runs and artifacts
+- **React Dashboard** — Web UI for triggering runs and visualizing results
+- **Method Registry** — JSON files defining methods with config schemas
 
 **Target features:**
-- Method abstraction that makes algorithm implementations swappable
-- JSON export of intermediate processing data from iOS tests
-- Browser tool that triggers xcodebuild and visualizes results
-- Side-by-side comparison of current method vs. audio-only variant
-- Parameter adjustment with immediate feedback on detection quality
+- Method abstraction that makes algorithm implementations swappable (Phase 4 - complete)
+- iOS Runner app receiving run requests via HTTP and returning segmentation results
+- Dashboard triggering runs, displaying timelines, and comparing results to ground truth
+- Side-by-side comparison of multiple methods on the same video
+- Bespoke visualizations for intermediate data (spectral flux, audio peaks)
 
 ### Out of Scope
 
@@ -61,12 +69,12 @@ Accurate, on-device segment detection that identifies rallies and shots without 
 - Cloud processing or cloud storage — all processing remains on-device for privacy and speed
 - Advanced editing features (trimming segments, filters, text overlays, effects) — keep scope focused on detection and export
 - Segment review UI with boundary editing — deferred to future milestone, focus on detection accuracy first
-- Enhanced dead space detection modes — deferred (original Active requirement)
-- Export highlights to Photos app — deferred (original Active requirement)
-- Golden labeled test suite — deferred (original Active requirement)
-- Performance optimization for 1-hour videos — deferred (original Active requirement)
-- Algorithm readability improvements — deferred (Phase 4)
-- Full suite validation and documentation — deferred (Phase 5)
+- Real-time streaming export — batch export at run end is sufficient
+- Binary format for waveforms — JSON is fine for dev tool
+- Progress streaming to browser — poll for completion is sufficient
+- Production deployment of dashboard — local dev tool only
+- Auto-discovery of iOS Runner — manual IP config is simpler
+- Generic visualization framework — bespoke visualizations per method
 
 ## Context
 
@@ -114,6 +122,15 @@ Target users are recreational tennis players who record their own matches and wa
 | Background video loading | Immediate UI dismissal improves UX | ✓ Good (v1.0) |
 | Defer segment review UI | Focus on detection accuracy before building curation UX | — Pending |
 | Skip CompletedProjectSheet ViewModel extraction | Low priority, can be done later | — Pending (v1.0) |
+| iOS Runner with Swifter HTTP server | Direct HTTP communication faster than xcodebuild invocation | — Pending (v1.1) |
+| Swifter as HTTP library | Lightweight, pure Swift, minimal setup for personal tool | — Pending (v1.1) |
+| Same project, new target for Runner | Shares existing segmentation code without duplication | — Pending (v1.1) |
+| Node.js for dashboard backend | Quick to build, good ecosystem for APIs and static files | — Pending (v1.1) |
+| React for dashboard frontend | Popular, good visualization ecosystem (recharts, etc.) | — Pending (v1.1) |
+| Filesystem transfer for simulator | Fast iteration, direct write to shared Mac filesystem | — Pending (v1.1) |
+| HTTP transfer for physical devices | Required for devices that don't share filesystem | — Pending (v1.1) |
+| Bespoke visualizations per method | Tightly coupled to method's intermediate data, no generic abstraction | — Pending (v1.1) |
+| JSON method registry | Version-controlled, easy to edit, single source of truth | — Pending (v1.1) |
 
 ---
-*Last updated: 2026-01-20 after v1.1 milestone start*
+*Last updated: 2026-01-21 after evaluation dashboard pivot*
