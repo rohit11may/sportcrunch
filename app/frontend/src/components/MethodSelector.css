@@ -1,0 +1,60 @@
+.method-selector {
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.method-selector h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.method-info {
+  background-color: #2a2a2a;
+  padding: 1rem;
+  border-radius: 6px;
+  border-left: 4px solid #646cff;
+}
+
+.method-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #646cff;
+}
+
+.method-description {
+  color: #bbb;
+  margin-bottom: 0.75rem;
+}
+
+.method-note {
+  font-size: 0.85rem;
+  color: #888;
+  font-style: italic;
+}
+
+@media (prefers-color-scheme: light) {
+  .method-selector {
+    border-color: #ddd;
+  }
+
+  .method-info {
+    background-color: #f5f5f5;
+    border-left-color: #4f46e5;
+  }
+
+  .method-name {
+    color: #4f46e5;
+  }
+
+  .method-description {
+    color: #555;
+  }
+
+  .method-note {
+    color: #666;
+  }
+}

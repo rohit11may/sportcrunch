@@ -1,0 +1,99 @@
+.video-selector {
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.video-selector h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.selector-group {
+  margin-bottom: 1.5rem;
+}
+
+.selector-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.selector-group select,
+.selector-group input[type="file"] {
+  width: 100%;
+  max-width: 500px;
+}
+
+.divider {
+  text-align: center;
+  margin: 1.5rem 0;
+  position: relative;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 45%;
+  height: 1px;
+  background-color: #444;
+}
+
+.divider::before {
+  left: 0;
+}
+
+.divider::after {
+  right: 0;
+}
+
+.divider span {
+  background-color: #1a1a1a;
+  padding: 0 1rem;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.loading-text {
+  color: #888;
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+.success-text {
+  color: #4ade80;
+  margin-top: 0.5rem;
+}
+
+.error-message {
+  background-color: #f87171;
+  color: #1a1a1a;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+@media (prefers-color-scheme: light) {
+  .video-selector {
+    border-color: #ddd;
+  }
+
+  .divider::before,
+  .divider::after {
+    background-color: #ddd;
+  }
+
+  .divider span {
+    background-color: #ffffff;
+    color: #666;
+  }
+
+  .error-message {
+    background-color: #fee2e2;
+    color: #991b1b;
+  }
+}
