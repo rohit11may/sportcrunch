@@ -1,0 +1,30 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #333;
+  background-color: #0a0a0a;
+}
+
+header h1 {
+  font-size: 1.5rem;
+}
+
+main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+@media (prefers-color-scheme: light) {
+  header {
+    background-color: #f5f5f5;
+    border-bottom-color: #ddd;
+  }
+}
