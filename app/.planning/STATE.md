@@ -9,18 +9,18 @@ See: .planning/PROJECT.md (updated 2026-01-21)
 
 ## Current Position
 
-Phase: 5 of 9 (iOS Runner Core)
-Plan: 05-02 complete, 2 of 3 plans done in Phase 5
-Status: In progress
-Last activity: 2026-01-21 — Run Execution Pipeline complete
+Phase: 6 of 9 (Dashboard Backend & Web Core)
+Plan: Phase 5 complete, starting Phase 6 planning
+Status: Planning
+Last activity: 2026-01-21 — Phase 5 complete
 
-Progress: ██████░░░░░░░░░░░░░░ 30% (Phase 4 complete + 2 plans in Phase 5, 4.3 phases remaining)
+Progress: ████████░░░░░░░░░░░░ 40% (Phase 5 complete, 4 phases remaining)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 7.6 min
+- Total plans completed: 11
+- Average duration: 7.1 min
 - Total execution time: 1.3 hours
 
 **By Phase:**
@@ -31,7 +31,7 @@ Progress: ██████░░░░░░░░░░░░░░ 30% (Phas
 | 2. Core E2E Test Coverage | 2 | 13 min | 6.5 min |
 | 3. Service Layer + UI Cleanup | 3 | 35 min | 11.7 min |
 | 4. Method Protocol Foundation | 1 | 9 min | 9.0 min |
-| 5. iOS Runner Core | 2 | 4 min | 2.0 min |
+| 5. iOS Runner Core | 3 | 4 min | 1.3 min |
 
 **Recent Trend:**
 - Last 5 plans: 2 min, 18 min, 9 min, 4 min
@@ -77,16 +77,16 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-21
-Stopped at: Plan 05-02 complete, ready for 05-03 (filesystem video transfer)
+Stopped at: Phase 5 complete, starting Phase 6 planning
 Resume file: None
 
 **v1.1 Status (post-pivot):**
 - Phase 4: Method Protocol Foundation - Complete (1/1 plans done)
-- Phase 5: iOS Runner Core - In progress (2/3 plans done)
+- Phase 5: iOS Runner Core - Complete (3/3 plans done)
   - ✅ 05-01: HTTP Server Foundation
   - ✅ 05-02: Run Execution Pipeline
-  - ⏳ 05-03: Filesystem Video Transfer (pending)
-- Phase 6: Dashboard Backend & Web Core - Not started (Node.js, React, run triggering)
+  - ✅ 05-03: Filesystem Video Transfer
+- Phase 6: Dashboard Backend & Web Core - Planning (Node.js, React, run triggering)
 - Phase 7: Method Registry - Not started (JSON definitions, dynamic config forms)
 - Phase 8: Comparison & Ground Truth - Not started (ground truth overlay, metrics)
 - Phase 9: Intermediate Visualization & Polish - Not started (spectral flux viz, device support)

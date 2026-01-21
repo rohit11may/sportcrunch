@@ -100,9 +100,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Swifter HTTP server setup + /health endpoint
-- [ ] 05-02-PLAN.md — Run execution + result persistence + /runs endpoints
-- [ ] 05-03-PLAN.md — Runner minimal UI (IP display, run status list)
+- [x] 05-01-PLAN.md — Swifter HTTP server setup + /health endpoint
+- [x] 05-02-PLAN.md — Run execution + result persistence + /runs endpoints
+- [x] 05-03-PLAN.md — Runner minimal UI (IP display, run status list)
 
 #### Phase 6: Dashboard Backend & Web Core
 **Goal**: Node.js backend + React dashboard for triggering runs and viewing results
@@ -184,8 +184,8 @@ Phases execute in numeric order: 4 -> 5 -> 6 -> 7 -> 8 -> 9
 | 2. Core E2E Test Coverage | v1.0 | 2/2 | Complete | 2026-01-15 |
 | 3. Service Layer + UI Cleanup | v1.0 | 3/4 | Complete | 2026-01-17 |
 | 4. Method Protocol Foundation | v1.1 | 1/1 | Complete | 2026-01-20 |
-| 5. iOS Runner Core | v1.1 | 0/3 | Planned | - |
-| 6. Dashboard Backend & Web Core | v1.1 | 0/3 | Not started | - |
+| 5. iOS Runner Core | v1.1 | 3/3 | Complete | 2026-01-21 |
+| 6. Dashboard Backend & Web Core | v1.1 | 0/3 | Planned | - |
 | 7. Method Registry | v1.1 | 0/3 | Not started | - |
 | 8. Comparison & Ground Truth | v1.1 | 0/3 | Not started | - |
 | 9. Intermediate Visualization & Polish | v1.1 | 0/3 | Not started | - |
