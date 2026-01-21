@@ -24,6 +24,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve video files from TestResources/Videos
+app.use('/videos', express.static(TEST_VIDEOS_PATH));
+
+// Serve uploaded videos
+app.use('/uploads', express.static(UPLOADS_PATH));
+
 // Create uploads directory if it doesn't exist
 if (!fs.existsSync(UPLOADS_PATH)) {
   fs.mkdirSync(UPLOADS_PATH, { recursive: true });

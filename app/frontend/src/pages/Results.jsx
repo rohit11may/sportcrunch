@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { getRun } from '../services/api'
+import Timeline from '../components/Timeline'
+import VideoPlayer from '../components/VideoPlayer'
 import './Results.css'
 
 function Results() {
@@ -8,6 +10,9 @@ function Results() {
   const [run, setRun] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [videoDuration, setVideoDuration] = useState(0)
+  const videoRef = useRef(null)
 
   useEffect(() => {
     loadRun()
@@ -60,6 +65,47 @@ function Results() {
   }
 
   const segmentCount = run.segments?.length || 0
+
+  // Handle segment click - seek video to timestamp
+  const handleSegmentClick = (timestamp) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = timestamp
+    }
+  }
+
+  // Handle video time update - update timeline position
+  const handleTimeUpdate = (time) => {
+    setCurrentTime(time)
+  }
+
+  // Handle video metadata loaded - get duration
+  useEffect(() => {
+    if (videoRef.current) {
+      const video = videoRef.current
+      const handleLoadedMetadata = () => {
+        setVideoDuration(video.duration)
+      }
+      video.addEventListener('loadedmetadata', handleLoadedMetadata)
+      return () => {
+        video.removeEventListener('loadedmetadata', handleLoadedMetadata)
+      }
+    }
+  }, [run])
+
+  // Determine video source
+  const getVideoSource = () => {
+    if (!run) return null
+
+    // If highlightVideo artifact exists, use that (segmented output)
+    if (run.artifactPaths?.highlightVideo) {
+      return run.artifactPaths.highlightVideo
+    }
+
+    // Otherwise, use original video path
+    return run.videoPath
+  }
+
+  const videoSource = getVideoSource()
 
   return (
     <div className="results-page">
@@ -115,26 +161,39 @@ function Results() {
 
       <div className="video-section">
         <h3>Video Player</h3>
-        <div className="placeholder-box">
-          <p className="placeholder-text">
-            VideoPlayer component will be built in Plan 06-03
-          </p>
-          <p className="placeholder-hint">
-            Will display segmented video with playback controls
-          </p>
-        </div>
+        {videoSource ? (
+          <VideoPlayer
+            videoRef={videoRef}
+            videoSrc={videoSource}
+            onTimeUpdate={handleTimeUpdate}
+          />
+        ) : (
+          <div className="placeholder-box">
+            <p className="placeholder-text">No video available</p>
+            <p className="placeholder-hint">
+              Video source not found in run data
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="timeline-section">
         <h3>Timeline Visualization</h3>
-        <div className="placeholder-box">
-          <p className="placeholder-text">
-            Timeline component will be built in Plan 06-03
-          </p>
-          <p className="placeholder-hint">
-            Will show horizontal bars for segments with click-to-scrub functionality
-          </p>
-        </div>
+        {run.segments && run.segments.length > 0 ? (
+          <Timeline
+            segments={run.segments}
+            onSegmentClick={handleSegmentClick}
+            currentTime={currentTime}
+            videoDuration={videoDuration}
+          />
+        ) : (
+          <div className="placeholder-box">
+            <p className="placeholder-text">No segments available</p>
+            <p className="placeholder-hint">
+              Segments will appear after video processing completes
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )
