@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F91A95C82F2142E100688974 /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = F91A95C72F2142E100688974 /* Swifter */; };
+		F91A95CA2F2142E100688974 /* Example in Frameworks */ = {isa = PBXBuildFile; productRef = F91A95C92F2142E100688974 /* Example */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		308DBA3F2EFEA3A6001F0B3F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -28,6 +33,7 @@
 		308DBA3E2EFEA3A6001F0B3F /* SportCrunchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SportCrunchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		308DBA482EFEA3A6001F0B3F /* SportCrunchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SportCrunchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F91A921C2F1552B000688974 /* SportCrunch.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = SportCrunch.xctestplan; path = ../SportCrunch.xctestplan; sourceTree = "<group>"; };
+		F91A95BB2F21428A00688974 /* SportCrunchRunner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SportCrunchRunner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -62,6 +68,11 @@
 			path = SportCrunchTests;
 			sourceTree = "<group>";
 		};
+		F91A95BC2F21428A00688974 /* SportCrunchRunner */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SportCrunchRunner;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +97,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F91A95B82F21428A00688974 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F91A95C82F2142E100688974 /* Swifter in Frameworks */,
+				F91A95CA2F2142E100688974 /* Example in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -96,6 +116,7 @@
 				308DBA332EFEA3A4001F0B3F /* SportCrunch */,
 				F91A920E2F1550AF00688974 /* SportCrunchTests */,
 				308DBA4B2EFEA3A6001F0B3F /* SportCrunchUITests */,
+				F91A95BC2F21428A00688974 /* SportCrunchRunner */,
 				308DBA322EFEA3A4001F0B3F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -106,6 +127,7 @@
 				308DBA312EFEA3A4001F0B3F /* SportCrunch.app */,
 				308DBA3E2EFEA3A6001F0B3F /* SportCrunchTests.xctest */,
 				308DBA482EFEA3A6001F0B3F /* SportCrunchUITests.xctest */,
+				F91A95BB2F21428A00688974 /* SportCrunchRunner.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -181,6 +203,31 @@
 			productReference = 308DBA482EFEA3A6001F0B3F /* SportCrunchUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		F91A95BA2F21428A00688974 /* SportCrunchRunner */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F91A95C52F21428A00688974 /* Build configuration list for PBXNativeTarget "SportCrunchRunner" */;
+			buildPhases = (
+				F91A95B72F21428A00688974 /* Sources */,
+				F91A95B82F21428A00688974 /* Frameworks */,
+				F91A95B92F21428A00688974 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				308DBA332EFEA3A4001F0B3F /* SportCrunch */,
+				F91A95BC2F21428A00688974 /* SportCrunchRunner */,
+			);
+			name = SportCrunchRunner;
+			packageProductDependencies = (
+				F91A95C72F2142E100688974 /* Swifter */,
+				F91A95C92F2142E100688974 /* Example */,
+			);
+			productName = SportCrunchRunner;
+			productReference = F91A95BB2F21428A00688974 /* SportCrunchRunner.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -202,6 +249,9 @@
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = 308DBA302EFEA3A4001F0B3F;
 					};
+					F91A95BA2F21428A00688974 = {
+						CreatedOnToolsVersion = 26.2;
+					};
 				};
 			};
 			buildConfigurationList = 308DBA2C2EFEA3A4001F0B3F /* Build configuration list for PBXProject "SportCrunch" */;
@@ -213,6 +263,9 @@
 			);
 			mainGroup = 308DBA282EFEA3A4001F0B3F;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F91A95C62F2142E100688974 /* XCRemoteSwiftPackageReference "swifter" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 308DBA322EFEA3A4001F0B3F /* Products */;
 			projectDirPath = "";
@@ -221,6 +274,7 @@
 				308DBA302EFEA3A4001F0B3F /* SportCrunch */,
 				308DBA3D2EFEA3A6001F0B3F /* SportCrunchTests */,
 				308DBA472EFEA3A6001F0B3F /* SportCrunchUITests */,
+				F91A95BA2F21428A00688974 /* SportCrunchRunner */,
 			);
 		};
 /* End PBXProject section */
@@ -247,6 +301,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F91A95B92F21428A00688974 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -265,6 +326,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		308DBA442EFEA3A6001F0B3F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F91A95B72F21428A00688974 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -559,6 +627,70 @@
 			};
 			name = Release;
 		};
+		F91A95C32F21428A00688974 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8BWHD8UVXP;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = sportcrunch.SportCrunchRunner;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F91A95C42F21428A00688974 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8BWHD8UVXP;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = sportcrunch.SportCrunchRunner;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -598,7 +730,40 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		F91A95C52F21428A00688974 /* Build configuration list for PBXNativeTarget "SportCrunchRunner" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F91A95C32F21428A00688974 /* Debug */,
+				F91A95C42F21428A00688974 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F91A95C62F2142E100688974 /* XCRemoteSwiftPackageReference "swifter" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/httpswift/swifter";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F91A95C72F2142E100688974 /* Swifter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F91A95C62F2142E100688974 /* XCRemoteSwiftPackageReference "swifter" */;
+			productName = Swifter;
+		};
+		F91A95C92F2142E100688974 /* Example */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F91A95C62F2142E100688974 /* XCRemoteSwiftPackageReference "swifter" */;
+			productName = Example;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 308DBA292EFEA3A4001F0B3F /* Project object */;
 }
