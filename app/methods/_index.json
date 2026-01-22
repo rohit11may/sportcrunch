@@ -1,0 +1,26 @@
+{
+  "generated": "2026-01-22T14:20:59Z",
+  "families": [
+  {
+    "family": "spectral_flux",
+    "description": "Spectral flux onset detection family: pure audio-only (v1) and visual validation (v2) variants",
+    "versions": [
+      {
+        "version": "v1",
+        "name": "SpectralFlux",
+        "description": "Pure audio spectral flux onset detection (no visual validation, faster processing)",
+        "swiftClass": "SpectralFluxMethod",
+        "defaultConfig": "default.config.json",
+        "configs": ["aggressive.config.json","conservative.config.json","default.config.json"]
+      },      {
+        "version": "v2",
+        "name": "SpectralFluxVisualValidation",
+        "description": "Audio spectral flux onset detection enhanced with motion-based visual validation (current production implementation)",
+        "swiftClass": "SpectralFluxVisualValidationMethod",
+        "defaultConfig": "default.config.json",
+        "configs": ["default.config.json"]
+      }
+    ]
+  }
+  ]
+}
