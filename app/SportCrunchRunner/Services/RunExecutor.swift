@@ -15,6 +15,7 @@ actor RunExecutor {
 
   private let store: RunStore
   private let exporter: ArtifactExporter
+  private let registry: MethodRegistry
 
   // MARK: - Queue State
 
@@ -23,9 +24,10 @@ actor RunExecutor {
 
   // MARK: - Initialization
 
-  init(store: RunStore, exporter: ArtifactExporter) {
+  init(store: RunStore, exporter: ArtifactExporter, registry: MethodRegistry) {
     self.store = store
     self.exporter = exporter
+    self.registry = registry
   }
 
   // MARK: - Public Methods
@@ -111,10 +113,19 @@ actor RunExecutor {
       )
       print("🔄 [RunExecutor] Config: padding=\(config.paddingPreSec)s/\(config.paddingPostSec)s, maxGap=\(config.clusterMaxGapSec)s, minHits=\(config.clusterMinHits), motionThreshold=\(config.motionThreshold?.description ?? "nil")")
 
-      // Create method (for now, always use SpectralFlux)
-      let method = SpectralFluxMethod()
+      // Create method from registry
+      let methodFamily = run.methodFamily ?? "spectral_flux"
+      let methodVersion = run.methodVersion ?? "v1"
 
-      print("🔄 [RunExecutor] Executing \(method.name) on \(videoURL.lastPathComponent)")
+      let method: SegmentationMethod
+      do {
+        method = try await registry.createMethod(family: methodFamily, version: methodVersion)
+      } catch {
+        throw RunExecutorError.methodNotFound("\(methodFamily)/\(methodVersion)")
+      }
+
+      print("🔄 [RunExecutor] Using method: \(method.name) (\(methodFamily)/\(methodVersion))")
+      print("🔄 [RunExecutor] Executing on \(videoURL.lastPathComponent)")
       print(
         "🔄 [RunExecutor] Sport: \(sport.displayName), Mode: \(sportMode?.displayName ?? "default")")
 
@@ -194,6 +205,7 @@ actor RunExecutor {
 enum RunExecutorError: LocalizedError {
   case videoNotFound(String)
   case invalidSport(String)
+  case methodNotFound(String)
 
   var errorDescription: String? {
     switch self {
@@ -201,6 +213,8 @@ enum RunExecutorError: LocalizedError {
       return "Video file not found: \(path)"
     case .invalidSport(let sport):
       return "Invalid sport: \(sport)"
+    case .methodNotFound(let method):
+      return "Method not found: \(method)"
     }
   }
 }

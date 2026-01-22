@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-21)
 ## Current Position
 
 Phase: 7 of 9 (Method Registry)
-Plan: 1 of 3
+Plan: 3 of 4
 Status: In progress
-Last activity: 2026-01-22 — Completed 07-01-PLAN.md (Method Registry JSON Structure)
+Last activity: 2026-01-22 — Completed 07-02-PLAN.md (Build Validation Script) + Xcode checkpoint
 
-Progress: ██████████░░░░░░░░░░ 54% (15 of 28 plans complete)
+Progress: ███████████░░░░░░░░░ 57% (16 of 28 plans complete)
 
 ## Performance Metrics
 
@@ -33,11 +33,11 @@ Progress: ██████████░░░░░░░░░░ 54% (15 o
 | 4. Method Protocol Foundation | 1 | 9 min | 9.0 min |
 | 5. iOS Runner Core | 3 | 4 min | 1.3 min |
 | 6. Dashboard Backend & Web Core | 3 | 10 min | 3.3 min |
-| 7. Method Registry | 1 | 7 min | 7.0 min |
+| 7. Method Registry | 2 | 22 min | 11.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 2 min, 5 min, 3 min, 7 min
-- Trend: Excellent (maintaining ~5 min avg, clear plans and atomic tasks)
+- Last 5 plans: 5 min, 3 min, 7 min, 15 min
+- Trend: Good (07-02 was longer due to protocol refactoring work)
 
 ## Accumulated Context
 
@@ -102,7 +102,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-22
-Stopped at: Completed 07-01-PLAN.md (Method Registry JSON Structure)
+Stopped at: Completed 07-02-PLAN.md + Xcode checkpoint, ready to proceed to 07-03
 Resume file: None
 
 **v1.1 Status (post-pivot):**
@@ -118,9 +118,10 @@ Resume file: None
   - ✅ Post-GSD: Dashboard reorganization (moved to root level)
   - ✅ Post-GSD: DeviceManager + DeviceSelector (multi-device support)
   - ✅ Post-GSD: Enhanced styling, run-map.json, nodemon, video playback fixes
-- Phase 7: Method Registry - In progress (1/3 plans done)
+- Phase 7: Method Registry - In progress (2/4 plans done)
   - ✅ 07-01: Method Registry JSON Structure (spectral_flux family with v1/v2 versions)
-  - ⏳ 07-02: Build Validation Script (pending)
-  - ⏳ 07-03: Dashboard Registry UI (pending)
+  - ✅ 07-02: Build Validation Script + MethodConfig protocol refactoring (Xcode checkpoint complete)
+  - ⏳ 07-03: Runner Registry Loading + GET /methods (pending)
+  - ⏳ 07-04: Dashboard Method Selection UI (pending)
 - Phase 8: Comparison & Ground Truth - Not started (ground truth overlay, metrics)
 - Phase 9: Intermediate Visualization & Polish - Not started (spectral flux viz, remaining device work)
