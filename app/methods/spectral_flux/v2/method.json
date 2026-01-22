@@ -1,0 +1,12 @@
+{
+  "version": "v2",
+  "name": "SpectralFluxVisualValidation",
+  "description": "Audio spectral flux onset detection enhanced with motion-based visual validation (current production implementation)",
+  "swiftClass": "SpectralFluxVisualValidationMethod",
+  "capabilities": {
+    "audioAnalysis": true,
+    "visualValidation": true,
+    "audioOnly": false
+  },
+  "defaultConfig": "default.config.json"
+}

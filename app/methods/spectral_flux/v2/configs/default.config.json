@@ -1,0 +1,12 @@
+{
+  "name": "default",
+  "description": "Standard detection parameters with visual validation",
+  "parameters": {
+    "audioThresholdMultiplier": 1.5,
+    "peakMinDistance": 0.5,
+    "motionThreshold": 100.0,
+    "paddingPreSec": 1.5,
+    "paddingPostSec": 1.0,
+    "clusterMaxGapSec": 2.0
+  }
+}
