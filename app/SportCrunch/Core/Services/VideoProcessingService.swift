@@ -323,17 +323,8 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             statusSubject.send(.detectingAction)
             progressSubject.send(0.40)
 
-            // Map sport/sportMode to method config
-            let preset = sport.preset(for: sportMode)
-            let config = MethodConfig(
-                audioThresholdMultiplier: Double(preset.onsetThresholdLambda),
-                peakMinDistance: preset.peakMinDistanceSec,
-                clusterMaxGapSec: preset.clusterMaxGapSec,
-                clusterMinHits: preset.clusterMinHits,
-                paddingPreSec: preset.paddingPreSec,
-                paddingPostSec: preset.paddingPostSec,
-                motionThreshold: preset.skipVisualValidation ? nil : Double(preset.motionAreaThreshold)
-            )
+            // Get hardwired method config for this sport/mode
+            let config = sport.methodConfig(for: sportMode)
 
             // Detect segments using method with config
             segments = try await method.detectSegments(
