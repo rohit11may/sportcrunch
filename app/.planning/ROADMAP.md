@@ -104,7 +104,7 @@ Plans:
 - [x] 05-02-PLAN.md — Run execution + result persistence + /runs endpoints
 - [x] 05-03-PLAN.md — Runner minimal UI (IP display, run status list)
 
-#### Phase 6: Dashboard Backend & Web Core
+#### Phase 6: Dashboard Backend & Web Core ✅
 **Goal**: Node.js backend + React dashboard for triggering runs and viewing results
 **Depends on**: Phase 5
 **Requirements**: DASH-01, DASH-02, DASH-03, DASH-04
@@ -117,26 +117,57 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Node.js backend + Runner communication
-- [ ] 06-02-PLAN.md — React dashboard + run triggering UI
-- [ ] 06-03-PLAN.md — Segment timeline + video player integration
+- [x] 06-01-PLAN.md — Node.js backend + Runner communication
+- [x] 06-02-PLAN.md — React dashboard + run triggering UI
+- [x] 06-03-PLAN.md — Segment timeline + video player integration
+
+**Additional Implementation:**
+- DeviceManager.swift for macOS device communication via devicectl
+- DeviceSelector.jsx for multi-device support (simulator + physical devices)
+- Enhanced styling across all dashboard components
+- run-map.json for run persistence
+- nodemon for backend auto-reload during development
 
 #### Phase 7: Method Registry
-**Goal**: JSON-based method definitions with dynamic configuration
+**Goal**: Hierarchical read-only method registry with Swift/JSON parallelism enforcement
 **Depends on**: Phase 6
-**Requirements**: REG-01, REG-02, REG-03, REG-04
+**Requirements**: REG-01, REG-02, REG-03, REG-04, REG-05, REG-06, REG-07
 **Success Criteria** (what must be TRUE):
-  1. Method definitions stored in `methods/*.json` files
-  2. iOS Runner reads method definitions from bundle at startup
-  3. Dashboard displays available methods from registry
-  4. Dashboard generates config forms dynamically from `config_schema`
-  5. Audio-only method variant (spectral flux without visual validation) exists
-**Plans**: TBD
+  1. Method registry organized as `app/methods/{family}/{version}/method.json` + `configs/*.config.json`
+  2. Each method family has `_family.json` metadata, auto-generated `_index.json` registry
+  3. Swift implementations parallel to JSON structure in same folder hierarchy
+  4. Build script validates JSON-Swift parallelism (JSON without Swift implementation = build error)
+  5. iOS Runner reads method definitions from bundle at startup, serves via `GET /methods`
+  6. Dashboard reads methods directly from `app/methods/` directory (read-only)
+  7. Dashboard shows method/version/config selection UI (not editable, just selectable)
+  8. Audio-only method variant exists (spectral_flux v2 without visual validation)
+**Plans**: 4 plans
+
+**Example Structure:**
+```
+app/methods/
+├── spectral_flux/
+│   ├── _family.json
+│   ├── v1/
+│   │   ├── method.json
+│   │   ├── SpectralFluxV1Method.swift
+│   │   └── configs/
+│   │       └── default.config.json
+│   └── v2/
+│       ├── method.json
+│       ├── SpectralFluxV2Method.swift
+│       └── configs/
+│           ├── default.config.json
+│           ├── aggressive.config.json
+│           └── conservative.config.json
+└── _index.json (auto-generated)
+```
 
 Plans:
-- [ ] 07-01: Method JSON schema + initial method definitions
-- [ ] 07-02: Runner method registry loading
-- [ ] 07-03: Dashboard method selection + dynamic config forms
+- [ ] 07-01-PLAN.md — Hierarchical method registry structure + JSON schemas (_family.json, method.json, config.json)
+- [ ] 07-02-PLAN.md — Build script for JSON-Swift parallelism validation + _index.json generation
+- [ ] 07-03-PLAN.md — Runner method registry loading from bundle + GET /methods endpoint
+- [ ] 07-04-PLAN.md — Dashboard method selection UI (read from app/methods/, not editable)
 
 #### Phase 8: Comparison & Ground Truth
 **Goal**: Side-by-side comparison with ground truth and metrics
@@ -185,7 +216,7 @@ Phases execute in numeric order: 4 -> 5 -> 6 -> 7 -> 8 -> 9
 | 3. Service Layer + UI Cleanup | v1.0 | 3/4 | Complete | 2026-01-17 |
 | 4. Method Protocol Foundation | v1.1 | 1/1 | Complete | 2026-01-20 |
 | 5. iOS Runner Core | v1.1 | 3/3 | Complete | 2026-01-21 |
-| 6. Dashboard Backend & Web Core | v1.1 | 0/3 | Planned | - |
-| 7. Method Registry | v1.1 | 0/3 | Not started | - |
+| 6. Dashboard Backend & Web Core | v1.1 | 3/3 | Complete | 2026-01-22 |
+| 7. Method Registry | v1.1 | 0/4 | Not started | - |
 | 8. Comparison & Ground Truth | v1.1 | 0/3 | Not started | - |
 | 9. Intermediate Visualization & Polish | v1.1 | 0/3 | Not started | - |
