@@ -1,0 +1,11 @@
+{
+  "name": "conservative",
+  "description": "Higher threshold, fewer but higher-confidence segments (higher precision, lower recall)",
+  "parameters": {
+    "audioThresholdMultiplier": 2.0,
+    "peakMinDistance": 0.8,
+    "paddingPreSec": 1.0,
+    "paddingPostSec": 0.5,
+    "clusterMaxGapSec": 1.5
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "version": "v1",
+  "name": "SpectralFlux",
+  "description": "Pure audio spectral flux onset detection (no visual validation, faster processing)",
+  "swiftClass": "SpectralFluxMethod",
+  "capabilities": {
+    "audioAnalysis": true,
+    "visualValidation": false,
+    "audioOnly": true
+  },
+  "defaultConfig": "default.config.json"
+}
