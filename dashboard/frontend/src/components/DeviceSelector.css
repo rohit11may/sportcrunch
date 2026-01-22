@@ -1,0 +1,144 @@
+.device-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.device-selector label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.device-selector select {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1em;
+}
+
+.device-selector select:hover:not(:disabled) {
+  border-color: var(--text-muted);
+  background-color: var(--surface-hover);
+}
+
+.device-selector select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.device-selector select:disabled {
+  background-color: var(--bg-color);
+  cursor: not-allowed;
+  opacity: 0.6;
+  border-color: var(--border-color);
+}
+
+.device-selector.error select {
+  border-color: #ef4444;
+}
+
+.device-selector .error-message {
+  color: #ef4444;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.device-selector .retry-button {
+  margin-top: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.device-selector .retry-button:hover {
+  background-color: #2563eb;
+}
+
+.device-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background-color: rgba(59, 130, 246, 0.1);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.device-badge {
+  padding: 0.25rem 0.6rem;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  width: fit-content;
+}
+
+.info-text {
+  color: #60a5fa;
+  font-size: 0.75rem;
+}
+
+.ip-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ip-input-container label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-color);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.ip-input-container input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+}
+
+.ip-input-container input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.ip-input-container input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ip-input-container input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}

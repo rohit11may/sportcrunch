@@ -49,7 +49,7 @@ export async function uploadVideo(file) {
   }
 }
 
-export async function createRun(videoPath, method, sport, sportMode, config = {}) {
+export async function createRun(videoPath, method, sport, sportMode, config = {}, deviceId = 'simulator', deviceIp = null) {
   try {
     const response = await fetch(`${API_BASE_URL}/api/runs`, {
       method: 'POST',
@@ -61,7 +61,9 @@ export async function createRun(videoPath, method, sport, sportMode, config = {}
         method,
         sport,
         sportMode,
-        config
+        config,
+        deviceId,
+        deviceIp
       })
     })
     return await handleResponse(response)
@@ -88,5 +90,35 @@ export async function checkHealth() {
   } catch (error) {
     if (error instanceof APIError) throw error
     throw new APIError(`Failed to check health: ${error.message}`, 0)
+  }
+}
+
+export async function fetchDevices() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/devices`)
+    return await handleResponse(response)
+  } catch (error) {
+    if (error instanceof APIError) throw error
+    throw new APIError(`Failed to fetch devices: ${error.message}`, 0)
+  }
+}
+
+export async function copyVideoToDevice(deviceId, videoPath, videoName) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/devices/copy-video`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        deviceId,
+        videoPath,
+        videoName
+      })
+    })
+    return await handleResponse(response)
+  } catch (error) {
+    if (error instanceof APIError) throw error
+    throw new APIError(`Failed to copy video to device: ${error.message}`, 0)
   }
 }

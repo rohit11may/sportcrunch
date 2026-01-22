@@ -2,23 +2,8 @@ import { useState } from 'react'
 import './Timeline.css'
 
 function Timeline({ segments, onSegmentClick, currentTime, videoDuration }) {
-    const [showRejected, setShowRejected] = useState(false)
-
-    // Handle case where data isn't loaded yet
-    if (!segments || !videoDuration) {
-        return (
-            <div className="timeline-container">
-                <div className="timeline-loading">
-                    <p>Loading timeline...</p>
-                </div>
-            </div>
-        )
-    }
-
-    // Filter segments based on showRejected toggle
-    const filteredSegments = showRejected
-        ? segments // Show all segments
-        : segments.filter(seg => seg.type === 'kept') // Only show kept segments
+    // Show all segments provided
+    const filteredSegments = segments
 
     // Timeline width in pixels
     const TIMELINE_WIDTH = 800
@@ -87,13 +72,6 @@ function Timeline({ segments, onSegmentClick, currentTime, videoDuration }) {
         <div className="timeline-container">
             <div className="timeline-header">
                 <h4>Segment Timeline</h4>
-                <button
-                    className="timeline-toggle"
-                    onClick={() => setShowRejected(!showRejected)}
-                    aria-pressed={showRejected}
-                >
-                    {showRejected ? 'Hide Rejected Segments' : 'Show Rejected Segments'}
-                </button>
             </div>
 
             <div className="timeline-wrapper" style={{ width: `${TIMELINE_WIDTH}px` }}>
@@ -114,7 +92,9 @@ function Timeline({ segments, onSegmentClick, currentTime, videoDuration }) {
                 {/* Segments */}
                 <div className="timeline-segments">
                     {filteredSegments.map((segment, index) => {
-                        const isKept = segment.type === 'kept'
+                        // All segments in the run are considered "kept/selected"
+                        // The backend assigns types like 'rally', 'shot', 'segment'
+                        const isKept = true
                         return (
                             <div
                                 key={index}
@@ -125,10 +105,10 @@ function Timeline({ segments, onSegmentClick, currentTime, videoDuration }) {
                                 onKeyDown={(e) => handleKeyDown(e, segment, index)}
                                 tabIndex={0}
                                 role="button"
-                                aria-label={`${isKept ? 'Kept' : 'Rejected'} segment from ${formatTime(segment.startTime)} to ${formatTime(segment.endTime)}`}
+                                aria-label={`${segment.type} segment from ${formatTime(segment.startTime)} to ${formatTime(segment.endTime)}`}
                             >
                                 <div className="segment-tooltip">
-                                    <div>{isKept ? 'Kept' : 'Rejected'}</div>
+                                    <div>{segment.type}</div>
                                     <div>{formatTime(segment.startTime)} - {formatTime(segment.endTime)}</div>
                                     <div>Duration: {formatTime(segment.endTime - segment.startTime)}</div>
                                 </div>
@@ -149,14 +129,6 @@ function Timeline({ segments, onSegmentClick, currentTime, videoDuration }) {
 
             <div className="timeline-info">
                 <span>Total segments: {filteredSegments.length}</span>
-                {showRejected && (
-                    <>
-                        <span className="timeline-divider">|</span>
-                        <span className="segment-kept-label">Kept: {segments.filter(s => s.type === 'kept').length}</span>
-                        <span className="timeline-divider">|</span>
-                        <span className="segment-rejected-label">Rejected: {segments.filter(s => s.type !== 'kept').length}</span>
-                    </>
-                )}
             </div>
         </div>
     )

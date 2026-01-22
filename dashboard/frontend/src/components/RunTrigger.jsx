@@ -1,6 +1,6 @@
 import './RunTrigger.css'
 
-function RunTrigger({ videoPath, method, isProcessing, error, onTrigger }) {
+function RunTrigger({ videoPath, method, isProcessing, error, statusMessage, onTrigger }) {
   const canProcess = videoPath && method && !isProcessing
 
   return (
@@ -22,7 +22,7 @@ function RunTrigger({ videoPath, method, isProcessing, error, onTrigger }) {
 
       {isProcessing && (
         <div className="status-text">
-          Processing video... This may take 1-2 minutes for test videos.
+          {statusMessage || 'Processing video... This may take 1-2 minutes for test videos.'}
         </div>
       )}
 

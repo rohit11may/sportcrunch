@@ -14,6 +14,7 @@ struct SportCrunchRunnerApp: App {
     // Initialize services (not @StateObject because they're actors/classes)
     private let runStore = RunStore()
     private let artifactExporter = ArtifactExporter()
+    private let deviceManager = DeviceManager()
     private let runExecutor: RunExecutor
 
     init() {
@@ -22,7 +23,7 @@ struct SportCrunchRunnerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RunnerDashboard(server: httpServer, store: runStore)
+            RunnerDashboard(server: httpServer, store: runStore, deviceManager: deviceManager)
                 .onAppear {
                     // Register endpoints before server starts
                     HealthEndpoint.register(on: httpServer)

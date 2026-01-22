@@ -1,0 +1,2661 @@
+{
+  "94A77673-010B-4CA7-A924-2A457C260C52": "Documents/test-videos/tennis-shot-1.mp4",
+  "0DFADF15-B8CF-40A9-82CE-50B50AA598A6": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "startTime": 0,
+        "type": "segment",
+        "endTime": 11.344
+      },
+      {
+        "type": "segment",
+        "endTime": 17.136,
+        "startTime": 12.464
+      },
+      {
+        "type": "segment",
+        "startTime": 20.944,
+        "endTime": 31.248
+      },
+      {
+        "endTime": 65.168,
+        "type": "segment",
+        "startTime": 50.064
+      },
+      {
+        "startTime": 72.816,
+        "endTime": 89.04,
+        "type": "segment"
+      },
+      {
+        "startTime": 88.688,
+        "endTime": 105.648,
+        "type": "segment"
+      },
+      {
+        "startTime": 105.328,
+        "endTime": 112.912,
+        "type": "segment"
+      },
+      {
+        "endTime": 120.368,
+        "startTime": 115.664,
+        "type": "segment"
+      }
+    ]
+  },
+  "60FFAFEA-9765-417B-9146-50ACFD34A9F3": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "startTime": 0,
+        "endTime": 11.344,
+        "type": "segment"
+      },
+      {
+        "startTime": 12.464,
+        "type": "segment",
+        "endTime": 17.136
+      },
+      {
+        "startTime": 20.944,
+        "endTime": 31.248,
+        "type": "segment"
+      },
+      {
+        "type": "segment",
+        "endTime": 65.168,
+        "startTime": 50.064
+      },
+      {
+        "endTime": 89.04,
+        "type": "segment",
+        "startTime": 72.816
+      },
+      {
+        "endTime": 105.648,
+        "startTime": 88.688,
+        "type": "segment"
+      },
+      {
+        "type": "segment",
+        "startTime": 105.328,
+        "endTime": 112.912
+      },
+      {
+        "startTime": 115.664,
+        "endTime": 120.368,
+        "type": "segment"
+      }
+    ]
+  },
+  "C49FAF8E-002B-4F49-B6D6-CB1B932DDA43": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "endTime": 11.344,
+        "startTime": 0,
+        "type": "segment"
+      },
+      {
+        "endTime": 17.136,
+        "startTime": 12.464,
+        "type": "segment"
+      },
+      {
+        "endTime": 31.248,
+        "startTime": 20.944,
+        "type": "segment"
+      },
+      {
+        "type": "segment",
+        "endTime": 65.168,
+        "startTime": 50.064
+      },
+      {
+        "type": "segment",
+        "startTime": 72.816,
+        "endTime": 89.04
+      },
+      {
+        "startTime": 88.688,
+        "type": "segment",
+        "endTime": 105.648
+      },
+      {
+        "type": "segment",
+        "endTime": 112.912,
+        "startTime": 105.328
+      },
+      {
+        "endTime": 120.368,
+        "type": "segment",
+        "startTime": 115.664
+      }
+    ]
+  },
+  "5AF70BEA-FDC5-4C19-9F51-3BDDC6A8FD52": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-5.mp4",
+    "segments": [
+      {
+        "endTime": 14.96,
+        "type": "segment",
+        "startTime": 0
+      },
+      {
+        "type": "segment",
+        "startTime": 14.608,
+        "endTime": 28.88
+      },
+      {
+        "type": "segment",
+        "endTime": 78.576,
+        "startTime": 34.608
+      },
+      {
+        "endTime": 121.296,
+        "type": "segment",
+        "startTime": 92.016
+      },
+      {
+        "endTime": 146.448,
+        "startTime": 120.464,
+        "type": "segment"
+      },
+      {
+        "startTime": 147.824,
+        "endTime": 158.768,
+        "type": "segment"
+      },
+      {
+        "startTime": 158.928,
+        "type": "segment",
+        "endTime": 163.728
+      },
+      {
+        "endTime": 173.936,
+        "type": "segment",
+        "startTime": 162.928
+      }
+    ]
+  },
+  "F15B8400-5F57-405D-B01B-A170A3D804D3": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "startTime": 0,
+        "type": "segment",
+        "endTime": 11.344
+      },
+      {
+        "endTime": 17.136,
+        "type": "segment",
+        "startTime": 12.464
+      },
+      {
+        "endTime": 31.248,
+        "type": "segment",
+        "startTime": 20.944
+      },
+      {
+        "type": "segment",
+        "startTime": 50.064,
+        "endTime": 65.168
+      },
+      {
+        "type": "segment",
+        "startTime": 72.816,
+        "endTime": 89.04
+      },
+      {
+        "endTime": 105.648,
+        "type": "segment",
+        "startTime": 88.688
+      },
+      {
+        "startTime": 105.328,
+        "type": "segment",
+        "endTime": 112.912
+      },
+      {
+        "endTime": 120.368,
+        "type": "segment",
+        "startTime": 115.664
+      }
+    ]
+  },
+  "53341231-498C-4654-9BC1-C814942CAF7D": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "type": "segment",
+        "startTime": 0,
+        "endTime": 11.344
+      },
+      {
+        "endTime": 17.136,
+        "startTime": 12.464,
+        "type": "segment"
+      },
+      {
+        "endTime": 31.248,
+        "type": "segment",
+        "startTime": 20.944
+      },
+      {
+        "startTime": 50.064,
+        "type": "segment",
+        "endTime": 65.168
+      },
+      {
+        "endTime": 89.04,
+        "startTime": 72.816,
+        "type": "segment"
+      },
+      {
+        "startTime": 88.688,
+        "endTime": 105.648,
+        "type": "segment"
+      },
+      {
+        "type": "segment",
+        "startTime": 105.328,
+        "endTime": 112.912
+      },
+      {
+        "startTime": 115.664,
+        "endTime": 120.368,
+        "type": "segment"
+      }
+    ]
+  },
+  "2E35B3B8-FC37-4F3B-9EAF-E20AF718B863": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "startTime": 0,
+        "type": "segment",
+        "endTime": 11.344
+      },
+      {
+        "endTime": 17.136,
+        "startTime": 12.464,
+        "type": "segment"
+      },
+      {
+        "endTime": 31.248,
+        "startTime": 20.944,
+        "type": "segment"
+      },
+      {
+        "endTime": 65.168,
+        "startTime": 50.064,
+        "type": "segment"
+      },
+      {
+        "type": "segment",
+        "endTime": 89.04,
+        "startTime": 72.816
+      },
+      {
+        "startTime": 88.688,
+        "type": "segment",
+        "endTime": 105.648
+      },
+      {
+        "startTime": 105.328,
+        "type": "segment",
+        "endTime": 112.912
+      },
+      {
+        "startTime": 115.664,
+        "endTime": 120.368,
+        "type": "segment"
+      }
+    ]
+  },
+  "D8AEED34-1B4A-4C3C-9EB2-37723E8E65D5": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "type": "shot",
+        "startTime": 0.45999999999999996,
+        "endTime": 2.964
+      },
+      {
+        "endTime": 4.756,
+        "type": "shot",
+        "startTime": 3.02
+      },
+      {
+        "endTime": 7.028,
+        "startTime": 5.132,
+        "type": "shot"
+      },
+      {
+        "startTime": 8.844,
+        "endTime": 9.844,
+        "type": "shot"
+      },
+      {
+        "startTime": 13.964,
+        "type": "shot",
+        "endTime": 15.636
+      },
+      {
+        "endTime": 18.836,
+        "type": "shot",
+        "startTime": 17.836
+      },
+      {
+        "startTime": 22.444,
+        "endTime": 23.444,
+        "type": "shot"
+      },
+      {
+        "startTime": 23.788,
+        "type": "shot",
+        "endTime": 24.788
+      },
+      {
+        "endTime": 26.644,
+        "startTime": 25.644,
+        "type": "shot"
+      },
+      {
+        "endTime": 28.052,
+        "type": "shot",
+        "startTime": 27.052
+      },
+      {
+        "endTime": 29.748,
+        "startTime": 28.748,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 33.196,
+        "endTime": 34.196
+      },
+      {
+        "endTime": 38.324,
+        "startTime": 37.324,
+        "type": "shot"
+      },
+      {
+        "endTime": 42.58,
+        "startTime": 41.58,
+        "type": "shot"
+      },
+      {
+        "endTime": 46.292,
+        "type": "shot",
+        "startTime": 45.292
+      },
+      {
+        "type": "shot",
+        "startTime": 48.46,
+        "endTime": 49.46
+      },
+      {
+        "startTime": 51.564,
+        "endTime": 52.564,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 61.292,
+        "endTime": 62.292
+      },
+      {
+        "type": "shot",
+        "startTime": 62.668,
+        "endTime": 63.668
+      },
+      {
+        "startTime": 68.172,
+        "type": "shot",
+        "endTime": 69.172
+      },
+      {
+        "startTime": 77.164,
+        "type": "shot",
+        "endTime": 78.164
+      },
+      {
+        "type": "shot",
+        "startTime": 80.14,
+        "endTime": 81.14
+      },
+      {
+        "type": "shot",
+        "startTime": 82.188,
+        "endTime": 83.188
+      },
+      {
+        "type": "shot",
+        "startTime": 83.532,
+        "endTime": 84.532
+      },
+      {
+        "startTime": 85.132,
+        "endTime": 86.132,
+        "type": "shot"
+      },
+      {
+        "endTime": 87.54,
+        "type": "shot",
+        "startTime": 86.54
+      },
+      {
+        "endTime": 91.188,
+        "type": "shot",
+        "startTime": 90.188
+      },
+      {
+        "startTime": 91.82,
+        "endTime": 92.82,
+        "type": "shot"
+      },
+      {
+        "endTime": 94.516,
+        "startTime": 93.516,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 97.836,
+        "endTime": 98.836
+      },
+      {
+        "endTime": 100.212,
+        "startTime": 99.212,
+        "type": "shot"
+      },
+      {
+        "endTime": 101.524,
+        "type": "shot",
+        "startTime": 100.524
+      },
+      {
+        "startTime": 103.148,
+        "type": "shot",
+        "endTime": 104.148
+      },
+      {
+        "endTime": 107.828,
+        "type": "shot",
+        "startTime": 106.828
+      },
+      {
+        "type": "shot",
+        "startTime": 108.3,
+        "endTime": 109.3
+      },
+      {
+        "type": "shot",
+        "startTime": 110.412,
+        "endTime": 111.412
+      },
+      {
+        "endTime": 114.996,
+        "startTime": 113.996,
+        "type": "shot"
+      },
+      {
+        "startTime": 117.164,
+        "endTime": 118.868,
+        "type": "shot"
+      }
+    ]
+  },
+  "7F3C60FC-86AC-4BB7-80BD-4F856AC50BC5": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "type": "shot",
+        "endTime": 2.964,
+        "startTime": 0.45999999999999996
+      },
+      {
+        "startTime": 3.02,
+        "endTime": 4.756,
+        "type": "shot"
+      },
+      {
+        "endTime": 7.028,
+        "startTime": 5.132,
+        "type": "shot"
+      },
+      {
+        "startTime": 8.844,
+        "type": "shot",
+        "endTime": 9.844
+      },
+      {
+        "endTime": 15.636,
+        "type": "shot",
+        "startTime": 13.964
+      },
+      {
+        "type": "shot",
+        "startTime": 17.836,
+        "endTime": 18.836
+      },
+      {
+        "endTime": 23.444,
+        "type": "shot",
+        "startTime": 22.444
+      },
+      {
+        "startTime": 23.788,
+        "type": "shot",
+        "endTime": 24.788
+      },
+      {
+        "endTime": 26.644,
+        "startTime": 25.644,
+        "type": "shot"
+      },
+      {
+        "startTime": 27.052,
+        "endTime": 28.052,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "endTime": 29.748,
+        "startTime": 28.748
+      },
+      {
+        "endTime": 34.196,
+        "type": "shot",
+        "startTime": 33.196
+      },
+      {
+        "startTime": 37.324,
+        "endTime": 38.324,
+        "type": "shot"
+      },
+      {
+        "endTime": 42.58,
+        "type": "shot",
+        "startTime": 41.58
+      },
+      {
+        "endTime": 46.292,
+        "startTime": 45.292,
+        "type": "shot"
+      },
+      {
+        "endTime": 49.46,
+        "startTime": 48.46,
+        "type": "shot"
+      },
+      {
+        "startTime": 51.564,
+        "type": "shot",
+        "endTime": 52.564
+      },
+      {
+        "startTime": 61.292,
+        "endTime": 62.292,
+        "type": "shot"
+      },
+      {
+        "startTime": 62.668,
+        "type": "shot",
+        "endTime": 63.668
+      },
+      {
+        "type": "shot",
+        "endTime": 69.172,
+        "startTime": 68.172
+      },
+      {
+        "startTime": 77.164,
+        "type": "shot",
+        "endTime": 78.164
+      },
+      {
+        "startTime": 80.14,
+        "endTime": 81.14,
+        "type": "shot"
+      },
+      {
+        "startTime": 82.188,
+        "type": "shot",
+        "endTime": 83.188
+      },
+      {
+        "endTime": 84.532,
+        "startTime": 83.532,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 85.132,
+        "endTime": 86.132
+      },
+      {
+        "startTime": 86.54,
+        "endTime": 87.54,
+        "type": "shot"
+      },
+      {
+        "endTime": 91.188,
+        "startTime": 90.188,
+        "type": "shot"
+      },
+      {
+        "startTime": 91.82,
+        "endTime": 92.82,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 93.516,
+        "endTime": 94.516
+      },
+      {
+        "type": "shot",
+        "endTime": 98.836,
+        "startTime": 97.836
+      },
+      {
+        "type": "shot",
+        "startTime": 99.212,
+        "endTime": 100.212
+      },
+      {
+        "type": "shot",
+        "startTime": 100.524,
+        "endTime": 101.524
+      },
+      {
+        "type": "shot",
+        "endTime": 104.148,
+        "startTime": 103.148
+      },
+      {
+        "endTime": 107.828,
+        "startTime": 106.828,
+        "type": "shot"
+      },
+      {
+        "endTime": 109.3,
+        "type": "shot",
+        "startTime": 108.3
+      },
+      {
+        "endTime": 111.412,
+        "type": "shot",
+        "startTime": 110.412
+      },
+      {
+        "type": "shot",
+        "endTime": 114.996,
+        "startTime": 113.996
+      },
+      {
+        "type": "shot",
+        "startTime": 117.164,
+        "endTime": 118.868
+      }
+    ]
+  },
+  "0B6C6587-CD49-456A-BDAC-EBCB611DC15E": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "startTime": 0.45999999999999996,
+        "type": "shot",
+        "endTime": 2.964
+      },
+      {
+        "type": "shot",
+        "startTime": 3.02,
+        "endTime": 4.756
+      },
+      {
+        "endTime": 7.028,
+        "type": "shot",
+        "startTime": 5.132
+      },
+      {
+        "type": "shot",
+        "endTime": 9.844,
+        "startTime": 8.844
+      },
+      {
+        "type": "shot",
+        "startTime": 13.964,
+        "endTime": 15.636
+      },
+      {
+        "startTime": 17.836,
+        "endTime": 18.836,
+        "type": "shot"
+      },
+      {
+        "endTime": 23.444,
+        "type": "shot",
+        "startTime": 22.444
+      },
+      {
+        "type": "shot",
+        "startTime": 23.788,
+        "endTime": 24.788
+      },
+      {
+        "type": "shot",
+        "endTime": 26.644,
+        "startTime": 25.644
+      },
+      {
+        "type": "shot",
+        "startTime": 27.052,
+        "endTime": 28.052
+      },
+      {
+        "endTime": 29.748,
+        "type": "shot",
+        "startTime": 28.748
+      },
+      {
+        "type": "shot",
+        "endTime": 34.196,
+        "startTime": 33.196
+      },
+      {
+        "endTime": 38.324,
+        "type": "shot",
+        "startTime": 37.324
+      },
+      {
+        "startTime": 41.58,
+        "endTime": 42.58,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "endTime": 46.292,
+        "startTime": 45.292
+      },
+      {
+        "type": "shot",
+        "endTime": 49.46,
+        "startTime": 48.46
+      },
+      {
+        "endTime": 52.564,
+        "type": "shot",
+        "startTime": 51.564
+      },
+      {
+        "type": "shot",
+        "endTime": 62.292,
+        "startTime": 61.292
+      },
+      {
+        "endTime": 63.668,
+        "type": "shot",
+        "startTime": 62.668
+      },
+      {
+        "type": "shot",
+        "endTime": 69.172,
+        "startTime": 68.172
+      },
+      {
+        "endTime": 78.164,
+        "type": "shot",
+        "startTime": 77.164
+      },
+      {
+        "type": "shot",
+        "endTime": 81.14,
+        "startTime": 80.14
+      },
+      {
+        "startTime": 82.188,
+        "endTime": 83.188,
+        "type": "shot"
+      },
+      {
+        "endTime": 84.532,
+        "type": "shot",
+        "startTime": 83.532
+      },
+      {
+        "endTime": 86.132,
+        "startTime": 85.132,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 86.54,
+        "endTime": 87.54
+      },
+      {
+        "type": "shot",
+        "endTime": 91.188,
+        "startTime": 90.188
+      },
+      {
+        "type": "shot",
+        "endTime": 92.82,
+        "startTime": 91.82
+      },
+      {
+        "type": "shot",
+        "endTime": 94.516,
+        "startTime": 93.516
+      },
+      {
+        "type": "shot",
+        "startTime": 97.836,
+        "endTime": 98.836
+      },
+      {
+        "type": "shot",
+        "endTime": 100.212,
+        "startTime": 99.212
+      },
+      {
+        "type": "shot",
+        "startTime": 100.524,
+        "endTime": 101.524
+      },
+      {
+        "type": "shot",
+        "startTime": 103.148,
+        "endTime": 104.148
+      },
+      {
+        "startTime": 106.828,
+        "endTime": 107.828,
+        "type": "shot"
+      },
+      {
+        "endTime": 109.3,
+        "startTime": 108.3,
+        "type": "shot"
+      },
+      {
+        "startTime": 110.412,
+        "endTime": 111.412,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "endTime": 114.996,
+        "startTime": 113.996
+      },
+      {
+        "startTime": 117.164,
+        "type": "shot",
+        "endTime": 118.868
+      }
+    ]
+  },
+  "76556CBB-9AC9-4DDF-B30F-F516A213B8F5": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "type": "shot",
+        "startTime": 0.45999999999999996,
+        "endTime": 2.964
+      },
+      {
+        "endTime": 4.756,
+        "type": "shot",
+        "startTime": 3.02
+      },
+      {
+        "endTime": 7.028,
+        "type": "shot",
+        "startTime": 5.132
+      },
+      {
+        "endTime": 9.844,
+        "type": "shot",
+        "startTime": 8.844
+      },
+      {
+        "type": "shot",
+        "startTime": 13.964,
+        "endTime": 15.636
+      },
+      {
+        "endTime": 18.836,
+        "type": "shot",
+        "startTime": 17.836
+      },
+      {
+        "endTime": 23.444,
+        "startTime": 22.444,
+        "type": "shot"
+      },
+      {
+        "endTime": 24.788,
+        "startTime": 23.788,
+        "type": "shot"
+      },
+      {
+        "startTime": 25.644,
+        "endTime": 26.644,
+        "type": "shot"
+      },
+      {
+        "endTime": 28.052,
+        "startTime": 27.052,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 28.748,
+        "endTime": 29.748
+      },
+      {
+        "type": "shot",
+        "endTime": 34.196,
+        "startTime": 33.196
+      },
+      {
+        "startTime": 37.324,
+        "endTime": 38.324,
+        "type": "shot"
+      },
+      {
+        "endTime": 42.58,
+        "type": "shot",
+        "startTime": 41.58
+      },
+      {
+        "endTime": 46.292,
+        "startTime": 45.292,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 48.46,
+        "endTime": 49.46
+      },
+      {
+        "type": "shot",
+        "startTime": 51.564,
+        "endTime": 52.564
+      },
+      {
+        "startTime": 61.292,
+        "type": "shot",
+        "endTime": 62.292
+      },
+      {
+        "type": "shot",
+        "startTime": 62.668,
+        "endTime": 63.668
+      },
+      {
+        "type": "shot",
+        "endTime": 69.172,
+        "startTime": 68.172
+      },
+      {
+        "startTime": 77.164,
+        "endTime": 78.164,
+        "type": "shot"
+      },
+      {
+        "startTime": 80.14,
+        "endTime": 81.14,
+        "type": "shot"
+      },
+      {
+        "startTime": 82.188,
+        "endTime": 83.188,
+        "type": "shot"
+      },
+      {
+        "startTime": 83.532,
+        "endTime": 84.532,
+        "type": "shot"
+      },
+      {
+        "startTime": 85.132,
+        "type": "shot",
+        "endTime": 86.132
+      },
+      {
+        "type": "shot",
+        "startTime": 86.54,
+        "endTime": 87.54
+      },
+      {
+        "endTime": 91.188,
+        "type": "shot",
+        "startTime": 90.188
+      },
+      {
+        "endTime": 92.82,
+        "type": "shot",
+        "startTime": 91.82
+      },
+      {
+        "endTime": 94.516,
+        "startTime": 93.516,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "endTime": 98.836,
+        "startTime": 97.836
+      },
+      {
+        "startTime": 99.212,
+        "endTime": 100.212,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 100.524,
+        "endTime": 101.524
+      },
+      {
+        "endTime": 104.148,
+        "type": "shot",
+        "startTime": 103.148
+      },
+      {
+        "startTime": 106.828,
+        "endTime": 107.828,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 108.3,
+        "endTime": 109.3
+      },
+      {
+        "startTime": 110.412,
+        "endTime": 111.412,
+        "type": "shot"
+      },
+      {
+        "startTime": 113.996,
+        "endTime": 114.996,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 117.164,
+        "endTime": 118.868
+      }
+    ],
+    "highlightPath": "/Users/rohit/Documents/sportcrunch/dashboard/backend/cache/highlights/76556CBB-9AC9-4DDF-B30F-F516A213B8F5-highlight.mp4"
+  },
+  "7D1B22E8-AB96-4AEB-B513-D0E22073E1AD": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "startTime": 0.45999999999999996,
+        "endTime": 2.964,
+        "type": "shot"
+      },
+      {
+        "endTime": 4.756,
+        "startTime": 3.02,
+        "type": "shot"
+      },
+      {
+        "endTime": 7.028,
+        "type": "shot",
+        "startTime": 5.132
+      },
+      {
+        "startTime": 8.844,
+        "endTime": 9.844,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 13.964,
+        "endTime": 15.636
+      },
+      {
+        "startTime": 17.836,
+        "endTime": 18.836,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "endTime": 23.444,
+        "startTime": 22.444
+      },
+      {
+        "type": "shot",
+        "startTime": 23.788,
+        "endTime": 24.788
+      },
+      {
+        "startTime": 25.644,
+        "type": "shot",
+        "endTime": 26.644
+      },
+      {
+        "type": "shot",
+        "endTime": 28.052,
+        "startTime": 27.052
+      },
+      {
+        "startTime": 28.748,
+        "endTime": 29.748,
+        "type": "shot"
+      },
+      {
+        "startTime": 33.196,
+        "endTime": 34.196,
+        "type": "shot"
+      },
+      {
+        "endTime": 38.324,
+        "type": "shot",
+        "startTime": 37.324
+      },
+      {
+        "endTime": 42.58,
+        "startTime": 41.58,
+        "type": "shot"
+      },
+      {
+        "endTime": 46.292,
+        "type": "shot",
+        "startTime": 45.292
+      },
+      {
+        "startTime": 48.46,
+        "endTime": 49.46,
+        "type": "shot"
+      },
+      {
+        "startTime": 51.564,
+        "endTime": 52.564,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 61.292,
+        "endTime": 62.292
+      },
+      {
+        "startTime": 62.668,
+        "endTime": 63.668,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 68.172,
+        "endTime": 69.172
+      },
+      {
+        "startTime": 77.164,
+        "type": "shot",
+        "endTime": 78.164
+      },
+      {
+        "endTime": 81.14,
+        "startTime": 80.14,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 82.188,
+        "endTime": 83.188
+      },
+      {
+        "type": "shot",
+        "startTime": 83.532,
+        "endTime": 84.532
+      },
+      {
+        "type": "shot",
+        "startTime": 85.132,
+        "endTime": 86.132
+      },
+      {
+        "startTime": 86.54,
+        "type": "shot",
+        "endTime": 87.54
+      },
+      {
+        "type": "shot",
+        "startTime": 90.188,
+        "endTime": 91.188
+      },
+      {
+        "type": "shot",
+        "endTime": 92.82,
+        "startTime": 91.82
+      },
+      {
+        "startTime": 93.516,
+        "endTime": 94.516,
+        "type": "shot"
+      },
+      {
+        "startTime": 97.836,
+        "type": "shot",
+        "endTime": 98.836
+      },
+      {
+        "endTime": 100.212,
+        "type": "shot",
+        "startTime": 99.212
+      },
+      {
+        "type": "shot",
+        "startTime": 100.524,
+        "endTime": 101.524
+      },
+      {
+        "type": "shot",
+        "endTime": 104.148,
+        "startTime": 103.148
+      },
+      {
+        "startTime": 106.828,
+        "type": "shot",
+        "endTime": 107.828
+      },
+      {
+        "type": "shot",
+        "endTime": 109.3,
+        "startTime": 108.3
+      },
+      {
+        "type": "shot",
+        "startTime": 110.412,
+        "endTime": 111.412
+      },
+      {
+        "type": "shot",
+        "startTime": 113.996,
+        "endTime": 114.996
+      },
+      {
+        "startTime": 117.164,
+        "type": "shot",
+        "endTime": 118.868
+      }
+    ]
+  },
+  "71C35B12-7D78-4DE8-A29C-F5053482835D": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "startTime": 0.45999999999999996,
+        "endTime": 2.964,
+        "type": "shot"
+      },
+      {
+        "endTime": 4.756,
+        "startTime": 3.02,
+        "type": "shot"
+      },
+      {
+        "endTime": 7.028,
+        "startTime": 5.132,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 8.844,
+        "endTime": 9.844
+      },
+      {
+        "endTime": 15.636,
+        "startTime": 13.964,
+        "type": "shot"
+      },
+      {
+        "endTime": 18.836,
+        "type": "shot",
+        "startTime": 17.836
+      },
+      {
+        "type": "shot",
+        "startTime": 22.444,
+        "endTime": 23.444
+      },
+      {
+        "endTime": 24.788,
+        "type": "shot",
+        "startTime": 23.788
+      },
+      {
+        "startTime": 25.644,
+        "type": "shot",
+        "endTime": 26.644
+      },
+      {
+        "type": "shot",
+        "startTime": 27.052,
+        "endTime": 28.052
+      },
+      {
+        "type": "shot",
+        "startTime": 28.748,
+        "endTime": 29.748
+      },
+      {
+        "startTime": 33.196,
+        "endTime": 34.196,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 37.324,
+        "endTime": 38.324
+      },
+      {
+        "type": "shot",
+        "startTime": 41.58,
+        "endTime": 42.58
+      },
+      {
+        "startTime": 45.292,
+        "endTime": 46.292,
+        "type": "shot"
+      },
+      {
+        "endTime": 49.46,
+        "type": "shot",
+        "startTime": 48.46
+      },
+      {
+        "type": "shot",
+        "endTime": 52.564,
+        "startTime": 51.564
+      },
+      {
+        "type": "shot",
+        "startTime": 61.292,
+        "endTime": 62.292
+      },
+      {
+        "startTime": 62.668,
+        "type": "shot",
+        "endTime": 63.668
+      },
+      {
+        "endTime": 69.172,
+        "type": "shot",
+        "startTime": 68.172
+      },
+      {
+        "startTime": 77.164,
+        "type": "shot",
+        "endTime": 78.164
+      },
+      {
+        "endTime": 81.14,
+        "type": "shot",
+        "startTime": 80.14
+      },
+      {
+        "startTime": 82.188,
+        "type": "shot",
+        "endTime": 83.188
+      },
+      {
+        "startTime": 83.532,
+        "endTime": 84.532,
+        "type": "shot"
+      },
+      {
+        "startTime": 85.132,
+        "endTime": 86.132,
+        "type": "shot"
+      },
+      {
+        "endTime": 87.54,
+        "type": "shot",
+        "startTime": 86.54
+      },
+      {
+        "endTime": 91.188,
+        "type": "shot",
+        "startTime": 90.188
+      },
+      {
+        "type": "shot",
+        "endTime": 92.82,
+        "startTime": 91.82
+      },
+      {
+        "startTime": 93.516,
+        "endTime": 94.516,
+        "type": "shot"
+      },
+      {
+        "endTime": 98.836,
+        "type": "shot",
+        "startTime": 97.836
+      },
+      {
+        "type": "shot",
+        "startTime": 99.212,
+        "endTime": 100.212
+      },
+      {
+        "startTime": 100.524,
+        "endTime": 101.524,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 103.148,
+        "endTime": 104.148
+      },
+      {
+        "startTime": 106.828,
+        "endTime": 107.828,
+        "type": "shot"
+      },
+      {
+        "endTime": 109.3,
+        "type": "shot",
+        "startTime": 108.3
+      },
+      {
+        "endTime": 111.412,
+        "type": "shot",
+        "startTime": 110.412
+      },
+      {
+        "startTime": 113.996,
+        "type": "shot",
+        "endTime": 114.996
+      },
+      {
+        "startTime": 117.164,
+        "endTime": 118.868,
+        "type": "shot"
+      }
+    ]
+  },
+  "0F95FEDE-8B8A-4163-AFF0-3B07198D85B7": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "endTime": 2.964,
+        "startTime": 0.45999999999999996,
+        "type": "shot"
+      },
+      {
+        "startTime": 3.02,
+        "endTime": 4.756,
+        "type": "shot"
+      },
+      {
+        "startTime": 5.132,
+        "type": "shot",
+        "endTime": 7.028
+      },
+      {
+        "endTime": 9.844,
+        "type": "shot",
+        "startTime": 8.844
+      },
+      {
+        "startTime": 13.964,
+        "endTime": 15.636,
+        "type": "shot"
+      },
+      {
+        "startTime": 17.836,
+        "type": "shot",
+        "endTime": 18.836
+      },
+      {
+        "type": "shot",
+        "startTime": 22.444,
+        "endTime": 23.444
+      },
+      {
+        "type": "shot",
+        "startTime": 23.788,
+        "endTime": 24.788
+      },
+      {
+        "startTime": 25.644,
+        "type": "shot",
+        "endTime": 26.644
+      },
+      {
+        "startTime": 27.052,
+        "type": "shot",
+        "endTime": 28.052
+      },
+      {
+        "type": "shot",
+        "startTime": 28.748,
+        "endTime": 29.748
+      },
+      {
+        "type": "shot",
+        "startTime": 33.196,
+        "endTime": 34.196
+      },
+      {
+        "type": "shot",
+        "startTime": 37.324,
+        "endTime": 38.324
+      },
+      {
+        "startTime": 41.58,
+        "endTime": 42.58,
+        "type": "shot"
+      },
+      {
+        "endTime": 46.292,
+        "type": "shot",
+        "startTime": 45.292
+      },
+      {
+        "endTime": 49.46,
+        "type": "shot",
+        "startTime": 48.46
+      },
+      {
+        "startTime": 51.564,
+        "endTime": 52.564,
+        "type": "shot"
+      },
+      {
+        "endTime": 62.292,
+        "startTime": 61.292,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 62.668,
+        "endTime": 63.668
+      },
+      {
+        "endTime": 69.172,
+        "startTime": 68.172,
+        "type": "shot"
+      },
+      {
+        "endTime": 78.164,
+        "type": "shot",
+        "startTime": 77.164
+      },
+      {
+        "startTime": 80.14,
+        "type": "shot",
+        "endTime": 81.14
+      },
+      {
+        "endTime": 83.188,
+        "type": "shot",
+        "startTime": 82.188
+      },
+      {
+        "type": "shot",
+        "startTime": 83.532,
+        "endTime": 84.532
+      },
+      {
+        "type": "shot",
+        "startTime": 85.132,
+        "endTime": 86.132
+      },
+      {
+        "endTime": 87.54,
+        "startTime": 86.54,
+        "type": "shot"
+      },
+      {
+        "startTime": 90.188,
+        "endTime": 91.188,
+        "type": "shot"
+      },
+      {
+        "startTime": 91.82,
+        "endTime": 92.82,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 93.516,
+        "endTime": 94.516
+      },
+      {
+        "startTime": 97.836,
+        "type": "shot",
+        "endTime": 98.836
+      },
+      {
+        "type": "shot",
+        "startTime": 99.212,
+        "endTime": 100.212
+      },
+      {
+        "startTime": 100.524,
+        "endTime": 101.524,
+        "type": "shot"
+      },
+      {
+        "endTime": 104.148,
+        "type": "shot",
+        "startTime": 103.148
+      },
+      {
+        "endTime": 107.828,
+        "type": "shot",
+        "startTime": 106.828
+      },
+      {
+        "type": "shot",
+        "startTime": 108.3,
+        "endTime": 109.3
+      },
+      {
+        "type": "shot",
+        "endTime": 111.412,
+        "startTime": 110.412
+      },
+      {
+        "endTime": 114.996,
+        "type": "shot",
+        "startTime": 113.996
+      },
+      {
+        "startTime": 117.164,
+        "type": "shot",
+        "endTime": 118.868
+      }
+    ]
+  },
+  "996580A7-C857-4204-B2E3-C7A2E09AFC85": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "endTime": 2.964,
+        "startTime": 0.45999999999999996,
+        "type": "shot"
+      },
+      {
+        "endTime": 4.756,
+        "startTime": 3.02,
+        "type": "shot"
+      },
+      {
+        "endTime": 7.028,
+        "type": "shot",
+        "startTime": 5.132
+      },
+      {
+        "endTime": 9.844,
+        "startTime": 8.844,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 13.964,
+        "endTime": 15.636
+      },
+      {
+        "type": "shot",
+        "endTime": 18.836,
+        "startTime": 17.836
+      },
+      {
+        "type": "shot",
+        "startTime": 22.444,
+        "endTime": 23.444
+      },
+      {
+        "endTime": 24.788,
+        "startTime": 23.788,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 25.644,
+        "endTime": 26.644
+      },
+      {
+        "startTime": 27.052,
+        "type": "shot",
+        "endTime": 28.052
+      },
+      {
+        "type": "shot",
+        "startTime": 28.748,
+        "endTime": 29.748
+      },
+      {
+        "startTime": 33.196,
+        "type": "shot",
+        "endTime": 34.196
+      },
+      {
+        "endTime": 38.324,
+        "type": "shot",
+        "startTime": 37.324
+      },
+      {
+        "endTime": 42.58,
+        "type": "shot",
+        "startTime": 41.58
+      },
+      {
+        "endTime": 46.292,
+        "startTime": 45.292,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "endTime": 49.46,
+        "startTime": 48.46
+      },
+      {
+        "endTime": 52.564,
+        "type": "shot",
+        "startTime": 51.564
+      },
+      {
+        "startTime": 61.292,
+        "endTime": 62.292,
+        "type": "shot"
+      },
+      {
+        "startTime": 62.668,
+        "endTime": 63.668,
+        "type": "shot"
+      },
+      {
+        "startTime": 68.172,
+        "type": "shot",
+        "endTime": 69.172
+      },
+      {
+        "endTime": 78.164,
+        "type": "shot",
+        "startTime": 77.164
+      },
+      {
+        "type": "shot",
+        "startTime": 80.14,
+        "endTime": 81.14
+      },
+      {
+        "endTime": 83.188,
+        "type": "shot",
+        "startTime": 82.188
+      },
+      {
+        "endTime": 84.532,
+        "type": "shot",
+        "startTime": 83.532
+      },
+      {
+        "type": "shot",
+        "endTime": 86.132,
+        "startTime": 85.132
+      },
+      {
+        "endTime": 87.54,
+        "startTime": 86.54,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 90.188,
+        "endTime": 91.188
+      },
+      {
+        "startTime": 91.82,
+        "endTime": 92.82,
+        "type": "shot"
+      },
+      {
+        "startTime": 93.516,
+        "endTime": 94.516,
+        "type": "shot"
+      },
+      {
+        "startTime": 97.836,
+        "type": "shot",
+        "endTime": 98.836
+      },
+      {
+        "type": "shot",
+        "startTime": 99.212,
+        "endTime": 100.212
+      },
+      {
+        "type": "shot",
+        "startTime": 100.524,
+        "endTime": 101.524
+      },
+      {
+        "type": "shot",
+        "startTime": 103.148,
+        "endTime": 104.148
+      },
+      {
+        "type": "shot",
+        "startTime": 106.828,
+        "endTime": 107.828
+      },
+      {
+        "type": "shot",
+        "endTime": 109.3,
+        "startTime": 108.3
+      },
+      {
+        "startTime": 110.412,
+        "endTime": 111.412,
+        "type": "shot"
+      },
+      {
+        "startTime": 113.996,
+        "type": "shot",
+        "endTime": 114.996
+      },
+      {
+        "type": "shot",
+        "endTime": 118.868,
+        "startTime": 117.164
+      }
+    ]
+  },
+  "FEDD0B8E-86CE-4E06-8D00-1062CE2324BE": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "startTime": 0.45999999999999996,
+        "endTime": 2.964,
+        "type": "shot"
+      },
+      {
+        "startTime": 3.02,
+        "endTime": 4.756,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 5.132,
+        "endTime": 7.028
+      },
+      {
+        "type": "shot",
+        "startTime": 8.844,
+        "endTime": 9.844
+      },
+      {
+        "endTime": 15.636,
+        "type": "shot",
+        "startTime": 13.964
+      },
+      {
+        "endTime": 18.836,
+        "startTime": 17.836,
+        "type": "shot"
+      },
+      {
+        "endTime": 23.444,
+        "type": "shot",
+        "startTime": 22.444
+      },
+      {
+        "startTime": 23.788,
+        "endTime": 24.788,
+        "type": "shot"
+      },
+      {
+        "startTime": 25.644,
+        "endTime": 26.644,
+        "type": "shot"
+      },
+      {
+        "startTime": 27.052,
+        "endTime": 28.052,
+        "type": "shot"
+      },
+      {
+        "startTime": 28.748,
+        "type": "shot",
+        "endTime": 29.748
+      },
+      {
+        "type": "shot",
+        "startTime": 33.196,
+        "endTime": 34.196
+      },
+      {
+        "type": "shot",
+        "startTime": 37.324,
+        "endTime": 38.324
+      },
+      {
+        "type": "shot",
+        "startTime": 41.58,
+        "endTime": 42.58
+      },
+      {
+        "endTime": 46.292,
+        "startTime": 45.292,
+        "type": "shot"
+      },
+      {
+        "startTime": 48.46,
+        "type": "shot",
+        "endTime": 49.46
+      },
+      {
+        "endTime": 52.564,
+        "type": "shot",
+        "startTime": 51.564
+      },
+      {
+        "endTime": 62.292,
+        "startTime": 61.292,
+        "type": "shot"
+      },
+      {
+        "endTime": 63.668,
+        "type": "shot",
+        "startTime": 62.668
+      },
+      {
+        "endTime": 69.172,
+        "type": "shot",
+        "startTime": 68.172
+      },
+      {
+        "endTime": 78.164,
+        "startTime": 77.164,
+        "type": "shot"
+      },
+      {
+        "endTime": 81.14,
+        "startTime": 80.14,
+        "type": "shot"
+      },
+      {
+        "endTime": 83.188,
+        "type": "shot",
+        "startTime": 82.188
+      },
+      {
+        "type": "shot",
+        "startTime": 83.532,
+        "endTime": 84.532
+      },
+      {
+        "endTime": 86.132,
+        "type": "shot",
+        "startTime": 85.132
+      },
+      {
+        "startTime": 86.54,
+        "endTime": 87.54,
+        "type": "shot"
+      },
+      {
+        "endTime": 91.188,
+        "startTime": 90.188,
+        "type": "shot"
+      },
+      {
+        "startTime": 91.82,
+        "endTime": 92.82,
+        "type": "shot"
+      },
+      {
+        "endTime": 94.516,
+        "type": "shot",
+        "startTime": 93.516
+      },
+      {
+        "type": "shot",
+        "endTime": 98.836,
+        "startTime": 97.836
+      },
+      {
+        "startTime": 99.212,
+        "endTime": 100.212,
+        "type": "shot"
+      },
+      {
+        "endTime": 101.524,
+        "startTime": 100.524,
+        "type": "shot"
+      },
+      {
+        "startTime": 103.148,
+        "type": "shot",
+        "endTime": 104.148
+      },
+      {
+        "endTime": 107.828,
+        "startTime": 106.828,
+        "type": "shot"
+      },
+      {
+        "endTime": 109.3,
+        "type": "shot",
+        "startTime": 108.3
+      },
+      {
+        "endTime": 111.412,
+        "type": "shot",
+        "startTime": 110.412
+      },
+      {
+        "endTime": 114.996,
+        "type": "shot",
+        "startTime": 113.996
+      },
+      {
+        "type": "shot",
+        "startTime": 117.164,
+        "endTime": 118.868
+      }
+    ]
+  },
+  "E3415370-7DB0-49D0-9A24-02DE57510E6B": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "startTime": 0.45999999999999996,
+        "type": "shot",
+        "endTime": 2.964
+      },
+      {
+        "type": "shot",
+        "endTime": 4.756,
+        "startTime": 3.02
+      },
+      {
+        "endTime": 7.028,
+        "type": "shot",
+        "startTime": 5.132
+      },
+      {
+        "startTime": 8.844,
+        "type": "shot",
+        "endTime": 9.844
+      },
+      {
+        "startTime": 13.964,
+        "endTime": 15.636,
+        "type": "shot"
+      },
+      {
+        "endTime": 18.836,
+        "type": "shot",
+        "startTime": 17.836
+      },
+      {
+        "startTime": 22.444,
+        "type": "shot",
+        "endTime": 23.444
+      },
+      {
+        "type": "shot",
+        "endTime": 24.788,
+        "startTime": 23.788
+      },
+      {
+        "type": "shot",
+        "startTime": 25.644,
+        "endTime": 26.644
+      },
+      {
+        "type": "shot",
+        "startTime": 27.052,
+        "endTime": 28.052
+      },
+      {
+        "startTime": 28.748,
+        "type": "shot",
+        "endTime": 29.748
+      },
+      {
+        "startTime": 33.196,
+        "endTime": 34.196,
+        "type": "shot"
+      },
+      {
+        "endTime": 38.324,
+        "startTime": 37.324,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "endTime": 42.58,
+        "startTime": 41.58
+      },
+      {
+        "startTime": 45.292,
+        "type": "shot",
+        "endTime": 46.292
+      },
+      {
+        "type": "shot",
+        "endTime": 49.46,
+        "startTime": 48.46
+      },
+      {
+        "endTime": 52.564,
+        "startTime": 51.564,
+        "type": "shot"
+      },
+      {
+        "startTime": 61.292,
+        "type": "shot",
+        "endTime": 62.292
+      },
+      {
+        "type": "shot",
+        "startTime": 62.668,
+        "endTime": 63.668
+      },
+      {
+        "startTime": 68.172,
+        "type": "shot",
+        "endTime": 69.172
+      },
+      {
+        "startTime": 77.164,
+        "endTime": 78.164,
+        "type": "shot"
+      },
+      {
+        "startTime": 80.14,
+        "endTime": 81.14,
+        "type": "shot"
+      },
+      {
+        "startTime": 82.188,
+        "endTime": 83.188,
+        "type": "shot"
+      },
+      {
+        "endTime": 84.532,
+        "startTime": 83.532,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 85.132,
+        "endTime": 86.132
+      },
+      {
+        "startTime": 86.54,
+        "endTime": 87.54,
+        "type": "shot"
+      },
+      {
+        "endTime": 91.188,
+        "type": "shot",
+        "startTime": 90.188
+      },
+      {
+        "startTime": 91.82,
+        "endTime": 92.82,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 93.516,
+        "endTime": 94.516
+      },
+      {
+        "startTime": 97.836,
+        "endTime": 98.836,
+        "type": "shot"
+      },
+      {
+        "endTime": 100.212,
+        "type": "shot",
+        "startTime": 99.212
+      },
+      {
+        "startTime": 100.524,
+        "endTime": 101.524,
+        "type": "shot"
+      },
+      {
+        "endTime": 104.148,
+        "startTime": 103.148,
+        "type": "shot"
+      },
+      {
+        "startTime": 106.828,
+        "type": "shot",
+        "endTime": 107.828
+      },
+      {
+        "type": "shot",
+        "startTime": 108.3,
+        "endTime": 109.3
+      },
+      {
+        "startTime": 110.412,
+        "type": "shot",
+        "endTime": 111.412
+      },
+      {
+        "type": "shot",
+        "endTime": 114.996,
+        "startTime": 113.996
+      },
+      {
+        "startTime": 117.164,
+        "endTime": 118.868,
+        "type": "shot"
+      }
+    ]
+  },
+  "AA4ECD51-E8FC-4B51-8978-309341245537": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "type": "shot",
+        "startTime": 0.45999999999999996,
+        "endTime": 2.964
+      },
+      {
+        "type": "shot",
+        "startTime": 3.02,
+        "endTime": 4.756
+      },
+      {
+        "type": "shot",
+        "endTime": 7.028,
+        "startTime": 5.132
+      },
+      {
+        "endTime": 9.844,
+        "startTime": 8.844,
+        "type": "shot"
+      },
+      {
+        "endTime": 15.636,
+        "type": "shot",
+        "startTime": 13.964
+      },
+      {
+        "startTime": 17.836,
+        "type": "shot",
+        "endTime": 18.836
+      },
+      {
+        "startTime": 22.444,
+        "endTime": 23.444,
+        "type": "shot"
+      },
+      {
+        "endTime": 24.788,
+        "type": "shot",
+        "startTime": 23.788
+      },
+      {
+        "type": "shot",
+        "startTime": 25.644,
+        "endTime": 26.644
+      },
+      {
+        "startTime": 27.052,
+        "type": "shot",
+        "endTime": 28.052
+      },
+      {
+        "endTime": 29.748,
+        "type": "shot",
+        "startTime": 28.748
+      },
+      {
+        "type": "shot",
+        "startTime": 33.196,
+        "endTime": 34.196
+      },
+      {
+        "startTime": 37.324,
+        "type": "shot",
+        "endTime": 38.324
+      },
+      {
+        "type": "shot",
+        "endTime": 42.58,
+        "startTime": 41.58
+      },
+      {
+        "endTime": 46.292,
+        "type": "shot",
+        "startTime": 45.292
+      },
+      {
+        "endTime": 49.46,
+        "type": "shot",
+        "startTime": 48.46
+      },
+      {
+        "type": "shot",
+        "startTime": 51.564,
+        "endTime": 52.564
+      },
+      {
+        "type": "shot",
+        "startTime": 61.292,
+        "endTime": 62.292
+      },
+      {
+        "endTime": 63.668,
+        "type": "shot",
+        "startTime": 62.668
+      },
+      {
+        "endTime": 69.172,
+        "type": "shot",
+        "startTime": 68.172
+      },
+      {
+        "startTime": 77.164,
+        "endTime": 78.164,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "endTime": 81.14,
+        "startTime": 80.14
+      },
+      {
+        "endTime": 83.188,
+        "type": "shot",
+        "startTime": 82.188
+      },
+      {
+        "startTime": 83.532,
+        "endTime": 84.532,
+        "type": "shot"
+      },
+      {
+        "startTime": 85.132,
+        "endTime": 86.132,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 86.54,
+        "endTime": 87.54
+      },
+      {
+        "endTime": 91.188,
+        "type": "shot",
+        "startTime": 90.188
+      },
+      {
+        "endTime": 92.82,
+        "startTime": 91.82,
+        "type": "shot"
+      },
+      {
+        "startTime": 93.516,
+        "endTime": 94.516,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "endTime": 98.836,
+        "startTime": 97.836
+      },
+      {
+        "startTime": 99.212,
+        "type": "shot",
+        "endTime": 100.212
+      },
+      {
+        "startTime": 100.524,
+        "endTime": 101.524,
+        "type": "shot"
+      },
+      {
+        "startTime": 103.148,
+        "endTime": 104.148,
+        "type": "shot"
+      },
+      {
+        "startTime": 106.828,
+        "endTime": 107.828,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "endTime": 109.3,
+        "startTime": 108.3
+      },
+      {
+        "endTime": 111.412,
+        "startTime": 110.412,
+        "type": "shot"
+      },
+      {
+        "startTime": 113.996,
+        "endTime": 114.996,
+        "type": "shot"
+      },
+      {
+        "endTime": 118.868,
+        "type": "shot",
+        "startTime": 117.164
+      }
+    ],
+    "highlightPath": "/Users/rohit/Documents/sportcrunch/dashboard/backend/cache/highlights/AA4ECD51-E8FC-4B51-8978-309341245537-highlight.mp4"
+  },
+  "DC4CAAC5-7DD7-44CC-BEDC-CACF8FD11C80": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "startTime": 0.45999999999999996,
+        "type": "shot",
+        "endTime": 2.964
+      },
+      {
+        "startTime": 3.02,
+        "type": "shot",
+        "endTime": 4.756
+      },
+      {
+        "endTime": 7.028,
+        "type": "shot",
+        "startTime": 5.132
+      },
+      {
+        "startTime": 8.844,
+        "endTime": 9.844,
+        "type": "shot"
+      },
+      {
+        "endTime": 15.636,
+        "type": "shot",
+        "startTime": 13.964
+      },
+      {
+        "endTime": 18.836,
+        "startTime": 17.836,
+        "type": "shot"
+      },
+      {
+        "endTime": 23.444,
+        "type": "shot",
+        "startTime": 22.444
+      },
+      {
+        "type": "shot",
+        "startTime": 23.788,
+        "endTime": 24.788
+      },
+      {
+        "endTime": 26.644,
+        "startTime": 25.644,
+        "type": "shot"
+      },
+      {
+        "endTime": 28.052,
+        "startTime": 27.052,
+        "type": "shot"
+      },
+      {
+        "startTime": 28.748,
+        "endTime": 29.748,
+        "type": "shot"
+      },
+      {
+        "endTime": 34.196,
+        "type": "shot",
+        "startTime": 33.196
+      },
+      {
+        "endTime": 38.324,
+        "startTime": 37.324,
+        "type": "shot"
+      },
+      {
+        "startTime": 41.58,
+        "type": "shot",
+        "endTime": 42.58
+      },
+      {
+        "type": "shot",
+        "startTime": 45.292,
+        "endTime": 46.292
+      },
+      {
+        "startTime": 48.46,
+        "endTime": 49.46,
+        "type": "shot"
+      },
+      {
+        "endTime": 52.564,
+        "startTime": 51.564,
+        "type": "shot"
+      },
+      {
+        "type": "shot",
+        "startTime": 61.292,
+        "endTime": 62.292
+      },
+      {
+        "type": "shot",
+        "endTime": 63.668,
+        "startTime": 62.668
+      },
+      {
+        "endTime": 69.172,
+        "type": "shot",
+        "startTime": 68.172
+      },
+      {
+        "startTime": 77.164,
+        "endTime": 78.164,
+        "type": "shot"
+      },
+      {
+        "endTime": 81.14,
+        "type": "shot",
+        "startTime": 80.14
+      },
+      {
+        "endTime": 83.188,
+        "startTime": 82.188,
+        "type": "shot"
+      },
+      {
+        "startTime": 83.532,
+        "type": "shot",
+        "endTime": 84.532
+      },
+      {
+        "endTime": 86.132,
+        "type": "shot",
+        "startTime": 85.132
+      },
+      {
+        "type": "shot",
+        "startTime": 86.54,
+        "endTime": 87.54
+      },
+      {
+        "endTime": 91.188,
+        "type": "shot",
+        "startTime": 90.188
+      },
+      {
+        "endTime": 92.82,
+        "startTime": 91.82,
+        "type": "shot"
+      },
+      {
+        "endTime": 94.516,
+        "startTime": 93.516,
+        "type": "shot"
+      },
+      {
+        "startTime": 97.836,
+        "endTime": 98.836,
+        "type": "shot"
+      },
+      {
+        "startTime": 99.212,
+        "endTime": 100.212,
+        "type": "shot"
+      },
+      {
+        "startTime": 100.524,
+        "endTime": 101.524,
+        "type": "shot"
+      },
+      {
+        "endTime": 104.148,
+        "type": "shot",
+        "startTime": 103.148
+      },
+      {
+        "type": "shot",
+        "startTime": 106.828,
+        "endTime": 107.828
+      },
+      {
+        "startTime": 108.3,
+        "endTime": 109.3,
+        "type": "shot"
+      },
+      {
+        "endTime": 111.412,
+        "type": "shot",
+        "startTime": 110.412
+      },
+      {
+        "startTime": 113.996,
+        "type": "shot",
+        "endTime": 114.996
+      },
+      {
+        "startTime": 117.164,
+        "endTime": 118.868,
+        "type": "shot"
+      }
+    ],
+    "highlightPath": "/highlights/DC4CAAC5-7DD7-44CC-BEDC-CACF8FD11C80-highlight.mp4"
+  }
+}

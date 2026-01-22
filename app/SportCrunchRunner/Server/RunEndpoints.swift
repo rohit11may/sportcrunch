@@ -70,7 +70,7 @@ class RunEndpoints {
     do {
       // Parse JSON body
       guard let bodyData = Data(bytes: request.body, count: request.body.count) as Data?,
-        let json = try? JSONSerialization.jsonObject(with: bodyData) as? [String: Any]
+        let json = try JSONSerialization.jsonObject(with: bodyData) as? [String: Any]
       else {
         print("❌ [RunEndpoints] Invalid JSON body")
         return errorResponse(message: "Invalid JSON body", statusCode: 400)
@@ -96,10 +96,14 @@ class RunEndpoints {
 
       print("📝 [RunEndpoints] videoPath=\(videoPath), method=\(method), sport=\(sport)")
 
+      // Resolve relative paths (e.g., Documents/test-videos/...) to absolute paths
+      let resolvedVideoPath = resolveVideoPath(videoPath)
+      print("📝 [RunEndpoints] resolvedVideoPath=\(resolvedVideoPath)")
+
       // Validate video path exists
-      guard FileManager.default.fileExists(atPath: videoPath) else {
-        print("❌ [RunEndpoints] Video file not found: \(videoPath)")
-        return errorResponse(message: "Video file not found: \(videoPath)", statusCode: 404)
+      guard FileManager.default.fileExists(atPath: resolvedVideoPath) else {
+        print("❌ [RunEndpoints] Video file not found: \(resolvedVideoPath)")
+        return errorResponse(message: "Video file not found: \(resolvedVideoPath)", statusCode: 404)
       }
 
       // Extract optional fields
@@ -108,13 +112,17 @@ class RunEndpoints {
 
       print("📝 [RunEndpoints] sportMode=\(sportMode ?? "nil"), config=\(config)")
 
-      // Create run
+      // Parse device target (defaults to simulator)
+      let deviceTarget = parseDeviceTarget(from: json)
+
+      // Create run (use resolved path so executor can find the file)
       let run = Run(
-        videoPath: videoPath,
+        videoPath: resolvedVideoPath,
         method: method,
         sport: sport,
         sportMode: sportMode,
-        config: config
+        config: config,
+        deviceTarget: deviceTarget
       )
 
       print("✅ [RunEndpoints] Created run: \(run.id.uuidString)")
@@ -303,6 +311,42 @@ class RunEndpoints {
           Data("{\"error\":\"Serialisation error: \(error.localizedDescription)\"}".utf8))
       }
     }
+  }
+
+  private static func parseDeviceTarget(from json: [String: Any]) -> DeviceTarget {
+    // Parse device target from JSON (defaults to simulator)
+    if let targetString = json["deviceTarget"] as? String,
+      let target = DeviceTarget(rawValue: targetString)
+    {
+      return target
+    }
+    return .simulator
+  }
+
+  /// Resolve video path - converts relative paths like Documents/... to absolute paths
+  private static func resolveVideoPath(_ path: String) -> String {
+    // If already absolute, return as-is
+    if path.hasPrefix("/") {
+      return path
+    }
+
+    // Check if it's a relative path starting with Documents/
+    if path.hasPrefix("Documents/") {
+      // Get the app's Documents directory
+      if let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+        .first
+      {
+        // Remove "Documents/" prefix and append to actual Documents path
+        let relativePath = String(path.dropFirst("Documents/".count))
+        let fullPath = documentsURL.appendingPathComponent(relativePath).path
+        print("📁 [RunEndpoints] Resolved path: \(path) -> \(fullPath)")
+        return fullPath
+      }
+    }
+
+    // For other relative paths, try to resolve from home directory
+    let homeDirectory = NSHomeDirectory()
+    return "\(homeDirectory)/\(path)"
   }
 
   private static func errorResponse(message: String, statusCode: Int) -> HttpResponse {

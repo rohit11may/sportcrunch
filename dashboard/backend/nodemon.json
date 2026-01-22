@@ -1,0 +1,12 @@
+{
+  "ignore": [
+    "cache/**",
+    "uploads/**",
+    "run-map.json",
+    "node_modules/**"
+  ],
+  "watch": [
+    "server.js",
+    "*.js"
+  ]
+}

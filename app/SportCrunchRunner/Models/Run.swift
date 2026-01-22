@@ -56,6 +56,7 @@ struct Run: Identifiable, Codable, Sendable {
     let sport: String
     let sportMode: String?
     let config: [String: String]
+    let deviceTarget: DeviceTarget
     let createdAt: Date
     var startedAt: Date?
     var completedAt: Date?
@@ -70,7 +71,8 @@ struct Run: Identifiable, Codable, Sendable {
         method: String,
         sport: String,
         sportMode: String? = nil,
-        config: [String: String] = [:]
+        config: [String: String] = [:],
+        deviceTarget: DeviceTarget = .simulator
     ) {
         self.id = id
         self.status = status
@@ -79,6 +81,7 @@ struct Run: Identifiable, Codable, Sendable {
         self.sport = sport
         self.sportMode = sportMode
         self.config = config
+        self.deviceTarget = deviceTarget
         self.createdAt = Date()
     }
 }

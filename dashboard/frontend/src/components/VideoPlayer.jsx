@@ -46,18 +46,29 @@ function VideoPlayer({ videoSrc, onTimeUpdate, videoRef }) {
   const getVideoUrl = () => {
     if (!videoSrc) return null
 
-    // If it's already a URL (http://, /videos/, /artifacts/), use as-is
+    // If it's already a full URL, use as-is
     if (videoSrc.startsWith('http://') ||
-        videoSrc.startsWith('https://') ||
-        videoSrc.startsWith('/videos/') ||
-        videoSrc.startsWith('/artifacts/')) {
+      videoSrc.startsWith('https://')) {
       return videoSrc
+    }
+
+    // Handle /api paths - convert to absolute URL for video element compatibility
+    // (video elements may not work correctly with relative URLs through Vite proxy)
+    if (videoSrc.startsWith('/api/')) {
+      return `http://localhost:3000${videoSrc}`
+    }
+
+    // Handle relative paths that should go through the backend
+    if (videoSrc.startsWith('/videos/') ||
+      videoSrc.startsWith('/highlights/') ||
+      videoSrc.startsWith('/artifacts/')) {
+      return `http://localhost:3000${videoSrc}`
     }
 
     // If it's an absolute filesystem path, extract filename and serve from /videos/
     if (videoSrc.startsWith('/')) {
       const filename = videoSrc.split('/').pop()
-      return `/videos/${filename}`
+      return `http://localhost:3000/videos/${filename}`
     }
 
     // Otherwise, assume it's a relative path

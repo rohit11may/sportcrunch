@@ -12,16 +12,19 @@ function Results() {
     const [error, setError] = useState(null)
     const [currentTime, setCurrentTime] = useState(0)
     const [videoDuration, setVideoDuration] = useState(0)
-    const videoRef = useRef(null)
+    const [showInfo, setShowInfo] = useState(false)
+    const [showJson, setShowJson] = useState(false)
+    const originalVideoRef = useRef(null)
+    const highlightVideoRef = useRef(null)
 
     useEffect(() => {
         loadRun()
     }, [runId])
 
-    // Handle video metadata loaded - get duration
+    // Handle video metadata loaded - get duration from ORIGINAL video
     useEffect(() => {
-        if (videoRef.current) {
-            const video = videoRef.current
+        if (originalVideoRef.current) {
+            const video = originalVideoRef.current
             const handleLoadedMetadata = () => {
                 setVideoDuration(video.duration)
             }
@@ -80,118 +83,182 @@ function Results() {
 
     const segmentCount = run.segments?.length || 0
 
-    // Handle segment click - seek video to timestamp
+    // Handle segment click - seek ORIGINAL video to timestamp
     const handleSegmentClick = (timestamp) => {
-        if (videoRef.current) {
-            videoRef.current.currentTime = timestamp
+        if (originalVideoRef.current) {
+            originalVideoRef.current.currentTime = timestamp
+            originalVideoRef.current.play()
         }
     }
 
-    // Handle video time update - update timeline position
+    // Handle video time update - update timeline position from ORIGINAL video
     const handleTimeUpdate = (time) => {
         setCurrentTime(time)
     }
 
-    // Determine video source
-    const getVideoSource = () => {
+    // Determine ORIGINAL video source
+    const getOriginalVideoSource = () => {
+        if (!run) return null
+        return run.videoPath
+    }
+
+    // Determine HIGHLIGHT video source
+    const getHighlightVideoSource = () => {
         if (!run) return null
 
-        // If highlightVideo artifact exists, use that (segmented output)
+        // Use highlightPath from run data (served via /highlights static route)
+        if (run.highlightPath) {
+            // Extract filename from absolute path and serve via /highlights/
+            const filename = run.highlightPath.split('/').pop()
+            return `/highlights/${filename}`
+        }
+
+        // Fallback: If highlightVideo artifact exists (legacy), use that
         if (run.artifactPaths?.highlightVideo) {
             return run.artifactPaths.highlightVideo
         }
 
-        // Otherwise, use original video path
-        return run.videoPath
+        return null
     }
 
-    const videoSource = getVideoSource()
+    const originalSource = getOriginalVideoSource()
+    const highlightSource = getHighlightVideoSource()
+
+    // Format the run ID for display (truncated)
+    const formatRunId = (id) => {
+        if (id && id.length > 8) {
+            return `${id.substring(0, 8)}...`
+        }
+        return id
+    }
 
     return (
         <div className="results-page">
-            <h2>Run Results</h2>
+            {/* Split View: Original (Left) vs Highlight (Right) */}
+            <div className="video-main">
+                <div className="split-view-container">
+                    {/* LEFT: Original Video + Timeline Control */}
+                    <div className="video-column original-column">
+                        <div className="column-header">Original</div>
+                        <div className="video-wrapper">
+                            {originalSource ? (
+                                <VideoPlayer
+                                    videoRef={originalVideoRef}
+                                    videoSrc={originalSource}
+                                    onTimeUpdate={handleTimeUpdate}
+                                />
+                            ) : (
+                                <div className="placeholder-box">
+                                    <p>No Original Video</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
 
-            <div className="run-info">
-                <h3>Run Information</h3>
-                <div className="info-grid">
-                    <div className="info-item">
-                        <span className="info-label">Run ID:</span>
-                        <span className="info-value">{run.id}</span>
-                    </div>
-                    <div className="info-item">
-                        <span className="info-label">Video:</span>
-                        <span className="info-value">{run.videoPath.split('/').pop()}</span>
-                    </div>
-                    <div className="info-item">
-                        <span className="info-label">Method:</span>
-                        <span className="info-value">{run.method}</span>
-                    </div>
-                    <div className="info-item">
-                        <span className="info-label">Sport:</span>
-                        <span className="info-value">{run.sport} ({run.sportMode})</span>
-                    </div>
-                    <div className="info-item">
-                        <span className="info-label">Status:</span>
-                        <span className={`info-value status-${run.status}`}>
-                            {run.status}
-                        </span>
-                    </div>
-                    <div className="info-item">
-                        <span className="info-label">Segments:</span>
-                        <span className="info-value">{segmentCount}</span>
-                    </div>
-                    {run.createdAt && (
-                        <div className="info-item">
-                            <span className="info-label">Created:</span>
-                            <span className="info-value">
-                                {new Date(run.createdAt).toLocaleString()}
-                            </span>
+                    {/* RIGHT: Highlight Video */}
+                    <div className="video-column highlight-column">
+                        <div className="column-header">Highlight</div>
+                        <div className="video-wrapper">
+                            {highlightSource ? (
+                                <VideoPlayer
+                                    videoRef={highlightVideoRef}
+                                    videoSrc={highlightSource}
+                                // No onTimeUpdate for highlight - independent playback
+                                />
+                            ) : (
+                                <div className="placeholder-box">
+                                    <p>No Highlight Generated</p>
+                                    <p className="placeholder-hint">Process segments to generate highlight</p>
+                                </div>
+                            )}
                         </div>
-                    )}
-                    {run.completedAt && (
-                        <div className="info-item">
-                            <span className="info-label">Completed:</span>
-                            <span className="info-value">
-                                {new Date(run.completedAt).toLocaleString()}
-                            </span>
-                        </div>
-                    )}
+                    </div>
                 </div>
-            </div>
 
-            <div className="video-section">
-                <h3>Video Player</h3>
-                {videoSource ? (
-                    <VideoPlayer
-                        videoRef={videoRef}
-                        videoSrc={videoSource}
-                        onTimeUpdate={handleTimeUpdate}
-                    />
-                ) : (
-                    <div className="placeholder-box">
-                        <p className="placeholder-text">No video available</p>
-                        <p className="placeholder-hint">
-                            Video source not found in run data
-                        </p>
-                    </div>
-                )}
-            </div>
-
-            <div className="timeline-section">
-                <h3>Timeline Visualization</h3>
-                {run.segments && run.segments.length > 0 ? (
+                {/* Timeline below video - Controls ORIGINAL */}
+                <div className="timeline-container">
                     <Timeline
-                        segments={run.segments}
+                        segments={run.segments || []}
                         onSegmentClick={handleSegmentClick}
                         currentTime={currentTime}
                         videoDuration={videoDuration}
                     />
-                ) : (
-                    <div className="placeholder-box">
-                        <p className="placeholder-text">No segments available</p>
-                        <p className="placeholder-hint">
-                            Segments will appear after video processing completes
-                        </p>
+                </div>
+            </div>
+
+            {/* Compact info bar at bottom */}
+            <div className="info-bar">
+                <div className="info-bar-main">
+                    <div className="info-chips">
+                        <span className={`status-chip status-${run.status}`}>
+                            {run.status}
+                        </span>
+                        <span className="info-chip">
+                            <span className="chip-icon">🎾</span>
+                            {run.sport}
+                        </span>
+                        <span className="info-chip">
+                            <span className="chip-icon">⚙️</span>
+                            {run.method}
+                        </span>
+                        <span className="info-chip">
+                            <span className="chip-icon">📊</span>
+                            {segmentCount} segments
+                        </span>
+                    </div>
+                    <div className="info-actions">
+                        <span className="video-name" title={run.videoPath}>
+                            {run.videoPath.split('/').pop()}
+                        </span>
+                        <button
+                            className="info-toggle"
+                            onClick={() => setShowJson(!showJson)}
+                        >
+                            {showJson ? 'Hide JSON' : 'Show JSON'}
+                        </button>
+                        <button
+                            className="info-toggle"
+                            onClick={() => setShowInfo(!showInfo)}
+                        >
+                            {showInfo ? 'Hide Details' : 'Show Details'}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Raw JSON Display */}
+                {showJson && (
+                    <div className="json-details">
+                        <pre>{JSON.stringify(run, null, 2)}</pre>
+                    </div>
+                )}
+
+                {/* Expandable details panel */}
+                {showInfo && (
+                    <div className="info-details">
+                        <div className="detail-row">
+                            <span className="detail-label">Run ID</span>
+                            <span className="detail-value mono">{run.id}</span>
+                        </div>
+                        <div className="detail-row">
+                            <span className="detail-label">Mode</span>
+                            <span className="detail-value">{run.sportMode}</span>
+                        </div>
+                        {run.createdAt && (
+                            <div className="detail-row">
+                                <span className="detail-label">Created</span>
+                                <span className="detail-value">
+                                    {new Date(run.createdAt).toLocaleString()}
+                                </span>
+                            </div>
+                        )}
+                        {run.completedAt && (
+                            <div className="detail-row">
+                                <span className="detail-label">Completed</span>
+                                <span className="detail-value">
+                                    {new Date(run.completedAt).toLocaleString()}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
