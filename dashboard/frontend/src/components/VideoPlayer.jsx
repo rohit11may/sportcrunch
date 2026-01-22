@@ -52,23 +52,23 @@ function VideoPlayer({ videoSrc, onTimeUpdate, videoRef }) {
       return videoSrc
     }
 
-    // Handle /api paths - convert to absolute URL for video element compatibility
-    // (video elements may not work correctly with relative URLs through Vite proxy)
-    if (videoSrc.startsWith('/api/')) {
-      return `http://localhost:3000${videoSrc}`
-    }
-
-    // Handle relative paths that should go through the backend
-    if (videoSrc.startsWith('/videos/') ||
+    // Handle relative paths that go through Vite proxy to backend
+    if (videoSrc.startsWith('/api/') ||
+      videoSrc.startsWith('/videos/') ||
       videoSrc.startsWith('/highlights/') ||
+      videoSrc.startsWith('/uploads/') ||
       videoSrc.startsWith('/artifacts/')) {
-      return `http://localhost:3000${videoSrc}`
+      return videoSrc
     }
 
-    // If it's an absolute filesystem path, extract filename and serve from /videos/
+    // If it's an absolute filesystem path, extract filename and serve appropriately
     if (videoSrc.startsWith('/')) {
       const filename = videoSrc.split('/').pop()
-      return `http://localhost:3000/videos/${filename}`
+      // Check if it's a highlight file
+      if (filename.includes('-highlight.mp4')) {
+        return `/highlights/${filename}`
+      }
+      return `/videos/${filename}`
     }
 
     // Otherwise, assume it's a relative path

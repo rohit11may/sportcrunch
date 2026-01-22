@@ -370,7 +370,8 @@ app.get('/api/runs/:id', async (req, res) => {
     if (fs.existsSync(highlightPath)) {
       const stats = fs.statSync(highlightPath);
       if (stats.size > 1000) {
-        data.highlightPath = `/highlights/${id}-highlight.mp4`;
+        // Return absolute filesystem path - VideoPlayer will handle it
+        data.highlightPath = highlightPath;
       }
     } else if (data.status === 'completed' && data.segments && data.segments.length > 0) {
       // Generate highlight video synchronously (blocks until ffmpeg completes)
@@ -381,8 +382,8 @@ app.get('/api/runs/:id', async (req, res) => {
         try {
           console.log(`🎬 Generating highlight video for ${id}...`);
           await generateHighlightVideo(id, data.segments, hostVideoPath);
-          updateRunMap(id, { highlightPath: `/highlights/${id}-highlight.mp4` });
-          data.highlightPath = `/highlights/${id}-highlight.mp4`;
+          updateRunMap(id, { highlightPath: highlightPath });
+          data.highlightPath = highlightPath;
           console.log(`✅ Highlight generation completed for ${id}`);
         } catch (err) {
           console.error('⚠️ Highlight generation failed:', err.message);
@@ -575,7 +576,7 @@ async function generateHighlightVideo(runId, segments, hostVideoPath) {
   // Sort segments by start time
   const sortedSegments = [...segments].sort((a, b) => a.startTime - b.startTime);
 
-  // Build ffmpeg filter
+  // Build ffmpeg filter - video only for reliability
   let filterComplex = '';
   let mapString = '';
 
@@ -584,13 +585,13 @@ async function generateHighlightVideo(runId, segments, hostVideoPath) {
     const end = seg.endTime.toFixed(3);
 
     filterComplex += `[0:v]trim=start=${start}:end=${end},setpts=PTS-STARTPTS[v${index}];`;
-    filterComplex += `[0:a]atrim=start=${start}:end=${end},asetpts=PTS-STARTPTS[a${index}];`;
-    mapString += `[v${index}][a${index}]`;
+    mapString += `[v${index}]`;
   });
 
-  filterComplex += `${mapString}concat=n=${sortedSegments.length}:v=1:a=1[outv][outa]`;
+  filterComplex += `${mapString}concat=n=${sortedSegments.length}:v=1:a=0[outv]`;
 
-  const command = `ffmpeg -y -i "${hostVideoPath}" -filter_complex "${filterComplex}" -map "[outv]" -map "[outa]" -c:v libx264 -preset ultrafast -c:a aac "${highlightPath}"`;
+  // Video-only encoding with web-compatible settings
+  const command = `ffmpeg -y -i "${hostVideoPath}" -filter_complex "${filterComplex}" -map "[outv]" -c:v libx264 -profile:v baseline -level 3.0 -pix_fmt yuv420p -movflags +faststart -an "${highlightPath}"`;
 
   console.log(`🛠 Executing ffmpeg...`);
   await execAsync(command);
@@ -681,25 +682,19 @@ app.get('/api/runs/:id/highlight', async (req, res) => {
     let filterComplex = '';
     let mapString = '';
 
-    // Check if video has audio stream first? 
-    // For simplicity, we assume yes. If it fails, we might need a fallback.
-    // To be robust, we could check with ffprobe, but let's try assuming audio first.
-
-    // Note: ffmpeg trim doesn't reset timestamps, setpts does.
-
+    // Video-only encoding for reliability
     segments.forEach((seg, index) => {
-      // Format time to 3 decimal places to avoid scientific notation
       const start = seg.startTime.toFixed(3);
       const end = seg.endTime.toFixed(3);
 
       filterComplex += `[0:v]trim=start=${start}:end=${end},setpts=PTS-STARTPTS[v${index}];`;
-      filterComplex += `[0:a]atrim=start=${start}:end=${end},asetpts=PTS-STARTPTS[a${index}];`;
-      mapString += `[v${index}][a${index}]`;
+      mapString += `[v${index}]`;
     });
 
-    filterComplex += `${mapString}concat=n=${segments.length}:v=1:a=1[outv][outa]`;
+    filterComplex += `${mapString}concat=n=${segments.length}:v=1:a=0[outv]`;
 
-    const command = `ffmpeg -y -i "${hostVideoPath}" -filter_complex "${filterComplex}" -map "[outv]" -map "[outa]" -c:v libx264 -preset ultrafast -c:a aac "${highlightPath}"`;
+    // Video-only encoding with web-compatible settings
+    const command = `ffmpeg -y -i "${hostVideoPath}" -filter_complex "${filterComplex}" -map "[outv]" -c:v libx264 -profile:v baseline -level 3.0 -pix_fmt yuv420p -movflags +faststart -an "${highlightPath}"`;
 
     console.log(`🛠 Executing ffmpeg...`);
     // console.log(command); // Debug

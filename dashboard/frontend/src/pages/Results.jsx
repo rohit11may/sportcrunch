@@ -106,11 +106,9 @@ function Results() {
     const getHighlightVideoSource = () => {
         if (!run) return null
 
-        // Use highlightPath from run data (served via /highlights static route)
+        // Use highlightPath from run data (now a full URL from backend)
         if (run.highlightPath) {
-            // Extract filename from absolute path and serve via /highlights/
-            const filename = run.highlightPath.split('/').pop()
-            return `/highlights/${filename}`
+            return run.highlightPath
         }
 
         // Fallback: If highlightVideo artifact exists (legacy), use that
