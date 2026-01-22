@@ -16,30 +16,69 @@
   font-weight: 600;
 }
 
-.method-info {
-  background-color: var(--bg-color);
-  padding: 1.25rem;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  border-left: 4px solid var(--primary-color);
+.method-field {
+  margin-bottom: 12px;
 }
 
-.method-name {
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: var(--primary-color);
+.method-field label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.method-field select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--bg-color);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.method-field select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 .method-description {
-  color: var(--text-color);
-  margin-bottom: 0.75rem;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
   line-height: 1.5;
+  padding: 0.75rem;
+  background-color: var(--bg-color);
+  border-radius: 6px;
+  border-left: 3px solid var(--primary-color);
 }
 
-.method-note {
-  font-size: 0.85rem;
+.method-config-single {
+  font-size: 12px;
   color: var(--text-muted);
-  font-style: italic;
+  margin-top: 8px;
+  padding: 0.5rem;
+  background-color: var(--bg-color);
+  border-radius: 4px;
+}
+
+.method-loading,
+.method-error,
+.method-empty {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  padding: 1rem;
+  background-color: var(--bg-color);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.method-error {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
