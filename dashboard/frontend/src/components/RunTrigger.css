@@ -53,6 +53,13 @@
   }
 }
 
+.method-info {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  text-align: center;
+}
+
 .status-text {
   margin-top: 1rem;
   color: var(--text-muted);

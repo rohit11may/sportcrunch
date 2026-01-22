@@ -240,6 +240,8 @@ app.get('/api/methods/:family/:version/configs/:config', (req, res) => {
 app.post('/api/runs', async (req, res) => {
   try {
     const { videoPath, method, sport, sportMode, config, deviceId, deviceIp } = req.body;
+    const methodVersion = config?.methodVersion;
+    const methodConfig = config?.config;
 
     // Validate required fields
     if (!videoPath) {
@@ -275,15 +277,12 @@ app.post('/api/runs', async (req, res) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        videoPath, // For simulator, this is the host path. For device, likely same if using copy?
-        // Actually for physical device run, videoPath might be the remote path if the frontend changed it?
-        // But let's assume videoPath passed here is what the user Selected (Host Path).
-        // Wait, if device is physical, the frontend might have passed the Remote Path to the runner?
-        // Let's check frontend logic later. For now, assume this videoPath is the Source.
+        videoPath,
         method,
+        methodVersion: methodVersion || 'v2', // Default to v2 for backwards compatibility
+        config: methodConfig || 'default.config.json',
         sport,
-        sportMode,
-        config: config || {}
+        sportMode
       }),
       signal: AbortSignal.timeout(10000) // 10 second timeout
     });

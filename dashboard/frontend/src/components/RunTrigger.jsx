@@ -20,6 +20,13 @@ function RunTrigger({ videoPath, method, isProcessing, error, statusMessage, onT
         )}
       </button>
 
+      {/* Show selected method name */}
+      {method && !isProcessing && (
+        <div className="method-info">
+          Using: {method.name}
+        </div>
+      )}
+
       {isProcessing && (
         <div className="status-text">
           {statusMessage || 'Processing video... This may take 1-2 minutes for test videos.'}

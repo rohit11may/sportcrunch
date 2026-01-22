@@ -10,7 +10,7 @@ import './Home.css'
 function Home() {
   const navigate = useNavigate()
   const [selectedVideo, setSelectedVideo] = useState('')
-  const [selectedMethod, setSelectedMethod] = useState('')
+  const [methodSelection, setMethodSelection] = useState(null)
   const [selectedDevice, setSelectedDevice] = useState('simulator')
   const [deviceIp, setDeviceIp] = useState(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -23,7 +23,7 @@ function Home() {
   }, [])
 
   const handleMethodChange = useCallback((method) => {
-    setSelectedMethod(method)
+    setMethodSelection(method)
   }, [])
 
   const handleDeviceChange = useCallback((deviceId, ip) => {
@@ -58,7 +58,7 @@ function Home() {
   }
 
   async function handleTriggerRun() {
-    if (!selectedVideo || !selectedMethod) {
+    if (!selectedVideo || !methodSelection) {
       setError('Please select a video and method')
       return
     }
@@ -96,10 +96,13 @@ function Home() {
       // Create the run
       const result = await createRun(
         videoPathToUse,
-        selectedMethod,
+        methodSelection.family,
         'tennis',
         'individual',  // Changed from 'shot' to match TennisMode.individual rawValue
-        {},
+        {
+          methodVersion: methodSelection.version,
+          config: methodSelection.config
+        },
         selectedDevice,
         deviceIp
       )
@@ -130,7 +133,7 @@ function Home() {
 
       <RunTrigger
         videoPath={selectedVideo}
-        method={selectedMethod}
+        method={methodSelection}
         isProcessing={isProcessing}
         error={error}
         statusMessage={statusMessage}
