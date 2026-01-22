@@ -45,10 +45,8 @@ final class SpectralFluxMethod: SegmentationMethod {
 
     func detectSegments(
         videoURL: URL,
-        sport: Sport,
-        sportMode: SportMode?
+        config: MethodConfig
     ) async throws -> [ActionSegment] {
-        let preset = sport.preset(for: sportMode)
         let logger = ProcessingLogger.shared
 
         // Phase 1: Audio Analysis
@@ -60,8 +58,7 @@ final class SpectralFluxMethod: SegmentationMethod {
         do {
             audioResult = try await audioAnalyzer.analyze(
                 videoURL: videoURL,
-                sport: sport,
-                sportMode: sportMode
+                config: config
             )
         } catch {
             print("⚙️ [SpectralFluxMethod] ❌ Audio analysis failed: \(error.localizedDescription)")
@@ -73,10 +70,10 @@ final class SpectralFluxMethod: SegmentationMethod {
             throw ProcessingError.noActionDetected
         }
 
-        // Phase 2: Visual Validation (or skip if configured)
+        // Phase 2: Visual Validation (or skip if motion threshold not specified)
         let segments: [ActionSegment]
 
-        if preset.skipVisualValidation {
+        if config.motionThreshold == nil {
             // Audio-only mode
             print("⚙️ [SpectralFluxMethod] ✓ Skipping visual validation (audio-only mode)")
             await MainActor.run {
@@ -101,8 +98,7 @@ final class SpectralFluxMethod: SegmentationMethod {
                 validations = try await visualValidator.validate(
                     videoURL: videoURL,
                     candidates: audioResult.candidateIntervals,
-                    sport: sport,
-                    sportMode: sportMode,
+                    config: config,
                     progressHandler: nil  // No progress reporting in method layer
                 )
             } catch {

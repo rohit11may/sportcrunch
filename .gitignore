@@ -1,3 +1,4 @@
+.agent/
 .DS_Store
 sample-debug-reports/
 .build
@@ -58,3 +59,4 @@ xcuserdata/
 
 # Test results
 *.xcresult
+.osgrep

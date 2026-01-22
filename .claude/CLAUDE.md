@@ -1,3 +1,8 @@
+## Rules for searching
+
+When making any code search, instead of using Find tool or grep, use `osgrep`. Do not initially use Find or Search. 
+Always try to first use osgrep (see osgrep skill) when doing searches for code in the codebase.
+
 ## Rules for building/testing
 Always use iPhone 17 device.
 
@@ -7,9 +12,10 @@ Always use iPhone 17 device.
 xcodebuild test -project SportCrunch.xcodeproj -scheme SportCrunch -destination 'platform=iOS Simulator,name=iPhone 17'
 
 ### Run Only UI Tests
+Always use -parallel-testing-worker-count 2
 
 xcodebuild test -project SportCrunch.xcodeproj -scheme SportCrunch -destination 'platform=iOS Simulator,name=iPhone 17'
--only-testing:SportCrunchUITests
+-only-testing:SportCrunchUITests --parallel-testing-worker-count 2
 
 ### Run a Specific UI Test Class
 

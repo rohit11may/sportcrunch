@@ -42,8 +42,7 @@ final class SpectralFluxMethod: SegmentationMethod {
 
     func detectSegments(
         videoURL: URL,
-        sport: Sport,
-        sportMode: SportMode?
+        config: MethodConfig
     ) async throws -> [ActionSegment] {
         let logger = ProcessingLogger.shared
 
@@ -56,8 +55,7 @@ final class SpectralFluxMethod: SegmentationMethod {
         do {
             audioResult = try await audioAnalyzer.analyze(
                 videoURL: videoURL,
-                sport: sport,
-                sportMode: sportMode
+                config: config
             )
         } catch {
             print("⚙️ [SpectralFluxMethod] ❌ Audio analysis failed: \(error.localizedDescription)")

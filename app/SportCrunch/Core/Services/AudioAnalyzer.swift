@@ -127,7 +127,7 @@ actor AudioAnalyzer {
         let fingerprint = computeAudioFingerprint(samples)
         print("🎵 [AudioAnalyzer] 🔍 DEBUG: Audio fingerprint: \(fingerprint)")
         print("🎵 [AudioAnalyzer] 🔍 DEBUG: First 10 samples: \(samples.prefix(10).map { String(format: "%.6f", $0) }.joined(separator: ", "))")
-        print("🎵 [AudioAnalyzer] 🔍 DEBUG: Samples at 1s: \(samples.dropFirst(Int(preset.sampleRate)).prefix(5).map { String(format: "%.6f", $0) }.joined(separator: ", "))")
+        print("🎵 [AudioAnalyzer] 🔍 DEBUG: Samples at 1s: \(samples.dropFirst(Int(sampleRate)).prefix(5).map { String(format: "%.6f", $0) }.joined(separator: ", "))")
         
         // Step 2: Apply bandpass filter
         print("🎵 [AudioAnalyzer] Step 2/5: Applying bandpass filter (\(Int(bandpassLow))-\(Int(bandpassHigh)) Hz)...")

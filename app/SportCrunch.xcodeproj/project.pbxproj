@@ -9,6 +9,10 @@
 /* Begin PBXBuildFile section */
 		F91A95C82F2142E100688974 /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = F91A95C72F2142E100688974 /* Swifter */; };
 		F91A95CA2F2142E100688974 /* Example in Frameworks */ = {isa = PBXBuildFile; productRef = F91A95C92F2142E100688974 /* Example */; };
+		F91A97172F2272D500688974 /* methods in Resources */ = {isa = PBXBuildFile; fileRef = F91A97162F2272CA00688974 /* methods */; };
+		F91A97182F2272D500688974 /* methods in Resources */ = {isa = PBXBuildFile; fileRef = F91A97162F2272CA00688974 /* methods */; };
+		F91A97192F2272D500688974 /* methods in Resources */ = {isa = PBXBuildFile; fileRef = F91A97162F2272CA00688974 /* methods */; };
+		F91A971A2F2272DE00688974 /* methods in Resources */ = {isa = PBXBuildFile; fileRef = F91A97162F2272CA00688974 /* methods */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +38,7 @@
 		308DBA482EFEA3A6001F0B3F /* SportCrunchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SportCrunchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F91A921C2F1552B000688974 /* SportCrunch.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = SportCrunch.xctestplan; path = ../SportCrunch.xctestplan; sourceTree = "<group>"; };
 		F91A95BB2F21428A00688974 /* SportCrunchRunner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SportCrunchRunner.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F91A97162F2272CA00688974 /* methods */ = {isa = PBXFileReference; lastKnownFileType = folder; path = methods; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -122,6 +127,7 @@
 		308DBA282EFEA3A4001F0B3F = {
 			isa = PBXGroup;
 			children = (
+				F91A97162F2272CA00688974 /* methods */,
 				F91A921C2F1552B000688974 /* SportCrunch.xctestplan */,
 				308DBA332EFEA3A4001F0B3F /* SportCrunch */,
 				F91A920E2F1550AF00688974 /* SportCrunchTests */,
@@ -217,6 +223,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = F91A95C52F21428A00688974 /* Build configuration list for PBXNativeTarget "SportCrunchRunner" */;
 			buildPhases = (
+				F91A96E92F226E9B00688974 /* Validate Method Registry */,
 				F91A95B72F21428A00688974 /* Sources */,
 				F91A95B82F21428A00688974 /* Frameworks */,
 				F91A95B92F21428A00688974 /* Resources */,
@@ -294,6 +301,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F91A97172F2272D500688974 /* methods in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -301,6 +309,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F91A97182F2272D500688974 /* methods in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -308,6 +317,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F91A971A2F2272DE00688974 /* methods in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -315,10 +325,33 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F91A97192F2272D500688974 /* methods in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		F91A96E92F226E9B00688974 /* Validate Method Registry */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Validate Method Registry";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd \"${SRCROOT}\"\n./scripts/validate-methods.sh\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		308DBA2D2EFEA3A4001F0B3F /* Sources */ = {

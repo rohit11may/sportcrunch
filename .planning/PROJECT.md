@@ -37,10 +37,10 @@ Accurate, on-device segment detection that identifies rallies and shots without 
 <!-- Current scope being built toward. -->
 
 - [x] Method abstraction layer — refactor algorithm into swappable "Method" protocol (Phase 4 complete)
-- [ ] iOS Runner app — dedicated app target with Swifter HTTP server for on-demand segmentation
-- [ ] Dashboard backend — Node.js server proxying to iOS Runner, managing runs and artifacts
-- [ ] React dashboard — web UI for triggering runs, viewing results, comparing methods
-- [ ] Method registry — JSON-based method definitions with dynamic config schemas
+- [x] iOS Runner app — dedicated app target with Swifter HTTP server for on-demand segmentation (Phase 5 complete)
+- [x] Dashboard backend — Node.js server proxying to iOS Runner, managing runs and artifacts (Phase 6 complete)
+- [x] React dashboard — web UI for triggering runs, viewing results, comparing methods (Phase 6 complete)
+- [ ] Method registry — Hierarchical method definitions (family/version/configs) with Swift/JSON parallelism enforcement
 - [ ] Ground truth comparison — timeline overlay showing method vs. ground truth alignment
 - [ ] Intermediate data visualization — spectral flux curves, audio peaks, synced with video
 
@@ -122,15 +122,30 @@ Target users are recreational tennis players who record their own matches and wa
 | Background video loading | Immediate UI dismissal improves UX | ✓ Good (v1.0) |
 | Defer segment review UI | Focus on detection accuracy before building curation UX | — Pending |
 | Skip CompletedProjectSheet ViewModel extraction | Low priority, can be done later | — Pending (v1.0) |
-| iOS Runner with Swifter HTTP server | Direct HTTP communication faster than xcodebuild invocation | — Pending (v1.1) |
-| Swifter as HTTP library | Lightweight, pure Swift, minimal setup for personal tool | — Pending (v1.1) |
-| Same project, new target for Runner | Shares existing segmentation code without duplication | — Pending (v1.1) |
-| Node.js for dashboard backend | Quick to build, good ecosystem for APIs and static files | — Pending (v1.1) |
-| React for dashboard frontend | Popular, good visualization ecosystem (recharts, etc.) | — Pending (v1.1) |
-| Filesystem transfer for simulator | Fast iteration, direct write to shared Mac filesystem | — Pending (v1.1) |
+| iOS Runner with Swifter HTTP server | Direct HTTP communication faster than xcodebuild invocation | ✓ Good (v1.1) |
+| Swifter as HTTP library | Lightweight, pure Swift, minimal setup for personal tool | ✓ Good (v1.1) |
+| Same project, new target for Runner | Shares existing segmentation code without duplication | ✓ Good (v1.1) |
+| Node.js for dashboard backend | Quick to build, good ecosystem for APIs and static files | ✓ Good (v1.1) |
+| React for dashboard frontend | Popular, good visualization ecosystem (recharts, etc.) | ✓ Good (v1.1) |
+| Filesystem transfer for simulator | Fast iteration, direct write to shared Mac filesystem | ✓ Good (v1.1) |
 | HTTP transfer for physical devices | Required for devices that don't share filesystem | — Pending (v1.1) |
 | Bespoke visualizations per method | Tightly coupled to method's intermediate data, no generic abstraction | — Pending (v1.1) |
 | JSON method registry | Version-controlled, easy to edit, single source of truth | — Pending (v1.1) |
+| Dashboard directory at root level | Separate from app directory for clearer separation of concerns | ✓ Good (v1.1) |
+| DeviceManager with devicectl | macOS-only device management using devicectl CLI tool | ✓ Good (v1.1) |
+| Multi-device support in Phase 6 | Device selection UI built alongside core dashboard (not deferred) | ✓ Good (v1.1) |
+| run-map.json for persistence | JSON file tracking runs for dashboard restart resilience | ✓ Good (v1.1) |
+| nodemon for backend dev | Auto-restart on file changes improves iteration speed | ✓ Good (v1.1) |
+| Enhanced styling early | Invest in UI polish during initial build for better testing UX | ✓ Good (v1.1) |
+| Hierarchical method registry (family/version/configs) | Multi-version support with config variants, not flat structure | — Pending (v1.1) |
+| Methods in app/ folder, dashboard reads | Source of truth in app codebase, dashboard is read-only consumer | — Pending (v1.1) |
+| Build-time JSON-Swift parallelism enforcement | Prevent divergence between method definitions and implementations | — Pending (v1.1) |
+| Read-only method registry UI | Dashboard selects methods/configs, doesn't edit them | — Pending (v1.1) |
+
+**v1.1 Progress (2026-01-22):**
+- Phase 5 (iOS Runner Core): Complete - HTTP server, run execution, filesystem transfer
+- Phase 6 (Dashboard Backend & Web Core): Complete - Node.js backend, React UI, timeline visualization, device management
+- Next: Phase 7 (Method Registry) for JSON-based method definitions
 
 ---
-*Last updated: 2026-01-21 after evaluation dashboard pivot*
+*Last updated: 2026-01-22 after Phase 6 completion*

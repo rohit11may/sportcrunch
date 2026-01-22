@@ -1,0 +1,9 @@
+prototype/
+research/
+.agent/
+.gemini/
+.claude/
+.git/
+samples/
+ramblings/
+.gsd/

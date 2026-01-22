@@ -98,9 +98,17 @@ actor RunExecutor {
       let sportMode: SportMode? = parseSportMode(sport: sport, modeString: run.sportMode)
       print("🔄 [RunExecutor] Parsed sportMode: \(sportMode?.displayName ?? "nil (defaulting to rally)")")
 
-      // Get preset to verify configuration
+      // Map sport/sportMode to method config
       let preset = sport.preset(for: sportMode)
-      print("🔄 [RunExecutor] Preset: padding=\(preset.paddingPreSec)s/\(preset.paddingPostSec)s, maxGap=\(preset.clusterMaxGapSec)s, skipVisual=\(preset.skipVisualValidation)")
+      let config = MethodConfig(
+        audioThresholdMultiplier: Double(preset.onsetThresholdLambda),
+        peakMinDistance: preset.peakMinDistanceSec,
+        clusterMaxGapSec: preset.clusterMaxGapSec,
+        paddingPreSec: preset.paddingPreSec,
+        paddingPostSec: preset.paddingPostSec,
+        motionThreshold: preset.skipVisualValidation ? nil : Double(preset.motionAreaThreshold)
+      )
+      print("🔄 [RunExecutor] Config: padding=\(config.paddingPreSec)s/\(config.paddingPostSec)s, maxGap=\(config.clusterMaxGapSec)s, motionThreshold=\(config.motionThreshold?.description ?? "nil")")
 
       // Create method (for now, always use SpectralFlux)
       let method = SpectralFluxMethod()
@@ -109,11 +117,10 @@ actor RunExecutor {
       print(
         "🔄 [RunExecutor] Sport: \(sport.displayName), Mode: \(sportMode?.displayName ?? "default")")
 
-      // Detect segments
+      // Detect segments using method with config
       let segments = try await method.detectSegments(
         videoURL: videoURL,
-        sport: sport,
-        sportMode: sportMode
+        config: config
       )
 
       print("🔄 [RunExecutor] ✓ Detected \(segments.count) segments")

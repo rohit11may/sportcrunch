@@ -12,26 +12,29 @@ Requirements for the Evaluation Dashboard system. Each maps to roadmap phases.
 - [x] **METH-01**: Method protocol defines interface for swappable detection algorithms
 - [x] **METH-02**: Current spectral flux + visual validation refactored into Method implementation
 
-### iOS Runner (Phase 5)
+### iOS Runner (Phase 5 - Complete)
 
-- [ ] **RUN-01**: SportCrunchRunner target in SportCrunch.xcodeproj with Swifter HTTP server
-- [ ] **RUN-02**: `/health` endpoint returns ready status; `/runs` POST triggers segmentation
-- [ ] **RUN-03**: `GET /runs/:id` returns run status, segments, and artifact locations
-- [ ] **RUN-04**: Artifacts written to shared Mac filesystem for simulator transfer mode
+- [x] **RUN-01**: SportCrunchRunner target in SportCrunch.xcodeproj with Swifter HTTP server
+- [x] **RUN-02**: `/health` endpoint returns ready status; `/runs` POST triggers segmentation
+- [x] **RUN-03**: `GET /runs/:id` returns run status, segments, and artifact locations
+- [x] **RUN-04**: Artifacts written to shared Mac filesystem for simulator transfer mode
 
-### Dashboard Backend & Web Core (Phase 6)
+### Dashboard Backend & Web Core (Phase 6 - Complete)
 
-- [ ] **DASH-01**: Node.js backend serves React frontend and proxies requests to iOS Runner
-- [ ] **DASH-02**: Dashboard triggers `POST /runs` to iOS Runner with method/config/video selection
-- [ ] **DASH-03**: Dashboard displays run status and detected segments on timeline
-- [ ] **DASH-04**: Video player plays segmented output synced with timeline visualization
+- [x] **DASH-01**: Node.js backend serves React frontend and proxies requests to iOS Runner
+- [x] **DASH-02**: Dashboard triggers `POST /runs` to iOS Runner with method/config/video selection
+- [x] **DASH-03**: Dashboard displays run status and detected segments on timeline
+- [x] **DASH-04**: Video player plays segmented output synced with timeline visualization
 
 ### Method Registry (Phase 7)
 
-- [ ] **REG-01**: Method definitions stored in `methods/*.json` with config_schema and intermediate_schema
-- [ ] **REG-02**: iOS Runner reads method definitions from bundle at startup via `GET /methods`
-- [ ] **REG-03**: Dashboard generates config forms dynamically from method's config_schema
-- [ ] **REG-04**: Audio-only method variant exists (spectral flux without visual validation)
+- [ ] **REG-01**: Method registry stored in hierarchical structure at `app/methods/` with family/version/configs organization
+- [ ] **REG-02**: Each method family has `_family.json` metadata, each version has `method.json` + config variants in `configs/` subdirectory
+- [ ] **REG-03**: iOS Runner reads method definitions from bundle at startup and serves via `GET /methods`
+- [ ] **REG-04**: Swift implementations parallel to JSON structure with build-time enforcement (JSON without Swift = build error)
+- [ ] **REG-05**: Dashboard reads methods from `app/methods/` directory (read-only, not editable from UI)
+- [ ] **REG-06**: Dashboard generates config selection UI dynamically from available configs (not editable forms, just selection)
+- [ ] **REG-07**: Audio-only method variant exists (spectral flux v2 without visual validation)
 
 ### Comparison & Ground Truth (Phase 8)
 
@@ -91,18 +94,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | METH-01 | Phase 4 | Complete |
 | METH-02 | Phase 4 | Complete |
-| RUN-01 | Phase 5 | Pending |
-| RUN-02 | Phase 5 | Pending |
-| RUN-03 | Phase 5 | Pending |
-| RUN-04 | Phase 5 | Pending |
-| DASH-01 | Phase 6 | Pending |
-| DASH-02 | Phase 6 | Pending |
-| DASH-03 | Phase 6 | Pending |
-| DASH-04 | Phase 6 | Pending |
+| RUN-01 | Phase 5 | Complete |
+| RUN-02 | Phase 5 | Complete |
+| RUN-03 | Phase 5 | Complete |
+| RUN-04 | Phase 5 | Complete |
+| DASH-01 | Phase 6 | Complete |
+| DASH-02 | Phase 6 | Complete |
+| DASH-03 | Phase 6 | Complete |
+| DASH-04 | Phase 6 | Complete |
 | REG-01 | Phase 7 | Pending |
 | REG-02 | Phase 7 | Pending |
 | REG-03 | Phase 7 | Pending |
 | REG-04 | Phase 7 | Pending |
+| REG-05 | Phase 7 | Pending |
+| REG-06 | Phase 7 | Pending |
+| REG-07 | Phase 7 | Pending |
 | COMP-01 | Phase 8 | Pending |
 | COMP-02 | Phase 8 | Pending |
 | COMP-03 | Phase 8 | Pending |
@@ -114,10 +120,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEV-02 | Phase 9 | Pending |
 
 **Coverage:**
-- v1.1 requirements: 23 total (2 complete, 21 pending)
-- Mapped to phases: 23
+- v1.1 requirements: 26 total (10 complete, 16 pending)
+- Mapped to phases: 26
 - Unmapped: 0
+
+**Additional Implementation Notes:**
+- Device management (DeviceManager.swift) built in Phase 6 alongside core dashboard
+- Device selection UI (simulator/physical device) added for multi-device testing
+- Enhanced styling and UX improvements throughout dashboard components
+- run-map.json persistence for backend restart resilience
+- nodemon development workflow for faster iteration
 
 ---
 *Requirements defined: 2026-01-21*
-*Last updated: 2026-01-21 after evaluation dashboard pivot*
+*Last updated: 2026-01-22 after Phase 6 completion*
