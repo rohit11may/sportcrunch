@@ -26,15 +26,15 @@ Requirements for the Evaluation Dashboard system. Each maps to roadmap phases.
 - [x] **DASH-03**: Dashboard displays run status and detected segments on timeline
 - [x] **DASH-04**: Video player plays segmented output synced with timeline visualization
 
-### Method Registry (Phase 7)
+### Method Registry (Phase 7 - Complete)
 
-- [ ] **REG-01**: Method registry stored in hierarchical structure at `app/methods/` with family/version/configs organization
-- [ ] **REG-02**: Each method family has `_family.json` metadata, each version has `method.json` + config variants in `configs/` subdirectory
-- [ ] **REG-03**: iOS Runner reads method definitions from bundle at startup and serves via `GET /methods`
-- [ ] **REG-04**: Swift implementations parallel to JSON structure with build-time enforcement (JSON without Swift = build error)
-- [ ] **REG-05**: Dashboard reads methods from `app/methods/` directory (read-only, not editable from UI)
-- [ ] **REG-06**: Dashboard generates config selection UI dynamically from available configs (not editable forms, just selection)
-- [ ] **REG-07**: Audio-only method variant exists (spectral flux v2 without visual validation)
+- [x] **REG-01**: Method registry stored in hierarchical structure at `app/methods/` with family/version/configs organization
+- [x] **REG-02**: Each method family has `_family.json` metadata, each version has `method.json` + config variants in `configs/` subdirectory
+- [x] **REG-03**: iOS Runner reads method definitions from bundle at startup and serves via `GET /methods`
+- [x] **REG-04**: Swift implementations parallel to JSON structure with build-time enforcement (JSON without Swift = build error)
+- [x] **REG-05**: Dashboard reads methods from `app/methods/` directory (read-only, not editable from UI)
+- [x] **REG-06**: Dashboard generates config selection UI dynamically from available configs (not editable forms, just selection)
+- [x] **REG-07**: Audio-only method variant exists (spectral flux v1 without visual validation)
 
 ### Comparison & Ground Truth (Phase 8)
 
@@ -102,13 +102,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-02 | Phase 6 | Complete |
 | DASH-03 | Phase 6 | Complete |
 | DASH-04 | Phase 6 | Complete |
-| REG-01 | Phase 7 | Pending |
-| REG-02 | Phase 7 | Pending |
-| REG-03 | Phase 7 | Pending |
-| REG-04 | Phase 7 | Pending |
-| REG-05 | Phase 7 | Pending |
-| REG-06 | Phase 7 | Pending |
-| REG-07 | Phase 7 | Pending |
+| REG-01 | Phase 7 | Complete |
+| REG-02 | Phase 7 | Complete |
+| REG-03 | Phase 7 | Complete |
+| REG-04 | Phase 7 | Complete |
+| REG-05 | Phase 7 | Complete |
+| REG-06 | Phase 7 | Complete |
+| REG-07 | Phase 7 | Complete |
 | COMP-01 | Phase 8 | Pending |
 | COMP-02 | Phase 8 | Pending |
 | COMP-03 | Phase 8 | Pending |
@@ -120,7 +120,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEV-02 | Phase 9 | Pending |
 
 **Coverage:**
-- v1.1 requirements: 26 total (10 complete, 16 pending)
+- v1.1 requirements: 26 total (17 complete, 9 pending)
 - Mapped to phases: 26
 - Unmapped: 0
 
@@ -133,4 +133,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-21*
-*Last updated: 2026-01-22 after Phase 6 completion*
+*Last updated: 2026-01-22 after Phase 7 completion*

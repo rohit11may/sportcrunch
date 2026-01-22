@@ -164,10 +164,10 @@ app/methods/
 ```
 
 Plans:
-- [ ] 07-01-PLAN.md — Hierarchical method registry structure + JSON schemas (_family.json, method.json, config.json)
-- [ ] 07-02-PLAN.md — Build script for JSON-Swift parallelism validation + _index.json generation
-- [ ] 07-03-PLAN.md — Runner method registry loading from bundle + GET /methods endpoint
-- [ ] 07-04-PLAN.md — Dashboard method selection UI (read from app/methods/, not editable)
+- [x] 07-01-PLAN.md — Hierarchical method registry structure + JSON schemas (_family.json, method.json, config.json)
+- [x] 07-02-PLAN.md — Build script for JSON-Swift parallelism validation + _index.json generation
+- [x] 07-03-PLAN.md — Runner method registry loading from bundle + GET /methods endpoint
+- [x] 07-04-PLAN.md — Dashboard method selection UI (read from app/methods/, not editable)
 
 #### Phase 8: Comparison & Ground Truth
 **Goal**: Side-by-side comparison with ground truth and metrics
@@ -217,6 +217,6 @@ Phases execute in numeric order: 4 -> 5 -> 6 -> 7 -> 8 -> 9
 | 4. Method Protocol Foundation | v1.1 | 1/1 | Complete | 2026-01-20 |
 | 5. iOS Runner Core | v1.1 | 3/3 | Complete | 2026-01-21 |
 | 6. Dashboard Backend & Web Core | v1.1 | 3/3 | Complete | 2026-01-22 |
-| 7. Method Registry | v1.1 | 0/4 | Not started | - |
+| 7. Method Registry | v1.1 | 4/4 | Complete | 2026-01-22 |
 | 8. Comparison & Ground Truth | v1.1 | 0/3 | Not started | - |
 | 9. Intermediate Visualization & Polish | v1.1 | 0/3 | Not started | - |
