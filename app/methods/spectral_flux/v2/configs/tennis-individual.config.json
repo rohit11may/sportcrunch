@@ -1,0 +1,12 @@
+{
+  "name": "tennis-individual",
+  "description": "Tennis Individual/Shot Mode: Each shot is a separate short clip with minimal padding",
+  "parameters": {
+    "audioThresholdMultiplier": 2.0,
+    "peakMinDistance": 0.5,
+    "motionThreshold": 50.0,
+    "paddingPreSec": 0.5,
+    "paddingPostSec": 0.5,
+    "clusterMaxGapSec": 1.0
+  }
+}

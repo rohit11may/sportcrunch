@@ -85,7 +85,6 @@ actor AudioAnalyzer {
         let sampleRate: Double = 16000
         let bandpassLow: Double = 200
         let bandpassHigh: Double = 3000
-        let clusterMinHits: Int = 2
 
         let startTime = Date()
         let logger = ProcessingLogger.shared
@@ -100,7 +99,7 @@ actor AudioAnalyzer {
         print("🎵 [AudioAnalyzer]   • Threshold λ: \(config.audioThresholdMultiplier) (lower = more sensitive)")
         print("🎵 [AudioAnalyzer]   • Min peak distance: \(config.peakMinDistance)s")
         print("🎵 [AudioAnalyzer]   • Cluster max gap: \(config.clusterMaxGapSec)s")
-        print("🎵 [AudioAnalyzer]   • Cluster min hits: \(clusterMinHits)")
+        print("🎵 [AudioAnalyzer]   • Cluster min hits: \(config.clusterMinHits)")
         print("🎵 [AudioAnalyzer]   • Padding: \(config.paddingPreSec)s before, \(config.paddingPostSec)s after")
         print("🎵 [AudioAnalyzer] ───────────────────────────────────────────")
 
@@ -202,12 +201,12 @@ actor AudioAnalyzer {
         }
         
         // Step 5: Cluster peaks into intervals
-        print("🎵 [AudioAnalyzer] Step 5/5: Clustering peaks (max gap: \(config.clusterMaxGapSec)s, min hits: \(clusterMinHits))...")
+        print("🎵 [AudioAnalyzer] Step 5/5: Clustering peaks (max gap: \(config.clusterMaxGapSec)s, min hits: \(config.clusterMinHits))...")
         logger.audioAsync("Clustering hits into action segments...")
         let (candidateIntervals, rawClusters) = clusterPeaksWithDetails(
             peakTimes: peakTimes,
             maxGapSeconds: config.clusterMaxGapSec,
-            minHitsPerSegment: clusterMinHits,
+            minHitsPerSegment: config.clusterMinHits,
             paddingPre: config.paddingPreSec,
             paddingPost: config.paddingPostSec,
             videoDuration: duration

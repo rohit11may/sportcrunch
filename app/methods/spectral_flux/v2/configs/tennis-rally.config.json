@@ -1,6 +1,6 @@
 {
-  "name": "default",
-  "description": "Balanced detection parameters with visual validation (matches Tennis Rally preset)",
+  "name": "tennis-rally",
+  "description": "Tennis Rally Mode: Groups consecutive shots into rallies with longer padding",
   "parameters": {
     "audioThresholdMultiplier": 2.0,
     "peakMinDistance": 0.5,

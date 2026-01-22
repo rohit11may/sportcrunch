@@ -22,6 +22,7 @@ struct MethodConfig: Sendable {
 
     // Clustering parameters
     let clusterMaxGapSec: Double
+    let clusterMinHits: Int
 
     // Padding parameters
     let paddingPreSec: Double
@@ -35,6 +36,7 @@ struct MethodConfig: Sendable {
         audioThresholdMultiplier: Double = 1.5,
         peakMinDistance: Double = 0.5,
         clusterMaxGapSec: Double = 2.0,
+        clusterMinHits: Int = 2,
         paddingPreSec: Double = 1.5,
         paddingPostSec: Double = 1.0,
         motionThreshold: Double? = nil
@@ -42,6 +44,7 @@ struct MethodConfig: Sendable {
         self.audioThresholdMultiplier = audioThresholdMultiplier
         self.peakMinDistance = peakMinDistance
         self.clusterMaxGapSec = clusterMaxGapSec
+        self.clusterMinHits = clusterMinHits
         self.paddingPreSec = paddingPreSec
         self.paddingPostSec = paddingPostSec
         self.motionThreshold = motionThreshold

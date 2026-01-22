@@ -104,11 +104,12 @@ actor RunExecutor {
         audioThresholdMultiplier: Double(preset.onsetThresholdLambda),
         peakMinDistance: preset.peakMinDistanceSec,
         clusterMaxGapSec: preset.clusterMaxGapSec,
+        clusterMinHits: preset.clusterMinHits,
         paddingPreSec: preset.paddingPreSec,
         paddingPostSec: preset.paddingPostSec,
         motionThreshold: preset.skipVisualValidation ? nil : Double(preset.motionAreaThreshold)
       )
-      print("🔄 [RunExecutor] Config: padding=\(config.paddingPreSec)s/\(config.paddingPostSec)s, maxGap=\(config.clusterMaxGapSec)s, motionThreshold=\(config.motionThreshold?.description ?? "nil")")
+      print("🔄 [RunExecutor] Config: padding=\(config.paddingPreSec)s/\(config.paddingPostSec)s, maxGap=\(config.clusterMaxGapSec)s, minHits=\(config.clusterMinHits), motionThreshold=\(config.motionThreshold?.description ?? "nil")")
 
       // Create method (for now, always use SpectralFlux)
       let method = SpectralFluxMethod()

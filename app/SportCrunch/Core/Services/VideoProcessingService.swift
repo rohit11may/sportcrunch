@@ -329,6 +329,7 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
                 audioThresholdMultiplier: Double(preset.onsetThresholdLambda),
                 peakMinDistance: preset.peakMinDistanceSec,
                 clusterMaxGapSec: preset.clusterMaxGapSec,
+                clusterMinHits: preset.clusterMinHits,
                 paddingPreSec: preset.paddingPreSec,
                 paddingPostSec: preset.paddingPostSec,
                 motionThreshold: preset.skipVisualValidation ? nil : Double(preset.motionAreaThreshold)
