@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-21)
 
 **Core value:** Accurate, on-device segment detection that identifies rallies and shots without missing good moments or including dead space.
-**Current focus:** v1.1 DevX for Algorithm Iteration - Phase 5 iOS Runner Core
+**Current focus:** v1.1 DevX for Algorithm Iteration - Phase 7 Method Registry (In Progress)
 
 ## Current Position
 
-Phase: 6 of 9 (Dashboard Backend & Web Core)
-Plan: 3 of 3
-Status: Phase complete
-Last activity: 2026-01-21 — Completed 06-03-PLAN.md
+Phase: 7 of 9 (Method Registry)
+Plan: 1 of 3
+Status: In progress
+Last activity: 2026-01-22 — Completed 07-01-PLAN.md (Method Registry JSON Structure)
 
-Progress: █████████░░░░░░░░░░░ 50% (14 of 28 plans complete)
+Progress: ██████████░░░░░░░░░░ 54% (15 of 28 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
-- Average duration: 6.1 min
-- Total execution time: 1.4 hours
+- Total plans completed: 15
+- Average duration: 6.2 min
+- Total execution time: 1.6 hours
 
 **By Phase:**
 
@@ -33,10 +33,11 @@ Progress: █████████░░░░░░░░░░░ 50% (14 o
 | 4. Method Protocol Foundation | 1 | 9 min | 9.0 min |
 | 5. iOS Runner Core | 3 | 4 min | 1.3 min |
 | 6. Dashboard Backend & Web Core | 3 | 10 min | 3.3 min |
+| 7. Method Registry | 1 | 7 min | 7.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 4 min, 2 min, 5 min, 3 min
-- Trend: Excellent (Phase 6 complete at 3.3 min avg, clear specs paying off)
+- Last 5 plans: 2 min, 5 min, 3 min, 7 min
+- Trend: Excellent (maintaining ~5 min avg, clear plans and atomic tasks)
 
 ## Accumulated Context
 
@@ -72,6 +73,19 @@ Recent decisions affecting current work:
 - [06-03]: Toggle button for rejected segments view
 - [06-03]: Static file serving for videos via /videos/ and /uploads/
 - [06-03]: 800px fixed timeline width with 30-second time axis intervals
+- [06-post]: Dashboard directory at root level (not app/dashboard)
+- [06-post]: DeviceManager using devicectl for device communication (macOS only)
+- [06-post]: Multi-device support (simulator + physical devices) in Phase 6
+- [06-post]: run-map.json for run tracking persistence
+- [06-post]: nodemon for backend development workflow
+- [06-post]: Enhanced styling across all dashboard components early in development
+- [07-design]: Hierarchical method registry (family/version/configs) not flat structure
+- [07-design]: Methods in app/methods/ folder, dashboard reads directly (read-only)
+- [07-design]: Build-time enforcement of JSON-Swift parallelism (JSON without Swift = build error)
+- [07-design]: Dashboard shows method selection UI, not editable forms
+- [07-01]: v1 (SpectralFlux) as pure audio-only method, v2 (SpectralFluxVisualValidation) as audio+visual
+- [07-01]: v1 has 3 config variants (default/aggressive/conservative), v2 has single config
+- [07-01]: v2 preserves current production SpectralFluxMethod implementation exactly
 
 ### Pending Todos
 
@@ -87,8 +101,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-21
-Stopped at: Completed 06-03-PLAN.md (Results View)
+Last session: 2026-01-22
+Stopped at: Completed 07-01-PLAN.md (Method Registry JSON Structure)
 Resume file: None
 
 **v1.1 Status (post-pivot):**
@@ -97,10 +111,16 @@ Resume file: None
   - ✅ 05-01: HTTP Server Foundation
   - ✅ 05-02: Run Execution Pipeline
   - ✅ 05-03: Filesystem Video Transfer
-- Phase 6: Dashboard Backend & Web Core - Complete (3/3 plans done)
+- Phase 6: Dashboard Backend & Web Core - Complete (3/3 plans done + enhancements)
   - ✅ 06-01: Node.js Backend & iOS Runner Proxy
   - ✅ 06-02: React Dashboard (video selection, run triggering)
   - ✅ 06-03: Results View (timeline visualization, video player)
-- Phase 7: Method Registry - Not started (JSON definitions, dynamic config forms)
+  - ✅ Post-GSD: Dashboard reorganization (moved to root level)
+  - ✅ Post-GSD: DeviceManager + DeviceSelector (multi-device support)
+  - ✅ Post-GSD: Enhanced styling, run-map.json, nodemon, video playback fixes
+- Phase 7: Method Registry - In progress (1/3 plans done)
+  - ✅ 07-01: Method Registry JSON Structure (spectral_flux family with v1/v2 versions)
+  - ⏳ 07-02: Build Validation Script (pending)
+  - ⏳ 07-03: Dashboard Registry UI (pending)
 - Phase 8: Comparison & Ground Truth - Not started (ground truth overlay, metrics)
-- Phase 9: Intermediate Visualization & Polish - Not started (spectral flux viz, device support)
+- Phase 9: Intermediate Visualization & Polish - Not started (spectral flux viz, remaining device work)
