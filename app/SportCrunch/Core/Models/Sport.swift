@@ -365,6 +365,62 @@ enum Sport: String, CaseIterable, Identifiable, Codable, Sendable {
     )
   }
 
+  // MARK: - Method Configuration
+
+  /// Returns the hardwired method configuration for this sport and mode.
+  /// These configurations match the method registry JSON files but are
+  /// compiled into the app for the main processing pipeline.
+  /// The registry JSON files are used only by SportCrunchRunner for experimentation.
+  func methodConfig(for mode: SportMode?) -> MethodConfig {
+    switch self {
+    case .tennis:
+      if let tennisMode = mode as? TennisMode {
+        switch tennisMode {
+        case .individual:
+          return MethodConfig(
+            audioThresholdMultiplier: 2.0,
+            peakMinDistance: 0.5,
+            clusterMaxGapSec: 1.0,
+            clusterMinHits: 1,
+            paddingPreSec: 0.5,
+            paddingPostSec: 0.5,
+            motionThreshold: 50.0
+          )
+        case .rally:
+          return MethodConfig(
+            audioThresholdMultiplier: 2.0,
+            peakMinDistance: 0.5,
+            clusterMaxGapSec: 3.0,
+            clusterMinHits: 2,
+            paddingPreSec: 2.0,
+            paddingPostSec: 2.0,
+            motionThreshold: 50.0
+          )
+        }
+      }
+      // Default to rally if no mode specified
+      return MethodConfig(
+        audioThresholdMultiplier: 2.0,
+        peakMinDistance: 0.5,
+        clusterMaxGapSec: 3.0,
+        clusterMinHits: 2,
+        paddingPreSec: 2.0,
+        paddingPostSec: 2.0,
+        motionThreshold: 50.0
+      )
+    case .cricket:
+      return MethodConfig(
+        audioThresholdMultiplier: 2.0,
+        peakMinDistance: 0.5,
+        clusterMaxGapSec: 6.0,
+        clusterMinHits: 1,
+        paddingPreSec: 3.0,
+        paddingPostSec: 3.0,
+        motionThreshold: 50.0
+      )
+    }
+  }
+
   // MARK: - Convenience Accessors (deprecated - use preset instead)
 
   /// Bandpass filter lower frequency cutoff (Hz)
