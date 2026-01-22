@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-01-21)
 ## Current Position
 
 Phase: 7 of 9 (Method Registry)
-Plan: 3 of 4
-Status: In progress
-Last activity: 2026-01-22 — Completed 07-02-PLAN.md (Build Validation Script) + Xcode checkpoint
+Plan: 4 of 4
+Status: Phase complete
+Last activity: 2026-01-22 — Completed 07-04-PLAN.md (Dashboard Method Selection UI)
 
-Progress: ███████████░░░░░░░░░ 57% (16 of 28 plans complete)
+Progress: ███████████░░░░░░░░░ 61% (17 of 28 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
-- Average duration: 6.2 min
+- Total plans completed: 17
+- Average duration: 5.8 min
 - Total execution time: 1.6 hours
 
 **By Phase:**
@@ -33,11 +33,11 @@ Progress: ███████████░░░░░░░░░ 57% (16 o
 | 4. Method Protocol Foundation | 1 | 9 min | 9.0 min |
 | 5. iOS Runner Core | 3 | 4 min | 1.3 min |
 | 6. Dashboard Backend & Web Core | 3 | 10 min | 3.3 min |
-| 7. Method Registry | 2 | 22 min | 11.0 min |
+| 7. Method Registry | 4 | 25 min | 6.3 min |
 
 **Recent Trend:**
-- Last 5 plans: 5 min, 3 min, 7 min, 15 min
-- Trend: Good (07-02 was longer due to protocol refactoring work)
+- Last 5 plans: 3 min, 7 min, 15 min, (est 20 min for 07-03 incl. Xcode), 3 min
+- Trend: Good (07-03 had Xcode checkpoint handling)
 
 ## Accumulated Context
 
@@ -86,6 +86,9 @@ Recent decisions affecting current work:
 - [07-01]: v1 (SpectralFlux) as pure audio-only method, v2 (SpectralFluxVisualValidation) as audio+visual
 - [07-01]: v1 has 3 config variants (default/aggressive/conservative), v2 has single config
 - [07-01]: v2 preserves current production SpectralFluxMethod implementation exactly
+- [07-04]: Backend flattens hierarchical methods into flat array for easier frontend consumption
+- [07-04]: localStorage persistence for method selection with key "sportcrunch_method_selection"
+- [07-04]: Method selection as object {family, version, config, name} passed through to Runner
 
 ### Pending Todos
 
@@ -102,7 +105,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-22
-Stopped at: Completed 07-02-PLAN.md + Xcode checkpoint, ready to proceed to 07-03
+Stopped at: Completed 07-04-PLAN.md (Dashboard Method Selection UI) - Phase 7 complete
 Resume file: None
 
 **v1.1 Status (post-pivot):**
@@ -118,10 +121,10 @@ Resume file: None
   - ✅ Post-GSD: Dashboard reorganization (moved to root level)
   - ✅ Post-GSD: DeviceManager + DeviceSelector (multi-device support)
   - ✅ Post-GSD: Enhanced styling, run-map.json, nodemon, video playback fixes
-- Phase 7: Method Registry - In progress (2/4 plans done)
+- Phase 7: Method Registry - Complete (4/4 plans done)
   - ✅ 07-01: Method Registry JSON Structure (spectral_flux family with v1/v2 versions)
   - ✅ 07-02: Build Validation Script + MethodConfig protocol refactoring (Xcode checkpoint complete)
-  - ⏳ 07-03: Runner Registry Loading + GET /methods (pending)
-  - ⏳ 07-04: Dashboard Method Selection UI (pending)
+  - ✅ 07-03: Runner Registry Loading + GET /methods (registry loading, method endpoints)
+  - ✅ 07-04: Dashboard Method Selection UI (dynamic method selector, localStorage persistence)
 - Phase 8: Comparison & Ground Truth - Not started (ground truth overlay, metrics)
 - Phase 9: Intermediate Visualization & Polish - Not started (spectral flux viz, remaining device work)
