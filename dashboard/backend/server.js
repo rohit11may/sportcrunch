@@ -21,6 +21,9 @@ const RUNNER_URL = process.env.RUNNER_URL || 'http://localhost:8080';
 const TEST_VIDEOS_PATH = path.resolve(__dirname, '../../app/SportCrunchTests/TestResources/Videos');
 const UPLOADS_PATH = path.resolve(__dirname, 'uploads');
 
+// Path to method registry
+const METHODS_PATH = path.resolve(__dirname, '../../app/methods');
+
 // Create Express app
 const app = express();
 
@@ -159,6 +162,73 @@ app.post('/api/videos/upload', upload.single('video'), (req, res) => {
   } catch (error) {
     console.error('❌ Upload error:', error);
     res.status(500).json({ error: 'Failed to upload video' });
+  }
+});
+
+// ==========================================
+// Method Registry Endpoints
+// ==========================================
+
+// GET /api/methods - List available methods from registry
+app.get('/api/methods', (req, res) => {
+  try {
+    const indexPath = path.join(METHODS_PATH, '_index.json');
+
+    // Check if index exists
+    if (!fs.existsSync(indexPath)) {
+      console.warn('Method index not found:', indexPath);
+      return res.json({ families: [], methods: [] });
+    }
+
+    // Read and parse index
+    const indexData = fs.readFileSync(indexPath, 'utf-8');
+    const index = JSON.parse(indexData);
+
+    // Flatten into methods list for easier frontend consumption
+    const methods = [];
+    for (const family of index.families || []) {
+      for (const version of family.versions || []) {
+        methods.push({
+          id: `${family.family}/${version.version}`,
+          family: family.family,
+          version: version.version,
+          name: version.name,
+          description: version.description,
+          defaultConfig: version.defaultConfig,
+          configs: version.configs || []
+        });
+      }
+    }
+
+    res.json({
+      families: index.families,
+      methods: methods
+    });
+
+  } catch (error) {
+    console.error('Error reading method registry:', error);
+    res.status(500).json({ error: 'Failed to read method registry' });
+  }
+});
+
+// GET /api/methods/:family/:version/configs/:config - Get specific config
+app.get('/api/methods/:family/:version/configs/:config', (req, res) => {
+  try {
+    const { family, version, config } = req.params;
+    const configPath = path.join(METHODS_PATH, family, version, 'configs', config);
+
+    if (!fs.existsSync(configPath)) {
+      return res.status(404).json({ error: `Config not found: ${config}` });
+    }
+
+    const configData = fs.readFileSync(configPath, 'utf-8');
+    const configJson = JSON.parse(configData);
+
+    res.json(configJson);
+
+  } catch (error) {
+    console.error('Error reading config:', error);
+    res.status(500).json({ error: 'Failed to read config' });
   }
 });
 
