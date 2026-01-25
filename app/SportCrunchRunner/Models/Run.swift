@@ -52,9 +52,6 @@ struct Run: Identifiable, Codable, Sendable {
     let id: UUID
     var status: RunStatus
     let videoPath: String
-    let method: String  // Legacy: kept for backwards compatibility
-    let methodFamily: String?  // New: method family (e.g., "spectral_flux")
-    let methodVersion: String?  // New: method version (e.g., "v1", "v2")
     let sport: String
     let sportMode: String?
     let config: [String: String]
@@ -70,9 +67,6 @@ struct Run: Identifiable, Codable, Sendable {
         id: UUID = UUID(),
         status: RunStatus = .queued,
         videoPath: String,
-        method: String,
-        methodFamily: String? = nil,
-        methodVersion: String? = nil,
         sport: String,
         sportMode: String? = nil,
         config: [String: String] = [:],
@@ -81,9 +75,6 @@ struct Run: Identifiable, Codable, Sendable {
         self.id = id
         self.status = status
         self.videoPath = videoPath
-        self.method = method
-        self.methodFamily = methodFamily
-        self.methodVersion = methodVersion
         self.sport = sport
         self.sportMode = sportMode
         self.config = config

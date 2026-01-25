@@ -84,17 +84,12 @@ class RunEndpoints {
         return errorResponse(message: "Missing required field: videoPath", statusCode: 400)
       }
 
-      guard let method = json["method"] as? String else {
-        print("❌ [RunEndpoints] Missing method")
-        return errorResponse(message: "Missing required field: method", statusCode: 400)
-      }
-
       guard let sport = json["sport"] as? String else {
         print("❌ [RunEndpoints] Missing sport")
         return errorResponse(message: "Missing required field: sport", statusCode: 400)
       }
 
-      print("📝 [RunEndpoints] videoPath=\(videoPath), method=\(method), sport=\(sport)")
+      print("📝 [RunEndpoints] videoPath=\(videoPath), sport=\(sport)")
 
       // Resolve relative paths (e.g., Documents/test-videos/...) to absolute paths
       let resolvedVideoPath = resolveVideoPath(videoPath)
@@ -118,7 +113,6 @@ class RunEndpoints {
       // Create run (use resolved path so executor can find the file)
       let run = Run(
         videoPath: resolvedVideoPath,
-        method: method,
         sport: sport,
         sportMode: sportMode,
         config: config,
@@ -206,13 +200,12 @@ class RunEndpoints {
       "id": run.id.uuidString,
       "status": run.status.rawValue,
       "videoPath": run.videoPath,
-      "method": run.method,
       "sport": run.sport,
       "config": run.config,
       "createdAt": ISO8601DateFormatter().string(from: run.createdAt)
     ]
 
-    print("  ✓ Added base fields (id, status, videoPath, method, sport, config, createdAt)")
+    print("  ✓ Added base fields (id, status, videoPath, sport, config, createdAt)")
 
     if let sportMode = run.sportMode {
       json["sportMode"] = sportMode

@@ -32,16 +32,11 @@ struct RunStatusRow: View {
                         .font(.system(.caption, design: .monospaced))
                         .foregroundStyle(.secondary)
 
-                    // Method name
-                    Text(run.method)
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.primary)
-
                     // Sport + mode
                     Text(sportDisplayText)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.primary)
                 }
 
                 HStack(spacing: 8) {
@@ -135,7 +130,6 @@ struct RunStatusRow: View {
         RunStatusRow(run: Run(
             status: .queued,
             videoPath: "/path/to/video.mov",
-            method: "SpectralFlux",
             sport: "tennis",
             sportMode: "rally"
         ))
@@ -147,7 +141,6 @@ struct RunStatusRow: View {
             var run = Run(
                 status: .running,
                 videoPath: "/path/to/video.mov",
-                method: "SpectralFlux",
                 sport: "tennis",
                 sportMode: "rally"
             )
@@ -162,7 +155,6 @@ struct RunStatusRow: View {
             var run = Run(
                 status: .completed,
                 videoPath: "/path/to/video.mov",
-                method: "SpectralFlux",
                 sport: "tennis",
                 sportMode: "rally"
             )
@@ -183,7 +175,6 @@ struct RunStatusRow: View {
             var run = Run(
                 status: .failed,
                 videoPath: "/path/to/video.mov",
-                method: "SpectralFlux",
                 sport: "tennis",
                 sportMode: "rally"
             )
