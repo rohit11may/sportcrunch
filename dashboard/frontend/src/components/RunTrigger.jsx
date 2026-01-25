@@ -23,7 +23,7 @@ function RunTrigger({ videoPath, method, isProcessing, error, statusMessage, onT
       {/* Show selected method name */}
       {method && !isProcessing && (
         <div className="method-info">
-          Using: {method.name}
+          Using: {method.methodDisplayName} / {method.configDisplayName}
         </div>
       )}
 
