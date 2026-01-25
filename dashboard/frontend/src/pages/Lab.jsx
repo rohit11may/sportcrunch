@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import ObservationCharts from '../components/ObservationCharts';
+import EventLedger from '../components/EventLedger';
 import './Lab.css';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
@@ -147,11 +149,32 @@ function Lab() {
         </div>
       ) : (
         <div className="lab-content">
-          {/* Charts will be added in Task 9 */}
-          <div className="placeholder">
-            <p>Charts and event ledger coming in next step...</p>
-            <pre>{JSON.stringify(observations, null, 2).slice(0, 500)}...</pre>
+          {/* Note: Video seeking functionality placeholder */}
+          {/* In a full implementation, this would control a video player */}
+          <div className="video-note">
+            <p>📹 Video seeking: Click on charts or event times to seek (video player not implemented in this demo)</p>
           </div>
+
+          {/* Charts */}
+          <ObservationCharts
+            observations={observations}
+            onTimeClick={(time) => {
+              console.log(`Video seek to ${time}s requested`);
+              // TODO: Implement video player integration
+              alert(`Video seek to ${time.toFixed(2)}s`);
+            }}
+          />
+
+          {/* Event Ledger */}
+          <EventLedger
+            observations={observations}
+            runId={runId}
+            onTimeClick={(time) => {
+              console.log(`Video seek to ${time}s requested`);
+              // TODO: Implement video player integration
+              alert(`Video seek to ${time.toFixed(2)}s`);
+            }}
+          />
         </div>
       )}
     </div>

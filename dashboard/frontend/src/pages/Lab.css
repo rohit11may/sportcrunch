@@ -125,6 +125,20 @@
   margin-top: 30px;
 }
 
+.video-note {
+  padding: 15px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.video-note p {
+  margin: 0;
+  color: #856404;
+  font-size: 0.9rem;
+}
+
 .loading, .error {
   text-align: center;
   padding: 60px 20px;

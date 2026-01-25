@@ -1,0 +1,35 @@
+.observation-charts {
+  margin-top: 30px;
+}
+
+.chart-container {
+  margin-bottom: 40px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.chart-container h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.2rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.chart-hint {
+  margin: 15px 0 0 0;
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
+
+/* Recharts customization */
+.recharts-wrapper {
+  cursor: pointer;
+}
+
+.recharts-tooltip-wrapper {
+  z-index: 1000;
+}

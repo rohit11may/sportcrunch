@@ -1,0 +1,143 @@
+.event-ledger {
+  margin-top: 40px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.event-ledger h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.2rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.event-table-container {
+  overflow-x: auto;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.event-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.event-table thead {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  z-index: 10;
+}
+
+.event-table th {
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.event-table tbody tr {
+  border-bottom: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.event-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.event-table tbody tr.selected {
+  background: #e7f3ff;
+}
+
+.event-table td {
+  padding: 12px;
+  vertical-align: top;
+}
+
+.event-type {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.event-icon {
+  font-size: 1.2rem;
+}
+
+.event-name {
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: #495057;
+}
+
+.event-time {
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+}
+
+.time-button {
+  padding: 4px 10px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.time-button:hover {
+  background: #0056b3;
+}
+
+.event-metadata {
+  font-size: 0.85rem;
+}
+
+.metadata-entry {
+  margin-bottom: 4px;
+}
+
+.metadata-key {
+  font-weight: 600;
+  color: #6c757d;
+  margin-right: 4px;
+}
+
+.metadata-value {
+  font-family: 'Courier New', monospace;
+  color: #212529;
+}
+
+.event-artifact {
+  text-align: center;
+}
+
+.artifact-link {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #28a745;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+
+.artifact-link:hover {
+  background: #218838;
+}
+
+.ledger-hint {
+  margin: 15px 0 0 0;
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
