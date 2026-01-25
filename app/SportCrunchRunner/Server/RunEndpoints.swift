@@ -84,12 +84,17 @@ class RunEndpoints {
         return errorResponse(message: "Missing required field: videoPath", statusCode: 400)
       }
 
-      guard let sport = json["sport"] as? String else {
-        print("❌ [RunEndpoints] Missing sport")
-        return errorResponse(message: "Missing required field: sport", statusCode: 400)
+      guard let method = json["method"] as? String else {
+        print("❌ [RunEndpoints] Missing method")
+        return errorResponse(message: "Missing required field: method", statusCode: 400)
       }
 
-      print("📝 [RunEndpoints] videoPath=\(videoPath), sport=\(sport)")
+      guard let config = json["config"] as? String else {
+        print("❌ [RunEndpoints] Missing config")
+        return errorResponse(message: "Missing required field: config", statusCode: 400)
+      }
+
+      print("📝 [RunEndpoints] videoPath=\(videoPath), method=\(method), config=\(config)")
 
       // Resolve relative paths (e.g., Documents/test-videos/...) to absolute paths
       let resolvedVideoPath = resolveVideoPath(videoPath)
@@ -101,20 +106,13 @@ class RunEndpoints {
         return errorResponse(message: "Video file not found: \(resolvedVideoPath)", statusCode: 404)
       }
 
-      // Extract optional fields
-      let sportMode = json["sportMode"] as? String
-      let config = json["config"] as? [String: String] ?? [:]
-
-      print("📝 [RunEndpoints] sportMode=\(sportMode ?? "nil"), config=\(config)")
-
       // Parse device target (defaults to simulator)
       let deviceTarget = parseDeviceTarget(from: json)
 
       // Create run (use resolved path so executor can find the file)
       let run = Run(
         videoPath: resolvedVideoPath,
-        sport: sport,
-        sportMode: sportMode,
+        method: method,
         config: config,
         deviceTarget: deviceTarget
       )
@@ -200,17 +198,12 @@ class RunEndpoints {
       "id": run.id.uuidString,
       "status": run.status.rawValue,
       "videoPath": run.videoPath,
-      "sport": run.sport,
+      "method": run.method,
       "config": run.config,
       "createdAt": ISO8601DateFormatter().string(from: run.createdAt)
     ]
 
-    print("  ✓ Added base fields (id, status, videoPath, sport, config, createdAt)")
-
-    if let sportMode = run.sportMode {
-      json["sportMode"] = sportMode
-      print("  ✓ Added sportMode: \(sportMode)")
-    }
+    print("  ✓ Added base fields (id, status, videoPath, method, config, createdAt)")
 
     if let startedAt = run.startedAt {
       json["startedAt"] = ISO8601DateFormatter().string(from: startedAt)
