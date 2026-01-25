@@ -232,8 +232,7 @@ final class BackgroundProcessingManager: ObservableObject {
         sourceURL = existingURL
       } else if let pickerItem = mutableJob.pickerItem {
         // Load video in background
-        let logger = ProcessingLogger.shared
-        sourceURL = try await videoLoaderService.loadVideo(from: pickerItem, logger: logger)
+        sourceURL = try await videoLoaderService.loadVideo(from: pickerItem)
         mutableJob.sourceURL = sourceURL
 
         // Update project with loaded URL

@@ -46,11 +46,9 @@ protocol VideoLoaderServiceProtocol {
     /// Load video from a PhotosPickerItem to a local URL
     /// - Parameters:
     ///   - item: The PhotosPickerItem to load
-    ///   - logger: Optional logger for progress tracking
     /// - Returns: URL to the loaded video file
     func loadVideo(
-        from item: PhotosPickerItem,
-        logger: ProcessingLogger?
+        from item: PhotosPickerItem
     ) async throws -> URL
 }
 
@@ -63,16 +61,12 @@ final class RealVideoLoaderService: VideoLoaderServiceProtocol {
     // MARK: - VideoLoaderServiceProtocol
 
     func loadVideo(
-        from item: PhotosPickerItem,
-        logger: ProcessingLogger?
+        from item: PhotosPickerItem
     ) async throws -> URL {
         // Get the asset identifier from PhotosPickerItem
         guard let assetIdentifier = item.itemIdentifier else {
             print("SportCrunch: [VideoLoaderService] No asset identifier, falling back to Transferable...")
-            await MainActor.run {
-                logger?.pipeline("No asset identifier, falling back to Transferable...")
-            }
-            return try await loadVideoViaTransferable(item: item, logger: logger)
+            return try await loadVideoViaTransferable(item: item)
         }
 
         print("SportCrunch: [VideoLoaderService] Loading video with asset ID: \(assetIdentifier)")
@@ -82,9 +76,8 @@ final class RealVideoLoaderService: VideoLoaderServiceProtocol {
         guard let asset = fetchResult.firstObject else {
             print("SportCrunch: [VideoLoaderService] Could not fetch PHAsset, falling back to Transferable...")
             await MainActor.run {
-                logger?.pipeline("Could not fetch PHAsset, falling back to Transferable...")
             }
-            return try await loadVideoViaTransferable(item: item, logger: logger)
+            return try await loadVideoViaTransferable(item: item)
         }
 
         // Check if this is a slow-mo or edited video (mediaSubtypes contains .videoHighFrameRate)
@@ -92,18 +85,16 @@ final class RealVideoLoaderService: VideoLoaderServiceProtocol {
         if isSlowMo {
             print("SportCrunch: [VideoLoaderService] Video is slow-mo, using PHImageManager fallback...")
             await MainActor.run {
-                logger?.pipeline("Video is slow-mo, using PHImageManager fallback...")
             }
-            return try await loadVideoViaPHImageManager(asset: asset, item: item, logger: logger)
+            return try await loadVideoViaPHImageManager(asset: asset, item: item)
         }
 
         // Use PHAssetResourceManager for byte-for-byte original access (no transcoding)
         print("SportCrunch: [VideoLoaderService] Using PHAssetResourceManager for original video access...")
         await MainActor.run {
-            logger?.pipeline("Loading original video file (no transcoding)...")
         }
 
-        return try await loadVideoViaPHAssetResourceManager(asset: asset, item: item, logger: logger)
+        return try await loadVideoViaPHAssetResourceManager(asset: asset, item: item)
     }
 
     // MARK: - Private Methods
@@ -112,8 +103,7 @@ final class RealVideoLoaderService: VideoLoaderServiceProtocol {
     /// This is critical for reliable frame extraction on physical devices.
     private func loadVideoViaPHAssetResourceManager(
         asset: PHAsset,
-        item: PhotosPickerItem,
-        logger: ProcessingLogger?
+        item: PhotosPickerItem
     ) async throws -> URL {
         // Find the video resource (prefer fullSizeVideo for edited videos, fall back to video)
         let resources = PHAssetResource.assetResources(for: asset)
@@ -126,14 +116,12 @@ final class RealVideoLoaderService: VideoLoaderServiceProtocol {
                 ?? resources.first(where: { $0.type == .video }) else {
             print("SportCrunch: [VideoLoaderService] No video resource found, falling back to PHImageManager...")
             await MainActor.run {
-                logger?.pipeline("No video resource found, falling back to PHImageManager...")
             }
-            return try await loadVideoViaPHImageManager(asset: asset, item: item, logger: logger)
+            return try await loadVideoViaPHImageManager(asset: asset, item: item)
         }
 
         print("SportCrunch: [VideoLoaderService] Using resource type \(videoResource.type.rawValue): \(videoResource.originalFilename)")
         await MainActor.run {
-            logger?.pipeline("Copying original video: \(videoResource.originalFilename)")
         }
 
         // Create destination URL with original filename extension
@@ -157,7 +145,6 @@ final class RealVideoLoaderService: VideoLoaderServiceProtocol {
                 if let error = error {
                     print("SportCrunch: [VideoLoaderService] PHAssetResourceManager error: \(error.localizedDescription)")
                     Task { @MainActor in
-                        logger?.error("PHAssetResourceManager error: \(error.localizedDescription)")
                     }
 
                     // Fall back to PHImageManager on error
@@ -165,8 +152,7 @@ final class RealVideoLoaderService: VideoLoaderServiceProtocol {
                         do {
                             let url = try await self.loadVideoViaPHImageManager(
                                 asset: asset,
-                                item: item,
-                                logger: logger
+                                item: item
                             )
                             continuation.resume(returning: url)
                         } catch {
@@ -178,7 +164,6 @@ final class RealVideoLoaderService: VideoLoaderServiceProtocol {
 
                 print("SportCrunch: [VideoLoaderService] Successfully copied original video to: \(destinationURL)")
                 Task { @MainActor in
-                    logger?.success("Original video copied successfully (no transcoding)")
                 }
                 continuation.resume(returning: destinationURL)
             }
@@ -189,12 +174,10 @@ final class RealVideoLoaderService: VideoLoaderServiceProtocol {
     /// These videos return AVComposition and need to be exported via Transferable.
     private func loadVideoViaPHImageManager(
         asset: PHAsset,
-        item: PhotosPickerItem,
-        logger: ProcessingLogger?
+        item: PhotosPickerItem
     ) async throws -> URL {
         print("SportCrunch: [VideoLoaderService] Using PHImageManager for video asset...")
         await MainActor.run {
-            logger?.pipeline("Using PHImageManager for video access...")
         }
 
         return try await withCheckedThrowingContinuation { continuation in
@@ -207,7 +190,6 @@ final class RealVideoLoaderService: VideoLoaderServiceProtocol {
                 // Check for errors
                 if let error = info?[PHImageErrorKey] as? Error {
                     Task { @MainActor in
-                        logger?.error("PHImageManager error: \(error.localizedDescription)")
                     }
                     continuation.resume(throwing: error)
                     return
@@ -222,18 +204,16 @@ final class RealVideoLoaderService: VideoLoaderServiceProtocol {
                 if let urlAsset = avAsset as? AVURLAsset {
                     print("SportCrunch: [VideoLoaderService] Got video URL from PHImageManager: \(urlAsset.url)")
                     Task { @MainActor in
-                        logger?.success("Got video URL from PHImageManager")
                     }
                     continuation.resume(returning: urlAsset.url)
                 } else if avAsset is AVComposition {
                     // Slow-mo or heavily edited video - need Transferable export
                     print("SportCrunch: [VideoLoaderService] Video is AVComposition, falling back to Transferable export...")
                     Task { @MainActor in
-                        logger?.pipeline("Video requires export (slow-mo/edited), using Transferable...")
                     }
                     Task {
                         do {
-                            let url = try await self.loadVideoViaTransferable(item: item, logger: logger)
+                            let url = try await self.loadVideoViaTransferable(item: item)
                             continuation.resume(returning: url)
                         } catch {
                             continuation.resume(throwing: error)
@@ -244,7 +224,7 @@ final class RealVideoLoaderService: VideoLoaderServiceProtocol {
                     print("SportCrunch: [VideoLoaderService] Unexpected AVAsset type: \(type(of: avAsset)), falling back to Transferable...")
                     Task {
                         do {
-                            let url = try await self.loadVideoViaTransferable(item: item, logger: logger)
+                            let url = try await self.loadVideoViaTransferable(item: item)
                             continuation.resume(returning: url)
                         } catch {
                             continuation.resume(throwing: error)
@@ -257,26 +237,22 @@ final class RealVideoLoaderService: VideoLoaderServiceProtocol {
 
     /// Fallback method using Transferable for edge cases (slow-mo, edited videos, non-Photos sources)
     private func loadVideoViaTransferable(
-        item: PhotosPickerItem,
-        logger: ProcessingLogger?
+        item: PhotosPickerItem
     ) async throws -> URL {
         print("SportCrunch: [VideoLoaderService] Loading video via Transferable...")
         await MainActor.run {
-            logger?.pipeline("Loading video via Transferable (this may take a moment)...")
         }
 
         guard let movie = try await item.loadTransferable(type: VideoTransferable.self) else {
             print("SportCrunch: [VideoLoaderService] Failed to load video - loadTransferable returned nil")
             print("SportCrunch: [VideoLoaderService] Item supported types: \(item.supportedContentTypes)")
             await MainActor.run {
-                logger?.error("Failed to load video via Transferable")
             }
             throw VideoLoaderError.loadFailed("Transferable returned nil")
         }
 
         print("SportCrunch: [VideoLoaderService] Successfully loaded video at: \(movie.url)")
         await MainActor.run {
-            logger?.success("Video loaded via Transferable")
         }
         return movie.url
     }
@@ -297,8 +273,7 @@ final class MockVideoLoaderService: VideoLoaderServiceProtocol {
     var loadVideoCallCount = 0
 
     func loadVideo(
-        from item: PhotosPickerItem,
-        logger: ProcessingLogger?
+        from item: PhotosPickerItem
     ) async throws -> URL {
         loadVideoCallCount += 1
 

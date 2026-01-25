@@ -341,13 +341,6 @@ final class HighlightCreationViewModel {
 
         print("SportCrunch: Video duration: \(videoDuration) seconds")
 
-        let logger = ProcessingLogger.shared
-        await MainActor.run {
-            let mins = Int(self.videoDuration) / 60
-            let secs = Int(self.videoDuration) % 60
-            logger.pipeline("Video duration: \(mins):\(String(format: "%02d", secs))")
-        }
-
         // Generate thumbnail from middle of video
         let imageGenerator = AVAssetImageGenerator(asset: asset)
         imageGenerator.appliesPreferredTrackTransform = true

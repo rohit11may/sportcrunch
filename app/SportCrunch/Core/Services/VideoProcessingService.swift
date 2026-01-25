@@ -236,7 +236,6 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
     func processVideo(sourceURL: URL, sport: Sport, sportMode: (any SportMode)?) async throws -> ProcessingResult {
         isCancelled = false
         let pipelineStart = Date()
-        let logger = ProcessingLogger.shared
 
         // Track timing for each phase
         var detectionTime: Double = 0
@@ -253,16 +252,9 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         print("⚙️ [VideoProcessor] Path: \(sourceURL.path)")
         print("")
 
-        await MainActor.run {
-            logger.pipeline("Starting highlight creation for \(sport.displayName) (\(modeDescription))...")
-        }
-
         // Verify file exists
         guard FileManager.default.fileExists(atPath: sourceURL.path) else {
             print("⚙️ [VideoProcessor] ❌ ERROR: File does not exist!")
-            await MainActor.run {
-                logger.error("Video file not found")
-            }
             throw ProcessingError.invalidVideoURL
         }
 
@@ -273,9 +265,6 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             originalFileSize = fileSize
             let mb = Double(fileSize) / 1024 / 1024
             print("⚙️ [VideoProcessor] File size: \(String(format: "%.1f", mb)) MB")
-            await MainActor.run {
-                logger.pipeline("Processing \(String(format: "%.1f", mb)) MB video...")
-            }
         }
         print("")
 
@@ -307,33 +296,21 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
 
         } catch {
             print("⚙️ [VideoProcessor] ❌ Segment detection failed: \(error.localizedDescription)")
-            await MainActor.run {
-                logger.error("Segment detection failed: \(error.localizedDescription)")
-            }
             throw error
         }
 
         guard !isCancelled else {
             print("⚙️ [VideoProcessor] ⚠️ Cancelled during segment detection")
-            await MainActor.run {
-                logger.warning("Processing cancelled")
-            }
             throw ProcessingError.cancelled
         }
 
         guard !segments.isEmpty else {
             print("⚙️ [VideoProcessor] ❌ No action detected")
-            await MainActor.run {
-                logger.error("No action detected")
-            }
             throw ProcessingError.noActionDetected
         }
 
         progressSubject.send(0.75)
         print("⚙️ [VideoProcessor] ✓ Detected \(segments.count) segments using \(method.name)")
-        await MainActor.run {
-            logger.success("\(segments.count) segments detected")
-        }
 
         // Build intervals for export
         let finalIntervals = segments.map { (start: $0.startTime, end: $0.endTime) }
@@ -363,8 +340,6 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         originalFileSize: Int64,
         detectionTime: Double = 0
     ) async throws -> ProcessingResult {
-        let logger = ProcessingLogger.shared
-
         print("⚙️ [VideoProcessor] ┌─────────────────────────────────────────┐")
         print("⚙️ [VideoProcessor] │  PHASE 3/3: VIDEO EXPORT                │")
         print("⚙️ [VideoProcessor] └─────────────────────────────────────────┘")
@@ -374,9 +349,6 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
 
         guard !isCancelled else {
             print("⚙️ [VideoProcessor] ⚠️ Cancelled before export")
-            await MainActor.run {
-                logger.warning("Processing cancelled")
-            }
             throw ProcessingError.cancelled
         }
 
@@ -405,18 +377,12 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             )
         } catch {
             print("⚙️ [VideoProcessor] ❌ Export failed: \(error.localizedDescription)")
-            await MainActor.run {
-                logger.error("Export failed: \(error.localizedDescription)")
-            }
             throw ProcessingError.exportFailed
         }
         _ = Date().timeIntervalSince(exportPhaseStart)
 
         guard !isCancelled else {
             print("⚙️ [VideoProcessor] ⚠️ Cancelled after export, cleaning up...")
-            await MainActor.run {
-                logger.warning("Cancelled, cleaning up...")
-            }
             try? FileManager.default.removeItem(at: outputURL)
             throw ProcessingError.cancelled
         }
@@ -438,10 +404,6 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         print("⚙️ [VideoProcessor]    • Segments: \(segments.count)")
         print("⚙️ [VideoProcessor] 📁 Output: \(outputURL.lastPathComponent)")
         print("")
-
-        await MainActor.run {
-            logger.success("Highlight created! \(formatTime(exportResult.inputDuration)) → \(formatTime(exportResult.outputDuration)) in \(String(format: "%.1f", totalElapsed))s")
-        }
 
         // Get highlight file size
         var highlightFileSize: Int64 = 0

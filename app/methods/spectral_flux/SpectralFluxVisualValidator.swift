@@ -167,8 +167,6 @@ actor SpectralFluxVisualValidator {
         // Use motion threshold from config or default
         let motionAreaThreshold = config.motionThreshold ?? 50.0
 
-        let logger = ProcessingLogger.shared
-
         let thumbSize = CGSize(
             width: videoThumbSize.width,
             height: videoThumbSize.height
@@ -189,14 +187,11 @@ actor SpectralFluxVisualValidator {
         print("👁️ [SpectralFluxVisualValidator] ───────────────────────────────────────────")
         print("👁️ [SpectralFluxVisualValidator] 🚀 OPTIMIZED: Batched processing + controlled parallelism")
 
-        logger.visualAsync("Starting motion validation for \(candidates.count) segments...")
-
         let asset = AVURLAsset(url: videoURL)
 
         // Verify video track exists
         guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
             print("👁️ [SpectralFluxVisualValidator] ❌ ERROR: No video track found")
-            logger.errorAsync("No video track found")
             throw VisualValidatorError.noVideoTrack
         }
 
@@ -284,8 +279,6 @@ actor SpectralFluxVisualValidator {
         print("👁️ [SpectralFluxVisualValidator]    • Rejected (low motion): \(candidates.count - validCount)")
         print("👁️ [SpectralFluxVisualValidator]    • Batches processed: \(totalBatches)")
         print("👁️ [SpectralFluxVisualValidator] ═══════════════════════════════════════════")
-
-        logger.successAsync("Motion validation complete: \(validCount)/\(candidates.count) segments verified in \(String(format: "%.1f", elapsed))s")
 
         return allValidations
     }

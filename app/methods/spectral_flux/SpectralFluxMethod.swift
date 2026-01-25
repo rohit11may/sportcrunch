@@ -39,12 +39,7 @@ final class SpectralFluxMethod: SegmentationMethod {
     // MARK: - Segmentation Method Protocol
 
     func detectSegments(videoURL: URL) async throws -> [ActionSegment] {
-        let logger = ProcessingLogger.shared
-
         // Phase 1: Audio Analysis
-        await MainActor.run {
-            logger.pipeline("Running audio analysis...")
-        }
 
         let audioResult: AudioAnalysisResult
         do {
@@ -68,9 +63,6 @@ final class SpectralFluxMethod: SegmentationMethod {
         if self.config.motionThreshold == nil {
             // Audio-only mode
             print("⚙️ [SpectralFluxMethod] ✓ Skipping visual validation (audio-only mode)")
-            await MainActor.run {
-                logger.success("Using audio-only mode (visual validation skipped)")
-            }
 
             segments = audioResult.candidateIntervals.map { interval in
                 ActionSegment(
@@ -81,9 +73,6 @@ final class SpectralFluxMethod: SegmentationMethod {
             }
         } else {
             // Run visual validation
-            await MainActor.run {
-                logger.pipeline("Running visual validation...")
-            }
 
             let validations: [SegmentValidation]
             do {
@@ -97,9 +86,6 @@ final class SpectralFluxMethod: SegmentationMethod {
                 // Fallback to audio-only if visual validation fails
                 print("⚙️ [SpectralFluxMethod] ⚠️ Visual validation failed, using audio-only")
                 print("⚙️ [SpectralFluxMethod] Error: \(error.localizedDescription)")
-                await MainActor.run {
-                    logger.warning("Visual validation unavailable, using audio-only")
-                }
 
                 segments = audioResult.candidateIntervals.map { interval in
                     ActionSegment(
@@ -118,9 +104,6 @@ final class SpectralFluxMethod: SegmentationMethod {
             if validIntervals.isEmpty {
                 // No segments passed validation, use audio-only with lower confidence
                 print("⚙️ [SpectralFluxMethod] ⚠️ No segments passed visual validation, using audio-only")
-                await MainActor.run {
-                    logger.warning("Low motion detected, using audio-only results")
-                }
 
                 segments = audioResult.candidateIntervals.map { interval in
                     ActionSegment(
@@ -132,9 +115,6 @@ final class SpectralFluxMethod: SegmentationMethod {
             } else {
                 // Use validated segments
                 print("⚙️ [SpectralFluxMethod] ✓ \(validIntervals.count) segments validated with motion")
-                await MainActor.run {
-                    logger.success("\(validIntervals.count) segments verified with motion")
-                }
 
                 segments = validations.filter { $0.isValid }.map { validation in
                     // Normalize motion score to confidence (0.7-1.0 range)

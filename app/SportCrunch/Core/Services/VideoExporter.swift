@@ -186,14 +186,11 @@ actor VideoExporter {
         preset: VideoExportPreset = .fast
     ) async throws -> ExportResult {
         let startTime = Date()
-        let logger = ProcessingLogger.shared
 
         print("📼 [VideoExporter] ═══════════════════════════════════════════")
         print("📼 [VideoExporter] Starting video export")
         print("📼 [VideoExporter] Source: \(sourceURL.lastPathComponent)")
         print("📼 [VideoExporter] Input segments: \(intervals.count)")
-
-        logger.exportAsync("Starting video export with \(intervals.count) segments...")
 
         let asset = AVURLAsset(url: sourceURL)
 
@@ -207,18 +204,15 @@ actor VideoExporter {
 
         guard !tracks.isEmpty else {
             print("📼 [VideoExporter] ❌ ERROR: Cannot access file tracks")
-            logger.errorAsync("Cannot access file tracks")
             throw VideoExporterError.cannotAccessFile
         }
 
         // Merge overlapping intervals
         print("📼 [VideoExporter] Merging overlapping intervals...")
-        logger.exportAsync("Merging overlapping intervals...")
         let mergedIntervals = mergeIntervals(intervals, videoDuration: duration)
 
         guard !mergedIntervals.isEmpty else {
             print("📼 [VideoExporter] ❌ ERROR: No valid intervals after merge")
-            logger.errorAsync("No valid intervals after merge")
             throw VideoExporterError.noValidIntervals
         }
 
@@ -228,17 +222,13 @@ actor VideoExporter {
             print("📼 [VideoExporter]   Segment \(i+1): \(formatTime(interval.start)) → \(formatTime(interval.end)) (\(String(format: "%.1f", segDuration))s)")
         }
 
-        logger.exportAsync("Merged to \(mergedIntervals.count) segments")
-
         // Create composition
         print("📼 [VideoExporter] Building AVMutableComposition...")
-        logger.exportAsync("Building video composition...")
         let composition = AVMutableComposition()
 
         // Add video track
         guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
             print("📼 [VideoExporter] ❌ ERROR: No video track found")
-            logger.errorAsync("No video track found")
             throw VideoExporterError.compositionFailed
         }
 
@@ -376,7 +366,6 @@ actor VideoExporter {
                 insertedCount += 1
             } catch {
                 print("📼 [VideoExporter] ⚠️ Failed to insert segment \(index + 1): \(error.localizedDescription)")
-                logger.warningAsync("Skipped segment \(index + 1)")
                 errorMsg = error.localizedDescription
             }
 
@@ -404,7 +393,6 @@ actor VideoExporter {
 
         print("📼 [VideoExporter] ✓ Inserted \(insertedCount)/\(mergedIntervals.count) segments")
         print("📼 [VideoExporter] ✓ Final composition duration: \(insertionTime.value)/\(insertionTime.timescale) = \(String(format: "%.3f", insertionTime.seconds))s")
-        logger.exportAsync("Assembling \(insertedCount) video clips...")
 
         // Create video composition only for non-fast presets (to avoid unnecessary work)
         var videoComposition: AVMutableVideoComposition?
@@ -467,7 +455,6 @@ actor VideoExporter {
             presetName: preset.presetName
         ) else {
             print("📼 [VideoExporter] ❌ ERROR: Could not create export session")
-            logger.errorAsync("Could not create export session")
             throw VideoExporterError.exportFailed("Could not create export session")
         }
 
@@ -488,7 +475,6 @@ actor VideoExporter {
 
         print("📼 [VideoExporter] Output: \(outputURL.lastPathComponent)")
         print("📼 [VideoExporter] ⏳ Exporting... (this may take a while)")
-        logger.exportAsync("Exporting highlight video (this may take a moment)...")
 
         // Start progress monitoring task
         let progressTask = Task {
@@ -501,7 +487,6 @@ actor VideoExporter {
                 if progress - lastReportedProgress >= 0.05 {
                     let percent = Int(progress * 100)
                     print("📼 [VideoExporter] Export progress: \(percent)%")
-                    logger.exportAsync("Exporting... \(percent)%")
                     lastReportedProgress = progress
                 }
 
@@ -524,16 +509,13 @@ actor VideoExporter {
             print("📼 [VideoExporter] ✓ Export completed successfully")
         case .cancelled:
             print("📼 [VideoExporter] ❌ Export was cancelled")
-            logger.errorAsync("Export was cancelled")
             throw VideoExporterError.exportCancelled
         case .failed:
             let errorMessage = exportSession.error?.localizedDescription ?? "Unknown error"
             print("📼 [VideoExporter] ❌ Export failed: \(errorMessage)")
-            logger.errorAsync("Export failed: \(errorMessage)")
             throw VideoExporterError.exportFailed(errorMessage)
         default:
             print("📼 [VideoExporter] ❌ Unexpected export status: \(exportSession.status.rawValue)")
-            logger.errorAsync("Unexpected export status")
             throw VideoExporterError.exportFailed("Unexpected export status")
         }
 
@@ -580,8 +562,6 @@ actor VideoExporter {
         }
 
         print("📼 [VideoExporter] ═══════════════════════════════════════════")
-
-        logger.successAsync("Export complete! \(formatTime(duration)) → \(formatTime(outputDuration)) (\(String(format: "%.0f", compressionRatio))% removed)")
 
         // Build debug data
         let debugData = ExportDebugData(
