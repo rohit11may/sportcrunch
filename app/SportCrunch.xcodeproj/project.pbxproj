@@ -251,7 +251,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = F91A95C52F21428A00688974 /* Build configuration list for PBXNativeTarget "SportCrunchRunner" */;
 			buildPhases = (
-				F91A96E92F226E9B00688974 /* Validate Method Registry */,
 				F91A95B72F21428A00688974 /* Sources */,
 				F91A95B82F21428A00688974 /* Frameworks */,
 				F91A95B92F21428A00688974 /* Resources */,
@@ -355,28 +354,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		F91A96E92F226E9B00688974 /* Validate Method Registry */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Validate Method Registry";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "cd \"${SRCROOT}\"\n./scripts/validate-methods.sh\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		308DBA2D2EFEA3A4001F0B3F /* Sources */ = {

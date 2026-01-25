@@ -1,11 +1,11 @@
-## Rules for searching
+# Rules for gracefully handling changes to xcodeproj
 
-When making any code search, instead of using Find tool or grep, use `osgrep`. Do not initially use Find or Search. 
-Always try to first use osgrep (see osgrep skill) when doing searches for code in the codebase.
+NEVER edit .xcodeproj files directly. If you think a change is required in xcode project configuration, then always defer to the human with instructions
+on what you'd like them to do.
 
+# Testing
 ## Rules for building/testing
 Always use iPhone 17 device.
-
 
 ### Run All Tests (including UI tests)
 
@@ -27,12 +27,8 @@ xcodebuild test -project SportCrunch.xcodeproj -scheme SportCrunch -destination 
 xcodebuild test -project SportCrunch.xcodeproj -scheme SportCrunch -destination 'platform=iOS Simulator,name=iPhone 17'
 -only-testing:SportCrunchUITests/YourTestClassName/testMethodName
 
-
 You can also change the destination to use different simulators. To see available simulators:
 xcrun simctl list devices
 
-
-# Rules for gracefully handling changes to xcodeproj
-
-NEVER edit .xcodeproj files directly. If you think a change is required in xcode project configuration, then always defer to the human with instructions
-on what you'd like them to do.
+# Refactoring/deleting code
+- When doing refactors, don't worry about backwards compatibility. Don't mark things as deprecated. Just delete code where and as you need. 

@@ -30,7 +30,7 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
-            reference = "container:../SportCrunch.xctestplan"
+            reference = "container:SportCrunch/SportCrunch.xctestplan"
             default = "YES">
          </TestPlanReference>
       </TestPlans>
