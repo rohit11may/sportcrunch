@@ -95,8 +95,11 @@ actor RunExecutor {
       let method = try instantiateMethod(methodFamily: run.method, configName: run.config)
       print("🔄 [RunExecutor] Using method: \(method.name)")
 
+      // Create observation for telemetry
+      let observation = RunObservation()
+
       // Detect segments using configured method
-      let segments = try await method.detectSegments(videoURL: videoURL, observation: nil)
+      let segments = try await method.detectSegments(videoURL: videoURL, observation: observation)
 
       print("🔄 [RunExecutor] ✓ Detected \(segments.count) segments")
 
@@ -109,11 +112,19 @@ actor RunExecutor {
         )
       }
 
+      // Get temp artifacts from method (if it's SpectralFluxMethod)
+      var tempArtifacts: [String: URL] = [:]
+      if let spectralMethod = method as? SpectralFluxMethod {
+        tempArtifacts = await spectralMethod.visualValidator.tempArtifactPaths
+      }
+
       // Export artifacts
-      let artifactPaths = try exporter.export(
+      let artifactPaths = try await exporter.export(
         run: run,
         segments: exportedSegments,
-        highlightURL: nil  // Highlight video export not implemented yet
+        highlightURL: nil,  // Highlight video export not implemented yet
+        observation: observation,
+        tempArtifacts: tempArtifacts
       )
 
       // Update run with success

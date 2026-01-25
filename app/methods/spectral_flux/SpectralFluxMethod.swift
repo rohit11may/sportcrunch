@@ -28,7 +28,10 @@ final class SpectralFluxMethod: SegmentationMethod {
 
     private let config: SpectralFluxMethodConfig
     private let audioAnalyzer = SpectralFluxAudioAnalyzer()
-    private let visualValidator = SpectralFluxVisualValidator()
+
+    /// Visual validator exposed for artifact collection.
+    /// Internal access allows RunExecutor to retrieve tempArtifactPaths after detection.
+    let visualValidator = SpectralFluxVisualValidator()
 
     // MARK: - Initialization
 

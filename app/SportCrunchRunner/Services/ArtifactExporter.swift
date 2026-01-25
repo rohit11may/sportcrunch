@@ -7,6 +7,21 @@
 
 import Foundation
 
+// MARK: - Export Errors
+
+enum ExportError: LocalizedError {
+    case observationEncodingFailed(Error)
+
+    var errorDescription: String? {
+        switch self {
+        case .observationEncodingFailed(let error):
+            return "Failed to encode observation: \(error.localizedDescription)"
+        }
+    }
+}
+
+// MARK: - Artifact Exporter
+
 /// Exports run artifacts (segments.json, highlight video) to shared filesystem
 class ArtifactExporter {
 
@@ -36,12 +51,16 @@ class ArtifactExporter {
     ///   - run: The run to export artifacts for
     ///   - segments: Detected segments to write to JSON
     ///   - highlightURL: Optional URL to highlight video (will be copied)
+    ///   - observation: Optional observation data to export
+    ///   - tempArtifacts: Temporary artifact files to copy (artifact ID -> temp URL)
     /// - Returns: Artifact paths for the exported files
     func export(
         run: Run,
         segments: [ExportedSegment],
-        highlightURL: URL?
-    ) throws -> ArtifactPaths {
+        highlightURL: URL?,
+        observation: RunObservation?,
+        tempArtifacts: [String: URL]
+    ) async throws -> ArtifactPaths {
         // Create run directory
         let runDirectory = baseDirectory.appendingPathComponent(run.id.uuidString, isDirectory: true)
         try fileManager.createDirectory(at: runDirectory, withIntermediateDirectories: true)
@@ -71,6 +90,54 @@ class ArtifactExporter {
             try fileManager.copyItem(at: highlightURL, to: destinationURL)
             highlightPath = destinationURL.path
             print("📦 [ArtifactExporter] ✓ Copied highlight video: \(highlightFilename)")
+        }
+
+        // Export observation data if provided
+        if let obs = observation {
+            // 1. Encode observation snapshot with pretty printing for debugging
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+
+            let snapshot = await obs.snapshot()
+            let obsData: Data
+            do {
+                obsData = try encoder.encode(snapshot)
+            } catch {
+                print("📦 [ArtifactExporter] ❌ Failed to encode observation: \(error)")
+                throw ExportError.observationEncodingFailed(error)
+            }
+
+            let obsPath = runDirectory.appendingPathComponent("observations.json")
+            try obsData.write(to: obsPath)
+            print("📦 [ArtifactExporter] ✓ Wrote observations.json")
+
+            // 2. Export artifacts if any
+            if !tempArtifacts.isEmpty {
+                let artifactsDir = runDirectory.appendingPathComponent("artifacts", isDirectory: true)
+                try fileManager.createDirectory(at: artifactsDir, withIntermediateDirectories: true)
+
+                var copiedCount = 0
+                for (artifactId, tempURL) in tempArtifacts {
+                    // Validate file exists before copying
+                    guard fileManager.fileExists(atPath: tempURL.path) else {
+                        print("📦 [ArtifactExporter] ⚠️ Artifact file missing: \(tempURL.path)")
+                        continue
+                    }
+
+                    // Always use .jpg extension (JPEG format for all artifacts)
+                    let destURL = artifactsDir.appendingPathComponent("\(artifactId).jpg")
+
+                    do {
+                        try fileManager.copyItem(at: tempURL, to: destURL)
+                        copiedCount += 1
+                    } catch {
+                        print("📦 [ArtifactExporter] ❌ Failed to copy artifact \(artifactId): \(error)")
+                        // Continue with other artifacts rather than failing entire export
+                    }
+                }
+
+                print("📦 [ArtifactExporter] ✓ Exported \(copiedCount)/\(tempArtifacts.count) artifacts to \(artifactsDir.lastPathComponent)")
+            }
         }
 
         return ArtifactPaths(
