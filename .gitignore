@@ -1,5 +1,6 @@
 .agent/
 .DS_Store
+*.bak
 sample-debug-reports/
 .build
 build
