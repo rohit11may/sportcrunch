@@ -28,7 +28,7 @@ struct SportCrunchRunnerApp: App {
                     // Register endpoints before server starts
                     HealthEndpoint.register(on: httpServer)
                     RunEndpoints.register(on: httpServer, store: runStore, executor: runExecutor)
-                    SportEndpoints.register(on: httpServer)
+                    MethodEndpoints.register(on: httpServer)
                     httpServer.start()
                 }
                 .onDisappear {
