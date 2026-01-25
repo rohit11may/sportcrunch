@@ -20,24 +20,26 @@ function MethodSelector({ onChange }) {
         if (!response.ok) throw new Error('Failed to fetch methods')
 
         const data = await response.json()
-        setMethods(data.methods || [])
+        setMethods(data || [])
 
         // Restore last selection from localStorage
         const saved = localStorage.getItem(STORAGE_KEY)
         if (saved) {
-          const { methodId, configName } = JSON.parse(saved)
-          const method = data.methods.find(m => m.id === methodId)
+          const { methodFamily, configName } = JSON.parse(saved)
+          const method = data.find(m => m.family === methodFamily)
           if (method) {
             setSelectedMethod(method)
-            setSelectedConfig(configName || method.defaultConfig)
+            // Find config
+            const config = method.configs.find(c => c.name === configName)
+            setSelectedConfig(config || method.configs[0] || null)
           }
         }
 
-        // Default to first method if nothing saved
-        if (!saved && data.methods.length > 0) {
-          const first = data.methods[0]
+        // Default to first method + first config if nothing saved
+        if (!saved && data.length > 0) {
+          const first = data[0]
           setSelectedMethod(first)
-          setSelectedConfig(first.defaultConfig)
+          setSelectedConfig(first.configs[0] || null)
         }
 
         setLoading(false)
@@ -56,37 +58,40 @@ function MethodSelector({ onChange }) {
     if (selectedMethod && selectedConfig) {
       // Save to localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        methodId: selectedMethod.id,
-        configName: selectedConfig
+        methodFamily: selectedMethod.family,
+        configName: selectedConfig.name
       }))
 
       // Notify parent
       onChange({
-        family: selectedMethod.family,
-        version: selectedMethod.version,
-        config: selectedConfig,
-        name: selectedMethod.name
+        method: selectedMethod.family,
+        config: selectedConfig.name,
+        methodDisplayName: selectedMethod.displayName,
+        configDisplayName: selectedConfig.displayName
       })
     }
   }, [selectedMethod, selectedConfig, onChange])
 
   const handleMethodChange = useCallback((e) => {
-    const methodId = e.target.value
-    const method = methods.find(m => m.id === methodId)
+    const methodFamily = e.target.value
+    const method = methods.find(m => m.family === methodFamily)
     if (method) {
       setSelectedMethod(method)
-      setSelectedConfig(method.defaultConfig)
+      // Reset to first config
+      setSelectedConfig(method.configs[0] || null)
     }
   }, [methods])
 
   const handleConfigChange = useCallback((e) => {
-    setSelectedConfig(e.target.value)
-  }, [])
+    const configName = e.target.value
+    const config = selectedMethod?.configs.find(c => c.name === configName)
+    setSelectedConfig(config || null)
+  }, [selectedMethod])
 
   if (loading) {
     return (
       <div className="method-selector">
-        <h3>Detection Method</h3>
+        <h3>Method & Config</h3>
         <div className="method-loading">Loading methods...</div>
       </div>
     )
@@ -95,7 +100,7 @@ function MethodSelector({ onChange }) {
   if (error) {
     return (
       <div className="method-selector">
-        <h3>Detection Method</h3>
+        <h3>Method & Config</h3>
         <div className="method-error">Error: {error}</div>
       </div>
     )
@@ -104,9 +109,9 @@ function MethodSelector({ onChange }) {
   if (methods.length === 0) {
     return (
       <div className="method-selector">
-        <h3>Detection Method</h3>
+        <h3>Method & Config</h3>
         <div className="method-empty">
-          No methods available. Run validation script to generate _index.json.
+          No methods available. Please ensure SportCrunchRunner is running.
         </div>
       </div>
     )
@@ -114,19 +119,19 @@ function MethodSelector({ onChange }) {
 
   return (
     <div className="method-selector">
-      <h3>Detection Method</h3>
+      <h3>Method & Config</h3>
 
       {/* Method dropdown */}
       <div className="method-field">
         <label htmlFor="method-select">Method</label>
         <select
           id="method-select"
-          value={selectedMethod?.id || ''}
+          value={selectedMethod?.family || ''}
           onChange={handleMethodChange}
         >
           {methods.map(method => (
-            <option key={method.id} value={method.id}>
-              {method.name}
+            <option key={method.family} value={method.family}>
+              {method.displayName} ({method.version})
             </option>
           ))}
         </select>
@@ -139,28 +144,35 @@ function MethodSelector({ onChange }) {
         </div>
       )}
 
-      {/* Config dropdown (only if multiple configs) */}
-      {selectedMethod && selectedMethod.configs.length > 1 && (
+      {/* Config dropdown (only if method has configs) */}
+      {selectedMethod && selectedMethod.configs && selectedMethod.configs.length > 0 && (
         <div className="method-field">
-          <label htmlFor="config-select">Configuration</label>
+          <label htmlFor="config-select">Config</label>
           <select
             id="config-select"
-            value={selectedConfig || ''}
+            value={selectedConfig?.name || ''}
             onChange={handleConfigChange}
           >
             {selectedMethod.configs.map(config => (
-              <option key={config} value={config}>
-                {config.replace('.config.json', '')}
+              <option key={config.name} value={config.name}>
+                {config.displayName}
               </option>
             ))}
           </select>
         </div>
       )}
 
-      {/* Single config indicator */}
-      {selectedMethod && selectedMethod.configs.length === 1 && (
-        <div className="method-config-single">
-          Config: {selectedConfig?.replace('.config.json', '') || 'default'}
+      {/* Config description */}
+      {selectedConfig && (
+        <div className="config-description">
+          {selectedConfig.description}
+        </div>
+      )}
+
+      {/* No config indicator */}
+      {selectedMethod && (!selectedMethod.configs || selectedMethod.configs.length === 0) && (
+        <div className="method-no-configs">
+          This method has no configs
         </div>
       )}
     </div>

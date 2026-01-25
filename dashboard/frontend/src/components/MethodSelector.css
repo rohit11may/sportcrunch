@@ -1,84 +1,97 @@
 .method-selector {
-  border: 1px solid var(--border-color);
+  background: white;
+  padding: 20px;
   border-radius: 8px;
-  padding: 1.5rem;
-  background-color: var(--surface-color);
-  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
 }
 
 .method-selector h3 {
-  margin-top: 0;
-  margin-bottom: 1.25rem;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-color);
-  font-weight: 600;
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 18px;
 }
 
 .method-field {
-  margin-bottom: 12px;
+  margin-bottom: 15px;
 }
 
 .method-field label {
   display: block;
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-bottom: 4px;
+  margin-bottom: 5px;
+  color: #666;
   font-weight: 500;
+  font-size: 14px;
 }
 
 .method-field select {
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
   font-size: 14px;
-  background: var(--bg-color);
-  color: var(--text-color);
+  background: white;
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.method-field select:hover {
+  border-color: #999;
 }
 
 .method-field select:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
 }
 
 .method-description {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin-bottom: 12px;
-  line-height: 1.5;
-  padding: 0.75rem;
-  background-color: var(--bg-color);
-  border-radius: 6px;
-  border-left: 3px solid var(--primary-color);
-}
-
-.method-config-single {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 8px;
-  padding: 0.5rem;
-  background-color: var(--bg-color);
+  padding: 10px;
+  background: #f5f5f5;
   border-radius: 4px;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 15px;
+  line-height: 1.5;
 }
 
-.method-loading,
-.method-error,
-.method-empty {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  padding: 1rem;
-  background-color: var(--bg-color);
-  border-radius: 6px;
+.config-description {
+  padding: 10px;
+  background: #e8f5e9;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #2e7d32;
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+.method-no-configs {
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #999;
+  font-style: italic;
+}
+
+.method-loading {
+  padding: 15px;
   text-align: center;
+  color: #666;
+  font-style: italic;
 }
 
 .method-error {
-  color: #ef4444;
-  background-color: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 15px;
+  background: #ffebee;
+  color: #c62828;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.method-empty {
+  padding: 15px;
+  background: #fff3e0;
+  color: #e65100;
+  border-radius: 4px;
+  font-size: 14px;
 }
