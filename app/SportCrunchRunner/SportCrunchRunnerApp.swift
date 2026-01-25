@@ -15,26 +15,20 @@ struct SportCrunchRunnerApp: App {
     private let runStore = RunStore()
     private let artifactExporter = ArtifactExporter()
     private let deviceManager = DeviceManager()
-    private let methodRegistry = MethodRegistry()
     private let runExecutor: RunExecutor
 
     init() {
-        runExecutor = RunExecutor(store: runStore, exporter: artifactExporter, registry: methodRegistry)
+        runExecutor = RunExecutor(store: runStore, exporter: artifactExporter)
     }
 
     var body: some Scene {
         WindowGroup {
             RunnerDashboard(server: httpServer, store: runStore, deviceManager: deviceManager)
                 .onAppear {
-                    // Load method registry from bundle
-                    Task {
-                        await methodRegistry.loadFromBundle()
-                    }
-
                     // Register endpoints before server starts
                     HealthEndpoint.register(on: httpServer)
                     RunEndpoints.register(on: httpServer, store: runStore, executor: runExecutor)
-                    MethodEndpoints.register(on: httpServer, registry: methodRegistry)
+                    SportEndpoints.register(on: httpServer)
                     httpServer.start()
                 }
                 .onDisappear {
