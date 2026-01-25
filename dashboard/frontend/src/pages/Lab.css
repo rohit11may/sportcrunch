@@ -1,0 +1,139 @@
+.lab-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.lab-header {
+  margin-bottom: 30px;
+}
+
+.lab-header h1 {
+  margin: 0 0 15px 0;
+  font-size: 2rem;
+  color: #333;
+}
+
+.run-info {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.run-metadata {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.run-metadata .label {
+  font-weight: 600;
+  color: #666;
+}
+
+.run-metadata .value {
+  font-family: 'Courier New', monospace;
+  background: #f5f5f5;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.run-metadata .status {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.run-metadata .status.completed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.run-metadata .status.running {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.run-metadata .status.failed {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.sync-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.sync-button {
+  padding: 10px 20px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sync-button:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.sync-button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.sync-status {
+  font-size: 0.9rem;
+  color: #666;
+  font-style: italic;
+}
+
+.placeholder {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.placeholder p {
+  margin: 10px 0;
+  font-size: 1.1rem;
+}
+
+.placeholder pre {
+  text-align: left;
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  max-width: 800px;
+  margin: 20px auto;
+}
+
+.lab-content {
+  margin-top: 30px;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 1.2rem;
+}
+
+.error {
+  color: #721c24;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+}
