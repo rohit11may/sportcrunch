@@ -21,9 +21,6 @@ const RUNNER_URL = process.env.RUNNER_URL || 'http://localhost:8080';
 const TEST_VIDEOS_PATH = path.resolve(__dirname, '../../app/SportCrunchTests/TestResources/Videos');
 const UPLOADS_PATH = path.resolve(__dirname, 'uploads');
 
-// Path to method registry
-const METHODS_PATH = path.resolve(__dirname, '../../app/methods');
-
 // Create Express app
 const app = express();
 
@@ -166,69 +163,69 @@ app.post('/api/videos/upload', upload.single('video'), (req, res) => {
 });
 
 // ==========================================
-// Method Registry Endpoints
+// Sport Discovery Endpoints
 // ==========================================
 
-// GET /api/methods - List available methods from registry
-app.get('/api/methods', (req, res) => {
+// GET /api/sports - List available sports (proxy to iOS Runner)
+app.get('/api/sports', async (req, res) => {
   try {
-    const indexPath = path.join(METHODS_PATH, '_index.json');
-
-    // Check if index exists
-    if (!fs.existsSync(indexPath)) {
-      console.warn('Method index not found:', indexPath);
-      return res.json({ families: [], methods: [] });
-    }
-
-    // Read and parse index
-    const indexData = fs.readFileSync(indexPath, 'utf-8');
-    const index = JSON.parse(indexData);
-
-    // Flatten into methods list for easier frontend consumption
-    const methods = [];
-    for (const family of index.families || []) {
-      for (const version of family.versions || []) {
-        methods.push({
-          id: `${family.family}/${version.version}`,
-          family: family.family,
-          version: version.version,
-          name: version.name,
-          description: version.description,
-          defaultConfig: version.defaultConfig,
-          configs: version.configs || []
-        });
-      }
-    }
-
-    res.json({
-      families: index.families,
-      methods: methods
+    const response = await fetch(`${RUNNER_URL}/sports`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(5000)
     });
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ iOS Runner error (${response.status}):`, errorText);
+      return res.status(response.status).json({
+        error: `iOS Runner error: ${errorText}`
+      });
+    }
+
+    const data = await response.json();
+    res.json(data);
   } catch (error) {
-    console.error('Error reading method registry:', error);
-    res.status(500).json({ error: 'Failed to read method registry' });
+    if (error.name === 'AbortError' || error.code === 'ECONNREFUSED') {
+      console.error('❌ iOS Runner unavailable:', error.message);
+      return res.status(503).json({
+        error: 'iOS Runner unavailable. Please ensure the Runner app is running.'
+      });
+    }
+
+    console.error('❌ Error fetching sports:', error);
+    res.status(500).json({ error: 'Failed to fetch sports' });
   }
 });
 
-// GET /api/methods/:family/:version/configs/:config - Get specific config
-app.get('/api/methods/:family/:version/configs/:config', (req, res) => {
+// GET /api/sports/:sport - Get specific sport details (proxy to iOS Runner)
+app.get('/api/sports/:sport', async (req, res) => {
   try {
-    const { family, version, config } = req.params;
-    const configPath = path.join(METHODS_PATH, family, version, 'configs', config);
+    const { sport } = req.params;
+    const response = await fetch(`${RUNNER_URL}/sports/${sport}`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(5000)
+    });
 
-    if (!fs.existsSync(configPath)) {
-      return res.status(404).json({ error: `Config not found: ${config}` });
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ iOS Runner error (${response.status}):`, errorText);
+      return res.status(response.status).json({
+        error: `iOS Runner error: ${errorText}`
+      });
     }
 
-    const configData = fs.readFileSync(configPath, 'utf-8');
-    const configJson = JSON.parse(configData);
-
-    res.json(configJson);
-
+    const data = await response.json();
+    res.json(data);
   } catch (error) {
-    console.error('Error reading config:', error);
-    res.status(500).json({ error: 'Failed to read config' });
+    if (error.name === 'AbortError' || error.code === 'ECONNREFUSED') {
+      console.error('❌ iOS Runner unavailable:', error.message);
+      return res.status(503).json({
+        error: 'iOS Runner unavailable. Please ensure the Runner app is running.'
+      });
+    }
+
+    console.error('❌ Error fetching sport:', error);
+    res.status(500).json({ error: 'Failed to fetch sport details' });
   }
 });
 
@@ -239,16 +236,11 @@ app.get('/api/methods/:family/:version/configs/:config', (req, res) => {
 // POST /api/runs - Create new run
 app.post('/api/runs', async (req, res) => {
   try {
-    const { videoPath, method, sport, sportMode, config, deviceId, deviceIp } = req.body;
-    const methodVersion = config?.methodVersion;
-    const methodConfig = config?.config;
+    const { videoPath, sport, sportMode, deviceId, deviceIp } = req.body;
 
     // Validate required fields
     if (!videoPath) {
       return res.status(400).json({ error: 'Missing required field: videoPath' });
-    }
-    if (!method) {
-      return res.status(400).json({ error: 'Missing required field: method' });
     }
     if (!sport) {
       return res.status(400).json({ error: 'Missing required field: sport' });
@@ -270,7 +262,7 @@ app.post('/api/runs', async (req, res) => {
       console.log(`📱 Targeting simulator at: ${runnerUrl}`);
     }
 
-    // Forward to iOS Runner
+    // Forward to iOS Runner with new API format
     const response = await fetch(`${runnerUrl}/runs`, {
       method: 'POST',
       headers: {
@@ -278,11 +270,9 @@ app.post('/api/runs', async (req, res) => {
       },
       body: JSON.stringify({
         videoPath,
-        method,
-        methodVersion: methodVersion || 'v2', // Default to v2 for backwards compatibility
-        config: methodConfig || 'default.config.json',
         sport,
-        sportMode
+        sportMode,
+        deviceTarget: deviceId === 'simulator' ? 'simulator' : 'device'
       }),
       signal: AbortSignal.timeout(10000) // 10 second timeout
     });
@@ -297,18 +287,13 @@ app.post('/api/runs', async (req, res) => {
 
     const data = await response.json();
 
-    // [NEW] Save mapping of Run ID -> Host Video Path
-    // This allows us to find the source video for highlight generation later
+    // Save mapping of Run ID -> Host Video Path
     try {
       const MAP_FILE = path.resolve(__dirname, 'run-map.json');
       let runMap = {};
       if (fs.existsSync(MAP_FILE)) {
         runMap = JSON.parse(fs.readFileSync(MAP_FILE, 'utf8'));
       }
-
-      // If we are targeting physical device, the videoPath sent to Runner might be different from Host Path?
-      // In DeviceSelector.jsx/RunTrigger.jsx (not seen yet), we need to know what 'videoPath' is in this request.
-      // Assuming it's the Host path the user selected.
 
       runMap[data.id] = videoPath;
       fs.writeFileSync(MAP_FILE, JSON.stringify(runMap, null, 2));
@@ -319,7 +304,7 @@ app.post('/api/runs', async (req, res) => {
 
     res.status(202).json(data);
 
-    console.log(`✅ Created run: ${data.id} (${method} on ${sport})`);
+    console.log(`✅ Created run: ${data.id} (${sport}${sportMode ? `/${sportMode}` : ''})`);
   } catch (error) {
     if (error.name === 'AbortError' || error.code === 'ECONNREFUSED') {
       console.error('❌ iOS Runner unavailable:', error.message);
