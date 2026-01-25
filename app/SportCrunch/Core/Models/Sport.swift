@@ -177,6 +177,16 @@ enum Sport: String, CaseIterable, Identifiable, Codable, Sendable {
     }
   }
 
+  /// Returns all available modes for this sport
+  var availableModes: [any SportMode] {
+    switch self {
+    case .tennis:
+      return TennisMode.allCases.map { $0 as any SportMode }
+    case .cricket:
+      return []  // No modes yet
+    }
+  }
+
   // MARK: - Segmentation Method
 
   /// Returns the configured segmentation method for this sport and mode.
