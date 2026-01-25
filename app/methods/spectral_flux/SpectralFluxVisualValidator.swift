@@ -13,6 +13,10 @@ import AVFoundation
 import Accelerate
 import CoreGraphics
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 // MARK: - Segment Validation
 
 struct SegmentValidation {
@@ -83,6 +87,12 @@ struct MotionComputationResult {
 /// This validator is specific to the spectral flux method family.
 actor SpectralFluxVisualValidator {
 
+    // MARK: - Properties
+
+    /// Temporary artifact files (artifact ID -> file URL).
+    /// Stored here so RunExecutor can access them for export.
+    private(set) var tempArtifactPaths: [String: URL] = [:]
+
     // MARK: - Constants
 
     /// Number of segments to process in parallel.
@@ -96,12 +106,14 @@ actor SpectralFluxVisualValidator {
     ///   - videoURL: URL to the video file
     ///   - candidates: List of (start, end) intervals in seconds
     ///   - config: Spectral flux method configuration parameters
+    ///   - observation: Optional observation recorder for telemetry
     ///   - progressHandler: Optional callback for granular progress updates (0.0 to 1.0)
     /// - Returns: Array of validation results for each segment
     func validate(
         videoURL: URL,
         candidates: [(start: TimeInterval, end: TimeInterval)],
         config: SpectralFluxMethodConfig,
+        observation: RunObservation?,
         progressHandler: ((Double) -> Void)? = nil
     ) async throws -> [SegmentValidation] {
         // Video processing constants (not tunable parameters)
@@ -162,7 +174,7 @@ actor SpectralFluxVisualValidator {
 
             print("👁️ [SpectralFluxVisualValidator] Processing batch \(batchIndex + 1)/\(totalBatches): segments \(batchStart + 1)-\(batchEnd)")
 
-            let batchValidations = try await withThrowingTaskGroup(of: (Int, SegmentValidation).self) { group in
+            let batchResults = try await withThrowingTaskGroup(of: (Int, ValidationResult).self) { group in
                 for (localIndex, candidate) in batchCandidates.enumerated() {
                     let globalIndex = batchStart + localIndex
 
@@ -176,7 +188,7 @@ actor SpectralFluxVisualValidator {
                         taskGenerator.requestedTimeToleranceBefore = CMTime(seconds: timeTolerance, preferredTimescale: 600)
                         taskGenerator.requestedTimeToleranceAfter = CMTime(seconds: timeTolerance, preferredTimescale: 600)
 
-                        let validation = await self.validateSegmentBatch(
+                        let result = await self.validateSegmentBatch(
                             generator: taskGenerator,
                             start: candidate.start,
                             end: candidate.end,
@@ -186,22 +198,61 @@ actor SpectralFluxVisualValidator {
                             motionAreaThreshold: motionAreaThreshold
                         )
 
-                        let status = validation.isValid ? "✅ VALID" : "⚪️ LOW MOTION"
-                        print("👁️ [SpectralFluxVisualValidator]   → Segment \(globalIndex + 1) motion score: \(Int(validation.motionScore)) \(status)")
+                        let status = result.validation.isValid ? "✅ VALID" : "⚪️ LOW MOTION"
+                        print("👁️ [SpectralFluxVisualValidator]   → Segment \(globalIndex + 1) motion score: \(Int(result.validation.motionScore)) \(status)")
 
-                        return (globalIndex, validation)
+                        return (globalIndex, result)
                     }
                 }
 
                 // Collect results and sort by original index to maintain order
-                var results: [(Int, SegmentValidation)] = []
+                var results: [(Int, ValidationResult)] = []
                 for try await result in group {
                     results.append(result)
                 }
                 return results.sorted { $0.0 < $1.0 }.map { $0.1 }
             }
 
-            allValidations.append(contentsOf: batchValidations)
+            // Process results: save artifacts and record observations
+            for result in batchResults {
+                let validation = result.validation
+
+                // Save artifact for rejected segments
+                if let artifactFrame = result.artifactFrame, let obs = observation {
+                    let artifactId = UUID().uuidString
+                    let tempDir = FileManager.default.temporaryDirectory
+                    let tempURL = tempDir.appendingPathComponent("\(artifactId).jpg")
+
+                    // Convert CGImage to JPEG data
+                    #if canImport(UIKit)
+                    let uiImage = UIImage(cgImage: artifactFrame)
+                    if let jpegData = uiImage.jpegData(compressionQuality: 0.8) {
+                        try? jpegData.write(to: tempURL)
+                        tempArtifactPaths[artifactId] = tempURL
+
+                        // Record validation decision event
+                        let status = validation.isValid ? "accepted" : (validation.motionScore < motionAreaThreshold ? "rejected_low_motion" : "rejected_other")
+                        await obs.addEvent(
+                            name: "validation_decision",
+                            time: validation.start,
+                            metadata: [
+                                "status": status,
+                                "motion_score": String(format: "%.3f", validation.motionScore),
+                                "threshold": String(format: "%.3f", motionAreaThreshold)
+                            ],
+                            artifactId: artifactId
+                        )
+                    }
+                    #endif
+                }
+
+                // Record motion signal (downsampled automatically to 2 points/sec)
+                if let obs = observation {
+                    await obs.addSignalPoint(name: "motion_score", time: validation.start, value: validation.motionScore)
+                }
+
+                allValidations.append(validation)
+            }
 
             // Report progress after each batch
             let batchProgress = Double(batchIndex + 1) / Double(totalBatches)
@@ -230,6 +281,12 @@ actor SpectralFluxVisualValidator {
 
     // MARK: - Batch Segment Validation
 
+    /// Result of segment validation with optional artifact frame.
+    private struct ValidationResult {
+        let validation: SegmentValidation
+        let artifactFrame: CGImage?  // First frame for rejected segments
+    }
+
     /// Validates a segment using batch frame extraction for better performance.
     /// Now captures detailed debug data for comparing simulator vs device behavior.
     private nonisolated func validateSegmentBatch(
@@ -240,7 +297,7 @@ actor SpectralFluxVisualValidator {
         videoSampleStride: Int,
         motionPixelThreshold: Int,
         motionAreaThreshold: Double
-    ) async -> SegmentValidation {
+    ) async -> ValidationResult {
         let startFrame = Int(start * fps)
         let endFrame = Int(end * fps)
 
@@ -255,7 +312,10 @@ actor SpectralFluxVisualValidator {
         }
 
         guard !times.isEmpty else {
-            return SegmentValidation(start: start, end: end, isValid: false, motionScore: 0)
+            return ValidationResult(
+                validation: SegmentValidation(start: start, end: end, isValid: false, motionScore: 0),
+                artifactFrame: nil
+            )
         }
 
         // Use batch frame extraction with continuation
@@ -264,7 +324,10 @@ actor SpectralFluxVisualValidator {
         let extractionErrors = extractionResult.errors
 
         guard extractedFrames.count >= 2 else {
-            return SegmentValidation(start: start, end: end, isValid: false, motionScore: 0)
+            return ValidationResult(
+                validation: SegmentValidation(start: start, end: end, isValid: false, motionScore: 0),
+                artifactFrame: extractedFrames.first
+            )
         }
 
         // Pre-allocate buffers based on first frame size
@@ -299,11 +362,14 @@ actor SpectralFluxVisualValidator {
             // EARLY EXIT: If running average already exceeds threshold, we can stop
             let runningAverage = runningTotal / Double(framesProcessed)
             if runningAverage >= motionAreaThreshold && framesProcessed >= 3 {
-                return SegmentValidation(
-                    start: start,
-                    end: end,
-                    isValid: true,
-                    motionScore: runningAverage
+                return ValidationResult(
+                    validation: SegmentValidation(
+                        start: start,
+                        end: end,
+                        isValid: true,
+                        motionScore: runningAverage
+                    ),
+                    artifactFrame: nil  // No artifact for valid segments
                 )
             }
         }
@@ -318,11 +384,17 @@ actor SpectralFluxVisualValidator {
 
         let isValid = motionScore >= motionAreaThreshold
 
-        return SegmentValidation(
-            start: start,
-            end: end,
-            isValid: isValid,
-            motionScore: motionScore
+        // Save first frame for rejected segments as artifact
+        let artifactFrame = isValid ? nil : extractedFrames.first
+
+        return ValidationResult(
+            validation: SegmentValidation(
+                start: start,
+                end: end,
+                isValid: isValid,
+                motionScore: motionScore
+            ),
+            artifactFrame: artifactFrame
         )
     }
 

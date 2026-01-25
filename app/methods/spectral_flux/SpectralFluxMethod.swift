@@ -45,7 +45,8 @@ final class SpectralFluxMethod: SegmentationMethod {
         do {
             audioResult = try await audioAnalyzer.analyze(
                 videoURL: videoURL,
-                config: self.config
+                config: self.config,
+                observation: observation
             )
         } catch {
             print("⚙️ [SpectralFluxMethod] ❌ Audio analysis failed: \(error.localizedDescription)")
@@ -79,6 +80,7 @@ final class SpectralFluxMethod: SegmentationMethod {
                     videoURL: videoURL,
                     candidates: audioResult.candidateIntervals,
                     config: self.config,
+                    observation: observation,
                     progressHandler: nil  // No progress reporting in method layer
                 )
             } catch {
