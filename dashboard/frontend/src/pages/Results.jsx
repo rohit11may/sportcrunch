@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { getRun } from '../services/api'
 import Timeline from '../components/Timeline'
 import VideoPlayer from '../components/VideoPlayer'
@@ -208,6 +208,12 @@ function Results() {
                         <span className="video-name" title={run.videoPath}>
                             {run.videoPath.split('/').pop()}
                         </span>
+                        <Link
+                            to={`/lab/${runId}`}
+                            className="info-toggle lab-link"
+                        >
+                            Lab 🔬
+                        </Link>
                         <button
                             className="info-toggle"
                             onClick={() => setShowJson(!showJson)}

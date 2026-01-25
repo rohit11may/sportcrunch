@@ -184,6 +184,13 @@
     color: #fff;
 }
 
+.lab-link {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Expandable details panel */
 .info-details {
     display: grid;
