@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import RunHistory from './RunHistory'
 import './Layout.css'
 
 function Layout({ children }) {
@@ -16,12 +17,10 @@ function Layout({ children }) {
                         end
                     >
                         <span className="nav-icon">🏠</span>
-                        Home
+                        Create Run
                     </NavLink>
 
-                    <div className="nav-divider"></div>
-
-                    {/* We can add more specific links here later, possibly recent runs? */}
+                    <RunHistory />
                 </nav>
 
                 <div className="sidebar-footer">

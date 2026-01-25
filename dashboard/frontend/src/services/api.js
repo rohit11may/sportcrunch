@@ -130,3 +130,13 @@ export async function copyVideoToDevice(deviceId, videoPath, videoName) {
     throw new APIError(`Failed to copy video to device: ${error.message}`, 0)
   }
 }
+
+export async function fetchRuns() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/runs`)
+    return await handleResponse(response)
+  } catch (error) {
+    if (error instanceof APIError) throw error
+    throw new APIError(`Failed to fetch runs: ${error.message}`, 0)
+  }
+}

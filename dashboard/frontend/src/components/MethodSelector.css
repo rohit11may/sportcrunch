@@ -1,14 +1,14 @@
 .method-selector {
-  background: white;
+  background: var(--surface-color);
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
   margin-bottom: 20px;
 }
 
 .method-selector h3 {
   margin: 0 0 15px 0;
-  color: #333;
+  color: var(--text-color);
   font-size: 18px;
 }
 
@@ -19,7 +19,7 @@
 .method-field label {
   display: block;
   margin-bottom: 5px;
-  color: #666;
+  color: var(--text-muted);
   font-weight: 500;
   font-size: 14px;
 }
@@ -27,71 +27,76 @@
 .method-field select {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 14px;
-  background: white;
+  background: var(--bg-color);
+  color: var(--text-color);
   cursor: pointer;
 }
 
 .method-field select:hover {
-  border-color: #999;
+  border-color: var(--text-muted);
 }
 
 .method-field select:focus {
   outline: none;
-  border-color: #4CAF50;
-  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
 }
 
 .method-description {
   padding: 10px;
-  background: #f5f5f5;
+  background: var(--bg-color);
+  border-left: 3px solid var(--border-color);
   border-radius: 4px;
   font-size: 13px;
-  color: #666;
+  color: var(--text-muted);
   margin-bottom: 15px;
   line-height: 1.5;
 }
 
 .config-description {
   padding: 10px;
-  background: #e8f5e9;
+  background: var(--bg-color);
+  border-left: 3px solid var(--primary-color);
   border-radius: 4px;
   font-size: 13px;
-  color: #2e7d32;
+  color: var(--text-muted);
   margin-top: 10px;
   line-height: 1.5;
 }
 
 .method-no-configs {
   padding: 10px;
-  background: #f5f5f5;
+  background: var(--bg-color);
   border-radius: 4px;
   font-size: 13px;
-  color: #999;
+  color: var(--text-muted);
   font-style: italic;
 }
 
 .method-loading {
   padding: 15px;
   text-align: center;
-  color: #666;
+  color: var(--text-muted);
   font-style: italic;
 }
 
 .method-error {
   padding: 15px;
-  background: #ffebee;
-  color: #c62828;
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff6b6b;
+  border: 1px solid #ff6b6b;
   border-radius: 4px;
   font-size: 14px;
 }
 
 .method-empty {
   padding: 15px;
-  background: #fff3e0;
-  color: #e65100;
+  background: rgba(255, 183, 77, 0.1);
+  color: #ffb74d;
+  border: 1px solid #ffb74d;
   border-radius: 4px;
   font-size: 14px;
 }

@@ -51,64 +51,6 @@
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
-.selector-group input[type="file"] {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px dashed var(--border-color);
-  border-radius: 6px;
-  background-color: var(--bg-color);
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.selector-group input[type="file"]::file-selector-button {
-  margin-right: 1rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--border-color);
-  background-color: var(--surface-hover);
-  color: var(--text-color);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.selector-group input[type="file"]::file-selector-button:hover {
-  background-color: var(--border-color);
-}
-
-.divider {
-  text-align: center;
-  margin: 1.5rem 0;
-  position: relative;
-}
-
-.divider::before,
-.divider::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 45%;
-  height: 1px;
-  background-color: var(--border-color);
-}
-
-.divider::before {
-  left: 0;
-}
-
-.divider::after {
-  right: 0;
-}
-
-.divider span {
-  background-color: var(--surface-color);
-  padding: 0 1rem;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
 .loading-text {
   color: var(--text-muted);
   font-style: italic;

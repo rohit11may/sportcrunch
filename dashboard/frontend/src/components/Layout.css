@@ -9,7 +9,7 @@
 
 /* Sidebar Styling */
 .sidebar {
-    width: 240px;
+    width: 300px;
     background-color: var(--surface-color);
     border-right: 1px solid var(--border-color);
     display: flex;

@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react'
-import { fetchVideos, uploadVideo } from '../services/api'
+import { fetchVideos } from '../services/api'
 import './VideoSelector.css'
 
 function VideoSelector({ onChange }) {
   const [videos, setVideos] = useState([])
   const [selectedVideo, setSelectedVideo] = useState('')
-  const [uploading, setUploading] = useState(false)
-  const [uploadedFileName, setUploadedFileName] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -30,26 +28,7 @@ function VideoSelector({ onChange }) {
   function handleSelectChange(e) {
     const path = e.target.value
     setSelectedVideo(path)
-    setUploadedFileName('')
     onChange(path)
-  }
-
-  async function handleFileUpload(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    try {
-      setUploading(true)
-      setError(null)
-      const result = await uploadVideo(file)
-      setUploadedFileName(file.name)
-      setSelectedVideo(result.path)
-      onChange(result.path)
-    } catch (err) {
-      setError(`Upload failed: ${err.message}`)
-    } finally {
-      setUploading(false)
-    }
   }
 
   return (
@@ -67,7 +46,6 @@ function VideoSelector({ onChange }) {
             id="video-dropdown"
             value={selectedVideo}
             onChange={handleSelectChange}
-            disabled={uploading}
           >
             <option value="">-- Select a video --</option>
             {videos.map((video) => (
@@ -76,25 +54,6 @@ function VideoSelector({ onChange }) {
               </option>
             ))}
           </select>
-        )}
-      </div>
-
-      <div className="divider">
-        <span>OR</span>
-      </div>
-
-      <div className="selector-group">
-        <label htmlFor="file-upload">Upload your own video:</label>
-        <input
-          id="file-upload"
-          type="file"
-          accept=".mp4,.mov,.m4v"
-          onChange={handleFileUpload}
-          disabled={uploading}
-        />
-        {uploading && <div className="loading-text">Uploading...</div>}
-        {uploadedFileName && !uploading && (
-          <div className="success-text">Uploaded: {uploadedFileName}</div>
         )}
       </div>
     </div>
