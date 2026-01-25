@@ -93,16 +93,11 @@ function Home() {
 
       setStatusMessage('Creating run...')
 
-      // Create the run
+      // Create the run with method/config
       const result = await createRun(
         videoPathToUse,
-        methodSelection.family,
-        'tennis',
-        'individual',  // Changed from 'shot' to match TennisMode.individual rawValue
-        {
-          methodVersion: methodSelection.version,
-          config: methodSelection.config
-        },
+        methodSelection.method,
+        methodSelection.config,
         selectedDevice,
         deviceIp
       )
