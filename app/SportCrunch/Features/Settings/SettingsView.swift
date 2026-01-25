@@ -13,52 +13,37 @@ struct SettingsView: View {
     @State private var defaultSport: Sport = .tennis
     @State private var autoSaveToLibrary = true
     @State private var showResetAlert = false
-    @State private var showDebugReportsSheet = false
-    @State private var debugReportCount = 0
-    
+
     var body: some View {
         ZStack {
             Color.scBackground.ignoresSafeArea()
-            
+
             ScrollView {
                 VStack(spacing: Spacing.lg) {
                     // Default Sport Section
                     settingsSection(title: "Defaults") {
                         defaultSportPicker
-                        
+
                         toggleRow(
                             title: "Auto-save to Library",
                             subtitle: "Save highlights automatically after export",
                             isOn: $autoSaveToLibrary
                         )
                     }
-                    
+
                     // About Section
                     settingsSection(title: "About") {
                         infoRow(title: "Version", value: "1.0.0")
-                        
+
                         linkRow(title: "Privacy Policy", icon: "lock.shield") {
                             // Open privacy policy
                         }
-                    }
-                    
-                    // Debug Section (for development)
-                    settingsSection(title: "Developer") {
-                        toggleRow(
-                            title: "Developer Mode",
-                            subtitle: "Enable debug report logging during video processing",
-                            isOn: $appState.developerModeEnabled
-                        )
-                        
-                        if appState.developerModeEnabled {
-                            debugReportsRow
-                        }
-                        
+
                         #if DEBUG
                         linkRow(title: "Reset Onboarding", icon: "arrow.counterclockwise") {
                             showResetAlert = true
                         }
-                        
+
                         linkRow(title: "Clear All Projects", icon: "trash", isDestructive: true) {
                             // Clear projects
                         }
@@ -80,58 +65,10 @@ struct SettingsView: View {
         } message: {
             Text("This will show the onboarding screens again next time you launch the app.")
         }
-        .sheet(isPresented: $showDebugReportsSheet) {
-            DebugReportsListView()
-        }
-        .onAppear {
-            updateDebugReportCount()
-        }
     }
-    
-    // MARK: - Debug Reports Row
-    
-    private var debugReportsRow: some View {
-        Button {
-            showDebugReportsSheet = true
-        } label: {
-            HStack {
-                Image(systemName: "doc.text.magnifyingglass")
-                    .font(.system(size: 16))
-                    .foregroundStyle(Color.scTextSecondary)
-                    .frame(width: 24)
-                
-                Text("Debug Reports")
-                    .font(AppFont.body())
-                    .foregroundStyle(Color.scTextPrimary)
-                
-                Spacer()
-                
-                Text("\(debugReportCount)")
-                    .font(AppFont.body())
-                    .foregroundStyle(Color.scTextSecondary)
-                
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14))
-                    .foregroundStyle(Color.scTextTertiary)
-            }
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.sm)
-            .background(Color.scSurface)
-        }
-        .buttonStyle(.plain)
-    }
-    
-    private func updateDebugReportCount() {
-        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let reportsDir = documentsURL.appendingPathComponent("DebugReports", isDirectory: true)
-        
-        if let files = try? FileManager.default.contentsOfDirectory(atPath: reportsDir.path) {
-            debugReportCount = files.filter { $0.hasSuffix(".json") }.count
-        }
-    }
-    
+
     // MARK: - Settings Section
-    
+
     private func settingsSection<Content: View>(
         title: String,
         @ViewBuilder content: () -> Content
@@ -141,7 +78,7 @@ struct SettingsView: View {
                 .font(AppFont.caption())
                 .foregroundStyle(Color.scTextTertiary)
                 .padding(.leading, Spacing.xs)
-            
+
             VStack(spacing: 1) {
                 content()
             }
@@ -149,17 +86,17 @@ struct SettingsView: View {
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
         }
     }
-    
+
     // MARK: - Default Sport Picker
-    
+
     private var defaultSportPicker: some View {
         HStack {
             Text("Default Sport")
                 .font(AppFont.body())
                 .foregroundStyle(Color.scTextPrimary)
-            
+
             Spacer()
-            
+
             Menu {
                 ForEach(Sport.allCases) { sport in
                     Button {
@@ -189,9 +126,9 @@ struct SettingsView: View {
         .padding(.vertical, Spacing.sm)
         .background(Color.scSurface)
     }
-    
+
     // MARK: - Toggle Row
-    
+
     private func toggleRow(
         title: String,
         subtitle: String? = nil,
@@ -202,16 +139,16 @@ struct SettingsView: View {
                 Text(title)
                     .font(AppFont.body())
                     .foregroundStyle(Color.scTextPrimary)
-                
+
                 if let subtitle {
                     Text(subtitle)
                         .font(AppFont.caption())
                         .foregroundStyle(Color.scTextSecondary)
                 }
             }
-            
+
             Spacer()
-            
+
             Toggle("", isOn: isOn)
                 .tint(Color.scGradientStart)
                 .labelsHidden()
@@ -220,17 +157,17 @@ struct SettingsView: View {
         .padding(.vertical, Spacing.sm)
         .background(Color.scSurface)
     }
-    
+
     // MARK: - Info Row
-    
+
     private func infoRow(title: String, value: String) -> some View {
         HStack {
             Text(title)
                 .font(AppFont.body())
                 .foregroundStyle(Color.scTextPrimary)
-            
+
             Spacer()
-            
+
             Text(value)
                 .font(AppFont.body())
                 .foregroundStyle(Color.scTextSecondary)
@@ -239,9 +176,9 @@ struct SettingsView: View {
         .padding(.vertical, Spacing.sm)
         .background(Color.scSurface)
     }
-    
+
     // MARK: - Link Row
-    
+
     private func linkRow(
         title: String,
         icon: String,
@@ -254,13 +191,13 @@ struct SettingsView: View {
                     .font(.system(size: 16))
                     .foregroundStyle(isDestructive ? Color.scError : Color.scTextSecondary)
                     .frame(width: 24)
-                
+
                 Text(title)
                     .font(AppFont.body())
                     .foregroundStyle(isDestructive ? Color.scError : Color.scTextPrimary)
-                
+
                 Spacer()
-                
+
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14))
                     .foregroundStyle(Color.scTextTertiary)
@@ -271,7 +208,7 @@ struct SettingsView: View {
         }
         .buttonStyle(.plain)
     }
-    
+
 }
 
 // MARK: - Preview
@@ -282,4 +219,3 @@ struct SettingsView: View {
             .environmentObject(AppState())
     }
 }
-

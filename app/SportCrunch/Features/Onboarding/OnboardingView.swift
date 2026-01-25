@@ -12,13 +12,13 @@ struct OnboardingView: View {
     @EnvironmentObject private var appState: AppState
     @State private var currentPage = 0
     @State private var showPermissionAlert = false
-    
+
     private let pages = OnboardingPage.allPages
-    
+
     var body: some View {
         ZStack {
             MeshGradientBackground()
-            
+
             VStack(spacing: 0) {
                 // Skip button
                 HStack {
@@ -36,7 +36,7 @@ struct OnboardingView: View {
                 .padding(.horizontal, Spacing.lg)
                 .padding(.top, Spacing.md)
                 .frame(height: 44)
-                
+
                 // Page content
                 TabView(selection: $currentPage) {
                     ForEach(0..<pages.count, id: \.self) { index in
@@ -45,7 +45,7 @@ struct OnboardingView: View {
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                
+
                 // Page indicators and button
                 VStack(spacing: Spacing.xl) {
                     // Page dots
@@ -57,7 +57,7 @@ struct OnboardingView: View {
                                 .animation(.spring(response: 0.3), value: currentPage)
                         }
                     }
-                    
+
                     // Action button
                     actionButton
                 }
@@ -78,11 +78,11 @@ struct OnboardingView: View {
             Text("SportCrunch needs access to your photo library to select and process videos. Please enable access in Settings.")
         }
     }
-    
+
     @ViewBuilder
     private var actionButton: some View {
         let isLastPage = currentPage == pages.count - 1
-        
+
         PrimaryButton(
             isLastPage ? "Get Started" : "Continue",
             icon: isLastPage ? "arrow.right" : nil
@@ -96,7 +96,7 @@ struct OnboardingView: View {
             }
         }
     }
-    
+
     private func requestPhotoLibraryAccess() {
         PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
             DispatchQueue.main.async {
@@ -114,7 +114,7 @@ struct OnboardingView: View {
             }
         }
     }
-    
+
     private func completeOnboarding() {
         withAnimation(.spring(response: 0.5)) {
             appState.completeOnboarding()
@@ -126,22 +126,22 @@ struct OnboardingView: View {
 
 struct OnboardingPageView: View {
     let page: OnboardingPage
-    
+
     var body: some View {
         VStack(spacing: Spacing.xl) {
             Spacer()
-            
+
             // Illustration
             page.illustration
                 .frame(height: 280)
-            
+
             // Text content
             VStack(spacing: Spacing.md) {
                 Text(page.title)
                     .font(AppFont.displayMedium())
                     .foregroundStyle(Color.scTextPrimary)
                     .multilineTextAlignment(.center)
-                
+
                 Text(page.subtitle)
                     .font(AppFont.body())
                     .foregroundStyle(Color.scTextSecondary)
@@ -149,7 +149,7 @@ struct OnboardingPageView: View {
                     .lineSpacing(4)
             }
             .padding(.horizontal, Spacing.lg)
-            
+
             Spacer()
             Spacer()
         }
@@ -162,7 +162,7 @@ struct OnboardingPage {
     let title: String
     let subtitle: String
     let illustration: AnyView
-    
+
     static let allPages: [OnboardingPage] = [
         OnboardingPage(
             title: "Your Game, Condensed",
@@ -186,7 +186,7 @@ struct OnboardingPage {
 
 struct WelcomeIllustration: View {
     @State private var animate = false
-    
+
     var body: some View {
         ZStack {
             // Background circles
@@ -194,7 +194,7 @@ struct WelcomeIllustration: View {
                 .fill(Color.scGradientStart.opacity(0.1))
                 .frame(width: 240, height: 240)
                 .offset(y: animate ? -10 : 10)
-            
+
             // Video frame mockup
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color.scSurface)
@@ -209,7 +209,7 @@ struct WelcomeIllustration: View {
                             }
                         }
                         .padding(.horizontal, Spacing.md)
-                        
+
                         // Timeline
                         RoundedRectangle(cornerRadius: 4)
                             .fill(Color.scSurfaceElevated)
@@ -229,7 +229,7 @@ struct WelcomeIllustration: View {
                     }
                 )
                 .scShadow()
-            
+
             // Stats badge
             HStack(spacing: 4) {
                 Text("3h")
@@ -259,7 +259,7 @@ struct WelcomeIllustration: View {
 struct DetectionIllustration: View {
     @State private var showWave = false
     @State private var pulseScale: CGFloat = 1.0
-    
+
     var body: some View {
         ZStack {
             // Audio wave representation
@@ -278,14 +278,14 @@ struct DetectionIllustration: View {
                 }
             }
             .offset(y: -60)
-            
+
             // Detection circle
             Circle()
                 .stroke(Color.scGradientStart, lineWidth: 2)
                 .frame(width: 100, height: 100)
                 .scaleEffect(pulseScale)
                 .opacity(2 - pulseScale)
-            
+
             // Tennis ball
             Circle()
                 .fill(Color.scTennis)
@@ -297,7 +297,7 @@ struct DetectionIllustration: View {
                         .frame(width: 40, height: 40)
                 )
                 .scShadow()
-            
+
             // Motion lines
             HStack(spacing: 6) {
                 ForEach(0..<3) { i in
@@ -317,7 +317,7 @@ struct DetectionIllustration: View {
             }
         }
     }
-    
+
     private func randomHeight(for index: Int) -> CGFloat {
         let peak = index >= 8 && index <= 12
         let baseHeight: CGFloat = peak ? 60 : 30
@@ -327,7 +327,7 @@ struct DetectionIllustration: View {
 
 struct ReadyIllustration: View {
     @State private var selectedSport: Sport? = .tennis
-    
+
     var body: some View {
         VStack(spacing: Spacing.lg) {
             // Sport icons
@@ -344,12 +344,12 @@ struct ReadyIllustration: View {
                     }
                 }
             }
-            
+
             // Arrow
             Image(systemName: "arrow.down")
                 .font(.system(size: 24, weight: .bold))
                 .foregroundStyle(Color.scTextTertiary)
-            
+
             // Highlight preview
             RoundedRectangle(cornerRadius: 16)
                 .fill(selectedSport?.accentColor.opacity(0.2) ?? Color.scSurfaceElevated)
@@ -359,7 +359,7 @@ struct ReadyIllustration: View {
                         Image(systemName: "sparkles")
                             .font(.system(size: 28))
                             .foregroundStyle(selectedSport?.accentColor ?? .scGradientStart)
-                        
+
                         Text("Highlight Ready")
                             .font(AppFont.captionBold())
                             .foregroundStyle(Color.scTextPrimary)
@@ -373,13 +373,13 @@ struct ReadyIllustration: View {
 struct SportMiniIcon: View {
     let sport: Sport
     let isSelected: Bool
-    
+
     var body: some View {
         ZStack {
             Circle()
                 .fill(isSelected ? sport.gradient : LinearGradient(colors: [.scSurfaceElevated], startPoint: .top, endPoint: .bottom))
                 .frame(width: 64, height: 64)
-            
+
             Text(sport.emoji)
                 .font(.system(size: 28))
         }
@@ -397,4 +397,3 @@ struct SportMiniIcon: View {
     OnboardingView()
         .environmentObject(AppState())
 }
-

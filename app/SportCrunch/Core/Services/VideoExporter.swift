@@ -18,7 +18,7 @@ struct ExportResult {
     let outputDuration: TimeInterval
     let segmentCount: Int
     let compressionRatio: Double  // Percentage of video kept
-    
+
     // Enhanced debug data for diagnosing timing/slow-mo issues
     let debugData: ExportDebugData?
 }
@@ -106,15 +106,15 @@ enum VideoExportPreset {
     /// Fast export - uses passthrough when possible.
     /// Note: Video composition is still applied for color preservation.
     case fast
-    
+
     /// Balanced speed and quality - uses medium quality re-encoding.
     /// Good for most use cases.
     case balanced
-    
+
     /// Highest quality - full re-encoding at maximum quality.
     /// Best color and quality preservation, recommended for final exports.
     case best
-    
+
     var presetName: String {
         switch self {
         case .fast:
@@ -125,7 +125,7 @@ enum VideoExportPreset {
             return AVAssetExportPresetHighestQuality
         }
     }
-    
+
     var displayName: String {
         switch self {
         case .fast: return "Fast (Passthrough)"
@@ -143,7 +143,7 @@ enum VideoExporterError: Error, LocalizedError {
     case compositionFailed
     case exportFailed(String)
     case exportCancelled
-    
+
     var errorDescription: String? {
         switch self {
         case .cannotAccessFile:
@@ -169,9 +169,9 @@ enum VideoExporterError: Error, LocalizedError {
 /// - Handles edge cases (segments at video boundaries)
 /// - Uses AVMutableComposition for efficient segment assembly
 actor VideoExporter {
-    
+
     // MARK: - Public API
-    
+
     /// Export selected intervals from a video to a new file.
     /// - Parameters:
     ///   - sourceURL: URL to the source video
@@ -187,111 +187,111 @@ actor VideoExporter {
     ) async throws -> ExportResult {
         let startTime = Date()
         let logger = ProcessingLogger.shared
-        
+
         print("📼 [VideoExporter] ═══════════════════════════════════════════")
         print("📼 [VideoExporter] Starting video export")
         print("📼 [VideoExporter] Source: \(sourceURL.lastPathComponent)")
         print("📼 [VideoExporter] Input segments: \(intervals.count)")
-        
+
         logger.exportAsync("Starting video export with \(intervals.count) segments...")
-        
+
         let asset = AVURLAsset(url: sourceURL)
-        
+
         // Load asset properties
         let durationCMTime = try await asset.load(.duration)
         let duration = durationCMTime.seconds
         let tracks = try await asset.load(.tracks)
-        
+
         print("📼 [VideoExporter] Source duration: \(formatTime(duration))")
         print("📼 [VideoExporter] Source duration CMTime: \(durationCMTime.value)/\(durationCMTime.timescale)")
-        
+
         guard !tracks.isEmpty else {
             print("📼 [VideoExporter] ❌ ERROR: Cannot access file tracks")
             logger.errorAsync("Cannot access file tracks")
             throw VideoExporterError.cannotAccessFile
         }
-        
+
         // Merge overlapping intervals
         print("📼 [VideoExporter] Merging overlapping intervals...")
         logger.exportAsync("Merging overlapping intervals...")
         let mergedIntervals = mergeIntervals(intervals, videoDuration: duration)
-        
+
         guard !mergedIntervals.isEmpty else {
             print("📼 [VideoExporter] ❌ ERROR: No valid intervals after merge")
             logger.errorAsync("No valid intervals after merge")
             throw VideoExporterError.noValidIntervals
         }
-        
+
         print("📼 [VideoExporter] Merged to \(mergedIntervals.count) segments:")
         for (i, interval) in mergedIntervals.enumerated() {
             let segDuration = interval.end - interval.start
             print("📼 [VideoExporter]   Segment \(i+1): \(formatTime(interval.start)) → \(formatTime(interval.end)) (\(String(format: "%.1f", segDuration))s)")
         }
-        
+
         logger.exportAsync("Merged to \(mergedIntervals.count) segments")
-        
+
         // Create composition
         print("📼 [VideoExporter] Building AVMutableComposition...")
         logger.exportAsync("Building video composition...")
         let composition = AVMutableComposition()
-        
+
         // Add video track
         guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
             print("📼 [VideoExporter] ❌ ERROR: No video track found")
             logger.errorAsync("No video track found")
             throw VideoExporterError.compositionFailed
         }
-        
+
         guard let compositionVideoTrack = composition.addMutableTrack(
             withMediaType: .video,
             preferredTrackID: kCMPersistentTrackID_Invalid
         ) else {
             throw VideoExporterError.compositionFailed
         }
-        
+
         // Load and preserve the original video track's properties
         let preferredTransform = try await videoTrack.load(.preferredTransform)
         let naturalSize = try await videoTrack.load(.naturalSize)
         let nominalFrameRate = try await videoTrack.load(.nominalFrameRate)
         let minFrameDuration = try await videoTrack.load(.minFrameDuration)
         let naturalTimeScale = try await videoTrack.load(.naturalTimeScale)
-        
+
         // Apply the preferred transform to preserve orientation
         compositionVideoTrack.preferredTransform = preferredTransform
-        
+
         // Detect portrait video
         let isVideoPortrait = preferredTransform.a == 0 && abs(preferredTransform.b) == 1.0
-        
+
         print("📼 [VideoExporter] ✓ Video properties: \(Int(naturalSize.width))x\(Int(naturalSize.height)) @ \(String(format: "%.1f", nominalFrameRate))fps")
         print("📼 [VideoExporter] ✓ MinFrameDuration: \(minFrameDuration.value)/\(minFrameDuration.timescale) = \(String(format: "%.4f", minFrameDuration.seconds))s")
         print("📼 [VideoExporter] ✓ NaturalTimeScale: \(naturalTimeScale)")
         print("📼 [VideoExporter] ✓ Portrait mode: \(isVideoPortrait)")
         print("📼 [VideoExporter] ✓ Transform: a=\(preferredTransform.a), b=\(preferredTransform.b), c=\(preferredTransform.c), d=\(preferredTransform.d)")
-        
+
         // Load color space info for debug
-        var colorPrimaries: String? = nil
-        var transferFunction: String? = nil
-        var ycbcrMatrix: String? = nil
-        var videoCodecType: String? = nil
+        var colorPrimaries: String?
+        var transferFunction: String?
+        var ycbcrMatrix: String?
+        var videoCodecType: String?
         var hasVariableFrameRate = false
-        
+
         let formatDescriptions = try await videoTrack.load(.formatDescriptions)
         if let formatDescription = formatDescriptions.first {
             let extensions = CMFormatDescriptionGetExtensions(formatDescription) as? [CFString: Any]
             colorPrimaries = extensions?[kCMFormatDescriptionExtension_ColorPrimaries] as? String
             transferFunction = extensions?[kCMFormatDescriptionExtension_TransferFunction] as? String
             ycbcrMatrix = extensions?[kCMFormatDescriptionExtension_YCbCrMatrix] as? String
-            
+
             // Get codec type
             let codecType = CMFormatDescriptionGetMediaSubType(formatDescription)
             videoCodecType = fourCharCodeToString(codecType)
-            
+
             print("📼 [VideoExporter] ✓ Video codec: \(videoCodecType ?? "unknown")")
             print("📼 [VideoExporter] ✓ Color primaries: \(colorPrimaries ?? "default")")
             print("📼 [VideoExporter] ✓ Transfer function: \(transferFunction ?? "default")")
             print("📼 [VideoExporter] ✓ YCbCr matrix: \(ycbcrMatrix ?? "default")")
         }
-        
+
         // Check for variable frame rate
         if minFrameDuration.seconds > 0 && nominalFrameRate > 0 {
             let expectedMinDuration = 1.0 / Double(nominalFrameRate)
@@ -301,12 +301,12 @@ actor VideoExporter {
                 print("📼 [VideoExporter] ⚠️ VARIABLE FRAME RATE DETECTED - may cause timing issues!")
             }
         }
-        
+
         // Add audio track if present
         let audioTracks = try await asset.loadTracks(withMediaType: .audio)
         let audioTrack = audioTracks.first
         var compositionAudioTrack: AVMutableCompositionTrack?
-        
+
         if audioTrack != nil {
             compositionAudioTrack = composition.addMutableTrack(
                 withMediaType: .audio,
@@ -316,7 +316,7 @@ actor VideoExporter {
         } else {
             print("📼 [VideoExporter] ✓ Video track configured (no audio)")
         }
-        
+
         // DEBUG: Create source video properties for debug report
         let sourceVideoProperties = SourceVideoDebugProperties(
             duration: duration,
@@ -335,35 +335,35 @@ actor VideoExporter {
             videoCodecType: videoCodecType,
             hasVariableFrameRate: hasVariableFrameRate
         )
-        
+
         // Insert each interval into the composition - track timing details for debug
         var insertionTime = CMTime.zero
         var insertedCount = 0
         var segmentTimingDetails: [SegmentTimingDebugDetail] = []
-        
+
         for (index, interval) in mergedIntervals.enumerated() {
             // Use the source video's natural time scale for better accuracy
             let preferredTimescale = naturalTimeScale > 0 ? naturalTimeScale : 600
             let segStartTime = CMTime(seconds: interval.start, preferredTimescale: preferredTimescale)
             let segEndTime = CMTime(seconds: interval.end, preferredTimescale: preferredTimescale)
             let timeRange = CMTimeRange(start: segStartTime, end: segEndTime)
-            
+
             // Check if time range is valid and within bounds
             let timeRangeValid = timeRange.duration.seconds > 0
             let clampedToVideoBounds = interval.start < 0 || interval.end > duration
-            
+
             print("📼 [VideoExporter] DEBUG Segment \(index): start=\(segStartTime.value)/\(segStartTime.timescale), end=\(segEndTime.value)/\(segEndTime.timescale), duration=\(timeRange.duration.value)/\(timeRange.duration.timescale)")
-            
+
             var insertSuccess = false
-            var errorMsg: String? = nil
-            
+            var errorMsg: String?
+
             do {
                 try compositionVideoTrack.insertTimeRange(
                     timeRange,
                     of: videoTrack,
                     at: insertionTime
                 )
-                
+
                 if let audioTrack = audioTrack, let compAudioTrack = compositionAudioTrack {
                     try compAudioTrack.insertTimeRange(
                         timeRange,
@@ -371,7 +371,7 @@ actor VideoExporter {
                         at: insertionTime
                     )
                 }
-                
+
                 insertSuccess = true
                 insertedCount += 1
             } catch {
@@ -379,7 +379,7 @@ actor VideoExporter {
                 logger.warningAsync("Skipped segment \(index + 1)")
                 errorMsg = error.localizedDescription
             }
-            
+
             // Record timing detail for debug
             let timingDetail = SegmentTimingDebugDetail(
                 segmentIndex: index,
@@ -396,20 +396,20 @@ actor VideoExporter {
                 clampedToVideoBounds: clampedToVideoBounds
             )
             segmentTimingDetails.append(timingDetail)
-            
+
             if insertSuccess {
                 insertionTime = CMTimeAdd(insertionTime, timeRange.duration)
             }
         }
-        
+
         print("📼 [VideoExporter] ✓ Inserted \(insertedCount)/\(mergedIntervals.count) segments")
         print("📼 [VideoExporter] ✓ Final composition duration: \(insertionTime.value)/\(insertionTime.timescale) = \(String(format: "%.3f", insertionTime.seconds))s")
         logger.exportAsync("Assembling \(insertedCount) video clips...")
-        
+
         // Create video composition only for non-fast presets (to avoid unnecessary work)
-        var videoComposition: AVMutableVideoComposition? = nil
+        var videoComposition: AVMutableVideoComposition?
         var compositionDebugConfig: CompositionDebugConfig
-        
+
         if preset != .fast {
             videoComposition = try await createVideoComposition(
                 for: composition,
@@ -418,12 +418,12 @@ actor VideoExporter {
                 preferredTransform: preferredTransform,
                 nominalFrameRate: nominalFrameRate
             )
-            
+
             let computedFrameRate: Double? = {
                 guard let vc = videoComposition, vc.frameDuration.seconds > 0 else { return nil }
                 return 1.0 / vc.frameDuration.seconds
             }()
-            
+
             compositionDebugConfig = CompositionDebugConfig(
                 exportPreset: preset.presetName,
                 outputFileType: AVFileType.mp4.rawValue,
@@ -452,14 +452,14 @@ actor VideoExporter {
                 appliedTransform: nil
             )
         }
-        
+
         // Ensure output directory exists
         let outputDir = outputURL.deletingLastPathComponent()
         try? FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
-        
+
         // Remove existing file if present
         try? FileManager.default.removeItem(at: outputURL)
-        
+
         // Create export session
         print("📼 [VideoExporter] Creating export session (\(preset.displayName) preset)...")
         guard let exportSession = AVAssetExportSession(
@@ -470,12 +470,12 @@ actor VideoExporter {
             logger.errorAsync("Could not create export session")
             throw VideoExporterError.exportFailed("Could not create export session")
         }
-        
+
         exportSession.outputURL = outputURL
         exportSession.outputFileType = .mp4
         // Only optimize for network use when re-encoding (adds overhead)
         exportSession.shouldOptimizeForNetworkUse = (preset != .fast)
-        
+
         // Apply video composition only for non-fast presets
         // For fast preset, skip composition to enable true passthrough (much faster)
         // This trades color/orientation preservation for speed
@@ -485,18 +485,18 @@ actor VideoExporter {
         } else {
             print("📼 [VideoExporter] ✓ Using fast passthrough mode (no re-encoding)")
         }
-        
+
         print("📼 [VideoExporter] Output: \(outputURL.lastPathComponent)")
         print("📼 [VideoExporter] ⏳ Exporting... (this may take a while)")
         logger.exportAsync("Exporting highlight video (this may take a moment)...")
-        
+
         // Start progress monitoring task
         let progressTask = Task {
             var lastReportedProgress: Float = 0
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 500_000_000) // Check every 0.5 seconds
                 let progress = exportSession.progress
-                
+
                 // Only log when progress increases by at least 5%
                 if progress - lastReportedProgress >= 0.05 {
                     let percent = Int(progress * 100)
@@ -504,20 +504,20 @@ actor VideoExporter {
                     logger.exportAsync("Exporting... \(percent)%")
                     lastReportedProgress = progress
                 }
-                
+
                 // Stop if export is no longer in progress
                 if exportSession.status != .exporting && exportSession.status != .waiting {
                     break
                 }
             }
         }
-        
+
         // Perform export
         await exportSession.export()
-        
+
         // Cancel progress monitoring
         progressTask.cancel()
-        
+
         // Check export status
         switch exportSession.status {
         case .completed:
@@ -536,26 +536,26 @@ actor VideoExporter {
             logger.errorAsync("Unexpected export status")
             throw VideoExporterError.exportFailed("Unexpected export status")
         }
-        
+
         // Calculate statistics
         let outputDuration = mergedIntervals.reduce(0) { $0 + ($1.end - $1.start) }
         let compressionRatio = duration > 0 ? (1 - outputDuration / duration) * 100 : 0
         let elapsed = Date().timeIntervalSince(startTime)
-        
+
         // Verify output video properties
         let outputVerification = await verifyOutputVideo(
             outputURL: outputURL,
             expectedDuration: insertionTime.seconds,
             sourceFrameRate: nominalFrameRate
         )
-        
+
         // Get file size
         var fileSizeStr = "unknown"
         if let attrs = try? FileManager.default.attributesOfItem(atPath: outputURL.path),
            let fileSize = attrs[.size] as? Int64 {
             fileSizeStr = formatBytes(fileSize)
         }
-        
+
         print("📼 [VideoExporter] ═══════════════════════════════════════════")
         print("📼 [VideoExporter] ✅ EXPORT COMPLETE in \(String(format: "%.2f", elapsed))s")
         print("📼 [VideoExporter] 📊 Results:")
@@ -564,7 +564,7 @@ actor VideoExporter {
         print("📼 [VideoExporter]    • Dead space removed: \(String(format: "%.1f", compressionRatio))%")
         print("📼 [VideoExporter]    • Segments: \(mergedIntervals.count)")
         print("📼 [VideoExporter]    • File size: \(fileSizeStr)")
-        
+
         // Print timing verification
         if let verification = outputVerification {
             print("📼 [VideoExporter] 🔍 Output Verification:")
@@ -578,11 +578,11 @@ actor VideoExporter {
                 print("📼 [VideoExporter]    ⚠️ TIMING ISSUE: \(verification.timingIssueDescription ?? "Unknown")")
             }
         }
-        
+
         print("📼 [VideoExporter] ═══════════════════════════════════════════")
-        
+
         logger.successAsync("Export complete! \(formatTime(duration)) → \(formatTime(outputDuration)) (\(String(format: "%.0f", compressionRatio))% removed)")
-        
+
         // Build debug data
         let debugData = ExportDebugData(
             sourceVideoProperties: sourceVideoProperties,
@@ -590,7 +590,7 @@ actor VideoExporter {
             segmentTimingDetails: segmentTimingDetails,
             outputVerification: outputVerification
         )
-        
+
         return ExportResult(
             outputURL: outputURL,
             inputDuration: duration,
@@ -600,9 +600,9 @@ actor VideoExporter {
             debugData: debugData
         )
     }
-    
+
     // MARK: - Output Verification
-    
+
     /// Verify output video properties to detect timing/frame rate issues.
     private func verifyOutputVideo(
         outputURL: URL,
@@ -610,37 +610,37 @@ actor VideoExporter {
         sourceFrameRate: Float
     ) async -> OutputVerificationDebug? {
         let outputAsset = AVURLAsset(url: outputURL)
-        
+
         do {
             let outputDurationCMTime = try await outputAsset.load(.duration)
             let outputDuration = outputDurationCMTime.seconds
-            
+
             let durationMismatch = outputDuration - expectedDuration
             let durationMismatchPercent = expectedDuration > 0 ? (abs(durationMismatch) / expectedDuration) * 100 : 0
-            
+
             // Load output video track properties
-            var outputFPS: Float? = nil
-            var outputSize: CGSize? = nil
-            var outputCodec: String? = nil
-            
+            var outputFPS: Float?
+            var outputSize: CGSize?
+            var outputCodec: String?
+
             if let outputVideoTrack = try await outputAsset.loadTracks(withMediaType: .video).first {
                 outputFPS = try await outputVideoTrack.load(.nominalFrameRate)
                 outputSize = try await outputVideoTrack.load(.naturalSize)
-                
+
                 let formatDescriptions = try await outputVideoTrack.load(.formatDescriptions)
                 if let formatDescription = formatDescriptions.first {
                     let codecType = CMFormatDescriptionGetMediaSubType(formatDescription)
                     outputCodec = fourCharCodeToString(codecType)
                 }
             }
-            
+
             // Check for frame rate mismatch (could indicate slow-mo)
             let frameRateMismatch = outputFPS != nil && abs(outputFPS! - sourceFrameRate) > 1.0
-            
+
             // Determine timing accuracy (within 1% tolerance or 0.5 seconds)
             let timingAccurate = durationMismatchPercent < 1.0 || abs(durationMismatch) < 0.5
-            
-            var timingIssueDescription: String? = nil
+
+            var timingIssueDescription: String?
             if !timingAccurate {
                 if durationMismatch > 0 {
                     timingIssueDescription = "Output \(String(format: "%.1f", durationMismatch))s LONGER than expected - possible SLOW-MO issue"
@@ -652,7 +652,7 @@ actor VideoExporter {
                 let fpsIssue = "Frame rate changed from \(String(format: "%.1f", sourceFrameRate)) to \(String(format: "%.1f", outputFPS ?? 0)) fps"
                 timingIssueDescription = timingIssueDescription != nil ? "\(timingIssueDescription!); \(fpsIssue)" : fpsIssue
             }
-            
+
             return OutputVerificationDebug(
                 duration: outputDuration,
                 durationCMTime: outputDurationCMTime,
@@ -672,9 +672,9 @@ actor VideoExporter {
             return nil
         }
     }
-    
+
     // MARK: - Utility
-    
+
     /// Convert FourCharCode to string for codec identification.
     private func fourCharCodeToString(_ code: FourCharCode) -> String {
         let bytes: [UInt8] = [
@@ -685,15 +685,15 @@ actor VideoExporter {
         ]
         return String(bytes: bytes, encoding: .ascii) ?? "unknown"
     }
-    
+
     // MARK: - Formatting Helpers
-    
+
     private func formatTime(_ seconds: TimeInterval) -> String {
         let mins = Int(seconds) / 60
         let secs = Int(seconds) % 60
         return String(format: "%d:%02d", mins, secs)
     }
-    
+
     private func formatBytes(_ bytes: Int64) -> String {
         let kb = Double(bytes) / 1024
         let mb = kb / 1024
@@ -703,9 +703,9 @@ actor VideoExporter {
             return String(format: "%.0f KB", kb)
         }
     }
-    
+
     // MARK: - Video Composition Creation
-    
+
     /// Creates a video composition that preserves the source video's color space and orientation.
     private func createVideoComposition(
         for composition: AVMutableComposition,
@@ -715,7 +715,7 @@ actor VideoExporter {
         nominalFrameRate: Float
     ) async throws -> AVMutableVideoComposition {
         let videoComposition = AVMutableVideoComposition()
-        
+
         // Calculate the correct render size based on the transform (handles rotation)
         let isVideoPortrait = preferredTransform.a == 0 && abs(preferredTransform.b) == 1.0
         if isVideoPortrait {
@@ -723,56 +723,56 @@ actor VideoExporter {
         } else {
             videoComposition.renderSize = naturalSize
         }
-        
+
         // Set frame duration from source (fallback to 30fps if not available)
         let frameRate = nominalFrameRate > 0 ? nominalFrameRate : 30.0
         videoComposition.frameDuration = CMTime(value: 1, timescale: CMTimeScale(frameRate))
-        
+
         // Load and preserve color properties from source video's format descriptions
         let formatDescriptions = try await sourceVideoTrack.load(.formatDescriptions)
         if let formatDescription = formatDescriptions.first {
             // Get color space properties from source video
             let extensions = CMFormatDescriptionGetExtensions(formatDescription) as? [CFString: Any]
-            
+
             // Preserve color primaries (e.g., BT.709, P3, BT.2020)
             if let colorPrimaries = extensions?[kCMFormatDescriptionExtension_ColorPrimaries] as? String {
                 videoComposition.colorPrimaries = colorPrimaries
                 print("📼 [VideoExporter] ✓ Preserving color primaries: \(colorPrimaries)")
             }
-            
+
             // Preserve transfer function (e.g., SDR, HLG, PQ for HDR)
             if let transferFunction = extensions?[kCMFormatDescriptionExtension_TransferFunction] as? String {
                 videoComposition.colorTransferFunction = transferFunction
                 print("📼 [VideoExporter] ✓ Preserving transfer function: \(transferFunction)")
             }
-            
+
             // Preserve YCbCr matrix (e.g., BT.709, BT.601)
             if let ycbcrMatrix = extensions?[kCMFormatDescriptionExtension_YCbCrMatrix] as? String {
                 videoComposition.colorYCbCrMatrix = ycbcrMatrix
                 print("📼 [VideoExporter] ✓ Preserving YCbCr matrix: \(ycbcrMatrix)")
             }
         }
-        
+
         // Create instruction for the entire composition
         guard let compositionVideoTrack = try await composition.loadTracks(withMediaType: .video).first else {
             throw VideoExporterError.compositionFailed
         }
-        
+
         let instruction = AVMutableVideoCompositionInstruction()
         instruction.timeRange = CMTimeRange(start: .zero, duration: composition.duration)
-        
+
         // Create layer instruction that applies the transform
         let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: compositionVideoTrack)
         layerInstruction.setTransform(preferredTransform, at: .zero)
-        
+
         instruction.layerInstructions = [layerInstruction]
         videoComposition.instructions = [instruction]
-        
+
         return videoComposition
     }
-    
+
     // MARK: - Interval Merging
-    
+
     /// Merge overlapping or adjacent intervals.
     /// - Parameters:
     ///   - intervals: List of (start, end) tuples
@@ -783,16 +783,16 @@ actor VideoExporter {
         videoDuration: TimeInterval
     ) -> [(start: TimeInterval, end: TimeInterval)] {
         guard !intervals.isEmpty else { return [] }
-        
+
         // Sort by start time
         let sorted = intervals.sorted { $0.start < $1.start }
-        
+
         var merged: [(start: TimeInterval, end: TimeInterval)] = [sorted[0]]
-        
+
         for i in 1..<sorted.count {
             let current = sorted[i]
             let lastIndex = merged.count - 1
-            
+
             // Check for overlap or adjacency (within 0.5s)
             if current.start <= merged[lastIndex].end + 0.5 {
                 // Merge by extending the end
@@ -804,21 +804,21 @@ actor VideoExporter {
                 merged.append(current)
             }
         }
-        
+
         // Clamp to video duration and filter invalid
         let clamped = merged.compactMap { interval -> (start: TimeInterval, end: TimeInterval)? in
             let start = max(0, interval.start)
             let end = min(videoDuration, interval.end)
-            
+
             guard end > start else { return nil }
             return (start: start, end: end)
         }
-        
+
         return clamped
     }
-    
+
     // MARK: - Preview
-    
+
     /// Get preview statistics for intervals without exporting.
     /// - Parameters:
     ///   - sourceURL: URL to the source video
@@ -830,12 +830,12 @@ actor VideoExporter {
     ) async throws -> [String: Any] {
         let asset = AVURLAsset(url: sourceURL)
         let duration = try await asset.load(.duration).seconds
-        
+
         let merged = mergeIntervals(intervals, videoDuration: duration)
         let outputDuration = merged.reduce(0) { $0 + ($1.end - $1.start) }
         let removedDuration = duration - outputDuration
         let compressionRatio = duration > 0 ? (1 - outputDuration / duration) * 100 : 0
-        
+
         return [
             "inputDuration": duration,
             "outputDuration": outputDuration,
@@ -846,4 +846,3 @@ actor VideoExporter {
         ]
     }
 }
-

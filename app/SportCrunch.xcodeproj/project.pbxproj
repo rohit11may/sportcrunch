@@ -9,10 +9,6 @@
 /* Begin PBXBuildFile section */
 		F91A95C82F2142E100688974 /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = F91A95C72F2142E100688974 /* Swifter */; };
 		F91A95CA2F2142E100688974 /* Example in Frameworks */ = {isa = PBXBuildFile; productRef = F91A95C92F2142E100688974 /* Example */; };
-		F91A97172F2272D500688974 /* methods in Resources */ = {isa = PBXBuildFile; fileRef = F91A97162F2272CA00688974 /* methods */; };
-		F91A97182F2272D500688974 /* methods in Resources */ = {isa = PBXBuildFile; fileRef = F91A97162F2272CA00688974 /* methods */; };
-		F91A97192F2272D500688974 /* methods in Resources */ = {isa = PBXBuildFile; fileRef = F91A97162F2272CA00688974 /* methods */; };
-		F91A971A2F2272DE00688974 /* methods in Resources */ = {isa = PBXBuildFile; fileRef = F91A97162F2272CA00688974 /* methods */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,9 +32,7 @@
 		308DBA312EFEA3A4001F0B3F /* SportCrunch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SportCrunch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		308DBA3E2EFEA3A6001F0B3F /* SportCrunchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SportCrunchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		308DBA482EFEA3A6001F0B3F /* SportCrunchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SportCrunchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		F91A921C2F1552B000688974 /* SportCrunch.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = SportCrunch.xctestplan; path = ../SportCrunch.xctestplan; sourceTree = "<group>"; };
 		F91A95BB2F21428A00688974 /* SportCrunchRunner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SportCrunchRunner.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		F91A97162F2272CA00688974 /* methods */ = {isa = PBXFileReference; lastKnownFileType = folder; path = methods; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -52,9 +46,31 @@
 		F91A96A32F2147D900688974 /* Exceptions for "SportCrunch" folder in "SportCrunchRunner" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				SportCrunch.xctestplan,
 				SportCrunchApp.swift,
 			);
 			target = F91A95BA2F21428A00688974 /* SportCrunchRunner */;
+		};
+		F91A9EA52F2651AF00688974 /* Exceptions for "SportCrunch" folder in "SportCrunch" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				SportCrunch.xctestplan,
+			);
+			target = 308DBA302EFEA3A4001F0B3F /* SportCrunch */;
+		};
+		F91A9EA62F2651AF00688974 /* Exceptions for "SportCrunch" folder in "SportCrunchTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				SportCrunch.xctestplan,
+			);
+			target = 308DBA3D2EFEA3A6001F0B3F /* SportCrunchTests */;
+		};
+		F91A9EA72F2651AF00688974 /* Exceptions for "SportCrunch" folder in "SportCrunchUITests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				SportCrunch.xctestplan,
+			);
+			target = 308DBA472EFEA3A6001F0B3F /* SportCrunchUITests */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -62,6 +78,9 @@
 		308DBA332EFEA3A4001F0B3F /* SportCrunch */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				F91A9EA52F2651AF00688974 /* Exceptions for "SportCrunch" folder in "SportCrunch" target */,
+				F91A9EA62F2651AF00688974 /* Exceptions for "SportCrunch" folder in "SportCrunchTests" target */,
+				F91A9EA72F2651AF00688974 /* Exceptions for "SportCrunch" folder in "SportCrunchUITests" target */,
 				F91A96A32F2147D900688974 /* Exceptions for "SportCrunch" folder in "SportCrunchRunner" target */,
 			);
 			path = SportCrunch;
@@ -86,6 +105,11 @@
 		F91A95BC2F21428A00688974 /* SportCrunchRunner */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = SportCrunchRunner;
+			sourceTree = "<group>";
+		};
+		F91A9C892F26432900688974 /* methods */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = methods;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -127,8 +151,7 @@
 		308DBA282EFEA3A4001F0B3F = {
 			isa = PBXGroup;
 			children = (
-				F91A97162F2272CA00688974 /* methods */,
-				F91A921C2F1552B000688974 /* SportCrunch.xctestplan */,
+				F91A9C892F26432900688974 /* methods */,
 				308DBA332EFEA3A4001F0B3F /* SportCrunch */,
 				F91A920E2F1550AF00688974 /* SportCrunchTests */,
 				308DBA4B2EFEA3A6001F0B3F /* SportCrunchUITests */,
@@ -165,6 +188,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				308DBA332EFEA3A4001F0B3F /* SportCrunch */,
+				F91A9C892F26432900688974 /* methods */,
 			);
 			name = SportCrunch;
 			packageProductDependencies = (
@@ -187,7 +211,9 @@
 				308DBA402EFEA3A6001F0B3F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
+				308DBA332EFEA3A4001F0B3F /* SportCrunch */,
 				F91A920E2F1550AF00688974 /* SportCrunchTests */,
+				F91A9C892F26432900688974 /* methods */,
 			);
 			name = SportCrunchTests;
 			packageProductDependencies = (
@@ -210,7 +236,9 @@
 				308DBA4A2EFEA3A6001F0B3F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
+				308DBA332EFEA3A4001F0B3F /* SportCrunch */,
 				308DBA4B2EFEA3A6001F0B3F /* SportCrunchUITests */,
+				F91A9C892F26432900688974 /* methods */,
 			);
 			name = SportCrunchUITests;
 			packageProductDependencies = (
@@ -235,6 +263,7 @@
 			fileSystemSynchronizedGroups = (
 				308DBA332EFEA3A4001F0B3F /* SportCrunch */,
 				F91A95BC2F21428A00688974 /* SportCrunchRunner */,
+				F91A9C892F26432900688974 /* methods */,
 			);
 			name = SportCrunchRunner;
 			packageProductDependencies = (
@@ -301,7 +330,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F91A97172F2272D500688974 /* methods in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -309,7 +337,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F91A97182F2272D500688974 /* methods in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -317,7 +344,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F91A971A2F2272DE00688974 /* methods in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -325,7 +351,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F91A97192F2272D500688974 /* methods in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

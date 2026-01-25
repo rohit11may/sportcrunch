@@ -1,1 +1,0 @@
-../../SportCrunch/Shared/AccessibilityIdentifiers.swift

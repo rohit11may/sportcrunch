@@ -1,0 +1,7 @@
+# Paths to ignore during linting
+excluded:
+  - app/.build
+  - app/DerivedData
+  - app/Pods
+  - app/Carthage
+  - app/Package.resolved

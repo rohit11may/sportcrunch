@@ -67,7 +67,7 @@ final class RealThumbnailService: ThumbnailServiceProtocol {
 final class MockThumbnailService: ThumbnailServiceProtocol {
 
     /// Configurable return value for tests
-    var thumbnailDataToReturn: Data? = nil
+    var thumbnailDataToReturn: Data?
 
     func generateThumbnail(from videoURL: URL, maxSize: CGSize?) async -> Data? {
         return thumbnailDataToReturn

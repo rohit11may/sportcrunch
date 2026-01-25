@@ -15,7 +15,6 @@ actor RunExecutor {
 
   private let store: RunStore
   private let exporter: ArtifactExporter
-  private let registry: MethodRegistry
 
   // MARK: - Queue State
 
@@ -24,10 +23,9 @@ actor RunExecutor {
 
   // MARK: - Initialization
 
-  init(store: RunStore, exporter: ArtifactExporter, registry: MethodRegistry) {
+  init(store: RunStore, exporter: ArtifactExporter) {
     self.store = store
     self.exporter = exporter
-    self.registry = registry
   }
 
   // MARK: - Public Methods
@@ -100,40 +98,15 @@ actor RunExecutor {
       let sportMode: SportMode? = parseSportMode(sport: sport, modeString: run.sportMode)
       print("🔄 [RunExecutor] Parsed sportMode: \(sportMode?.displayName ?? "nil (defaulting to rally)")")
 
-      // Map sport/sportMode to method config
-      let preset = sport.preset(for: sportMode)
-      let config = MethodConfig(
-        audioThresholdMultiplier: Double(preset.onsetThresholdLambda),
-        peakMinDistance: preset.peakMinDistanceSec,
-        clusterMaxGapSec: preset.clusterMaxGapSec,
-        clusterMinHits: preset.clusterMinHits,
-        paddingPreSec: preset.paddingPreSec,
-        paddingPostSec: preset.paddingPostSec,
-        motionThreshold: preset.skipVisualValidation ? nil : Double(preset.motionAreaThreshold)
-      )
-      print("🔄 [RunExecutor] Config: padding=\(config.paddingPreSec)s/\(config.paddingPostSec)s, maxGap=\(config.clusterMaxGapSec)s, minHits=\(config.clusterMinHits), motionThreshold=\(config.motionThreshold?.description ?? "nil")")
-
-      // Create method from registry
-      let methodFamily = run.methodFamily ?? "spectral_flux"
-      let methodVersion = run.methodVersion ?? "v1"
-
-      let method: SegmentationMethod
-      do {
-        method = try await registry.createMethod(family: methodFamily, version: methodVersion)
-      } catch {
-        throw RunExecutorError.methodNotFound("\(methodFamily)/\(methodVersion)")
-      }
-
-      print("🔄 [RunExecutor] Using method: \(method.name) (\(methodFamily)/\(methodVersion))")
+      // Get configured segmentation method for this sport/mode
+      let method = sport.segmentationMethod(for: sportMode)
+      print("🔄 [RunExecutor] Using method: \(method.name)")
       print("🔄 [RunExecutor] Executing on \(videoURL.lastPathComponent)")
       print(
         "🔄 [RunExecutor] Sport: \(sport.displayName), Mode: \(sportMode?.displayName ?? "default")")
 
-      // Detect segments using method with config
-      let segments = try await method.detectSegments(
-        videoURL: videoURL,
-        config: config
-      )
+      // Detect segments using configured method
+      let segments = try await method.detectSegments(videoURL: videoURL)
 
       print("🔄 [RunExecutor] ✓ Detected \(segments.count) segments")
 

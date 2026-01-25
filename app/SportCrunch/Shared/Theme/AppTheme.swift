@@ -15,26 +15,26 @@ extension Color {
     // Additional brand colors (scPrimary is auto-generated from Asset Catalog)
     static let scSecondary = Color(hex: "0066FF") // Electric blue
     static let scAccent = Color(hex: "F7931E") // Warm amber accent
-    
+
     // Sport-specific accents
     static let scTennis = Color(hex: "C8E038") // Vibrant tennis ball yellow-green
     static let scCricket = Color(hex: "E63946") // Cricket red
-    
+
     // Backgrounds
     static let scBackground = Color(hex: "0D0D0F")
     static let scSurface = Color(hex: "1A1A1E")
     static let scSurfaceElevated = Color(hex: "252529")
-    
+
     // Text
     static let scTextPrimary = Color(hex: "FFFFFF")
     static let scTextSecondary = Color(hex: "8E8E93")
     static let scTextTertiary = Color(hex: "636366")
-    
+
     // Semantic
     static let scSuccess = Color(hex: "30D158")
     static let scWarning = Color(hex: "FF9F0A")
     static let scError = Color(hex: "FF453A")
-    
+
     // Gradients
     static let scGradientStart = Color(hex: "FF6B35")
     static let scGradientEnd = Color(hex: "F7931E")
@@ -75,47 +75,47 @@ struct AppFont {
     static func displayLarge() -> Font {
         .system(size: 34, weight: .bold, design: .rounded)
     }
-    
+
     static func displayMedium() -> Font {
         .system(size: 28, weight: .bold, design: .rounded)
     }
-    
+
     // Headlines
     static func headline() -> Font {
         .system(size: 22, weight: .semibold, design: .rounded)
     }
-    
+
     static func subheadline() -> Font {
         .system(size: 17, weight: .semibold, design: .default)
     }
-    
+
     // Body
     static func body() -> Font {
         .system(size: 17, weight: .regular, design: .default)
     }
-    
+
     static func bodyBold() -> Font {
         .system(size: 17, weight: .semibold, design: .default)
     }
-    
+
     // Callout & Caption
     static func callout() -> Font {
         .system(size: 15, weight: .medium, design: .default)
     }
-    
+
     static func caption() -> Font {
         .system(size: 13, weight: .regular, design: .default)
     }
-    
+
     static func captionBold() -> Font {
         .system(size: 13, weight: .semibold, design: .default)
     }
-    
+
     // Stats - For time displays
     static func stats() -> Font {
         .system(size: 48, weight: .bold, design: .rounded)
     }
-    
+
     static func statsMedium() -> Font {
         .system(size: 32, weight: .bold, design: .rounded)
     }
@@ -149,7 +149,7 @@ extension View {
     func scShadow() -> some View {
         self.shadow(color: .black.opacity(0.25), radius: 12, x: 0, y: 4)
     }
-    
+
     func scShadowLight() -> some View {
         self.shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 2)
     }
@@ -165,7 +165,7 @@ struct AppGradient {
             endPoint: .bottomTrailing
         )
     }
-    
+
     static var tennis: LinearGradient {
         LinearGradient(
             colors: [Color(hex: "C8E038"), Color(hex: "9BC53D")],
@@ -173,7 +173,7 @@ struct AppGradient {
             endPoint: .bottomTrailing
         )
     }
-    
+
     static var cricket: LinearGradient {
         LinearGradient(
             colors: [Color(hex: "E63946"), Color(hex: "C41E3A")],
@@ -181,7 +181,7 @@ struct AppGradient {
             endPoint: .bottomTrailing
         )
     }
-    
+
     static var backgroundMesh: LinearGradient {
         LinearGradient(
             colors: [
@@ -194,4 +194,3 @@ struct AppGradient {
         )
     }
 }
-

@@ -1,0 +1,4 @@
+project: SportCrunch.xcodeproj
+schemes:
+- SportCrunch
+- SportCrunchRunner

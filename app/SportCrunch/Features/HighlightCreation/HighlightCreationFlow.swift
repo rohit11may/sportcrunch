@@ -19,7 +19,7 @@ enum CreationStep: Int, CaseIterable {
     case selectVideo
     case selectSport
     case selectMode    // New step for sports with modes (e.g., Tennis)
-    
+
     var title: String {
         switch self {
         case .selectVideo: return "Select Video"
@@ -35,7 +35,7 @@ struct HighlightCreationFlow: View {
     @EnvironmentObject private var appState: AppState
     @State private var viewModel = HighlightCreationViewModel()
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -66,13 +66,13 @@ struct HighlightCreationFlow: View {
                         .accessibilityIdentifier(AccessibilityID.Creation.backButton)
                     }
                 }
-                
+
                 ToolbarItem(placement: .principal) {
                     Text(viewModel.currentStep.title)
                         .font(AppFont.subheadline())
                         .foregroundStyle(Color.scTextPrimary)
                 }
-                
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         viewModel.cancel()
@@ -180,7 +180,7 @@ final class HighlightCreationViewModel {
     }
 
     /// The sport mode as SportMode protocol type (for passing to processor)
-    var sportMode: SportMode? {
+    var sportMode: (any SportMode)? {
         selectedTennisMode
     }
 
@@ -189,7 +189,7 @@ final class HighlightCreationViewModel {
         let date = videoCreationDate ?? Date()
         return Self.titleDateFormatter.string(from: date)
     }
-    
+
     // MARK: - Setup
 
     func setServices(
@@ -201,9 +201,9 @@ final class HighlightCreationViewModel {
         self.backgroundManager = backgroundManager
         self.videoLoader = videoLoader
     }
-    
+
     // MARK: - Navigation
-    
+
     func goBack() {
         switch currentStep {
         case .selectSport:
@@ -218,12 +218,12 @@ final class HighlightCreationViewModel {
             break
         }
     }
-    
+
     func cancel() {
         // Background processing is managed by BackgroundProcessingManager
         // Nothing to cancel in the creation flow itself
     }
-    
+
     // MARK: - Video Selection
 
     /// Stores the video reference, loads a quick thumbnail, and moves forward
@@ -283,50 +283,50 @@ final class HighlightCreationViewModel {
             print("SportCrunch: Failed to copy test video: \(error)")
         }
     }
-    
+
     /// Loads just the thumbnail quickly for the sport selection view
     private func loadQuickThumbnail(for item: PhotosPickerItem) async {
         guard let assetIdentifier = item.itemIdentifier else { return }
-        
+
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [assetIdentifier], options: nil)
         guard let asset = fetchResult.firstObject else { return }
-        
+
         // Store creation date
         await MainActor.run {
             self.videoCreationDate = asset.creationDate
         }
-        
+
         // Request video asset to get duration and generate thumbnail
         let options = PHVideoRequestOptions()
         options.version = .current
         options.deliveryMode = .fastFormat // Fast for quick preview
         options.isNetworkAccessAllowed = true
-        
+
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             PHImageManager.default().requestAVAsset(forVideo: asset, options: options) { avAsset, _, _ in
                 guard let avAsset = avAsset else {
                     continuation.resume()
                     return
                 }
-                
+
                 Task { @MainActor in
                     // Get duration
                     if let duration = try? await avAsset.load(.duration) {
                         self.videoDuration = CMTimeGetSeconds(duration)
                     }
-                    
+
                     // Generate thumbnail from middle of video
                     let imageGenerator = AVAssetImageGenerator(asset: avAsset)
                     imageGenerator.appliesPreferredTrackTransform = true
                     imageGenerator.maximumSize = CGSize(width: 400, height: 400)
-                    
+
                     // Use middle of video for thumbnail
                     let middleTime = CMTime(seconds: self.videoDuration / 2, preferredTimescale: 600)
-                    
+
                     if let cgImage = try? imageGenerator.copyCGImage(at: middleTime, actualTime: nil) {
                         self.videoThumbnail = UIImage(cgImage: cgImage)
                     }
-                    
+
                     continuation.resume()
                 }
             }
@@ -338,34 +338,34 @@ final class HighlightCreationViewModel {
         let asset = AVURLAsset(url: url)
         let duration = try await asset.load(.duration)
         videoDuration = CMTimeGetSeconds(duration)
-        
+
         print("SportCrunch: Video duration: \(videoDuration) seconds")
-        
+
         let logger = ProcessingLogger.shared
         await MainActor.run {
             let mins = Int(self.videoDuration) / 60
             let secs = Int(self.videoDuration) % 60
             logger.pipeline("Video duration: \(mins):\(String(format: "%02d", secs))")
         }
-        
+
         // Generate thumbnail from middle of video
         let imageGenerator = AVAssetImageGenerator(asset: asset)
         imageGenerator.appliesPreferredTrackTransform = true
         imageGenerator.maximumSize = CGSize(width: 400, height: 400)
-        
+
         // Use middle of video for thumbnail
         let middleTime = CMTime(seconds: videoDuration / 2, preferredTimescale: 600)
         let cgImage = try imageGenerator.copyCGImage(at: middleTime, actualTime: nil)
         videoThumbnail = UIImage(cgImage: cgImage)
-        
+
         print("SportCrunch: Thumbnail generated from middle of video")
     }
-    
+
     // MARK: - Sport Selection
-    
+
     func selectSport(_ sport: Sport) {
         selectedSport = sport
-        
+
         // If sport has modes (e.g., Tennis), go to mode selection
         // Otherwise, proceed directly to processing
         if sport.hasModes {
@@ -376,16 +376,16 @@ final class HighlightCreationViewModel {
             startBackgroundProcessing()
         }
     }
-    
+
     // MARK: - Tennis Mode Selection
-    
+
     func selectTennisMode(_ mode: TennisMode) {
         selectedTennisMode = mode
         startBackgroundProcessing()
     }
-    
+
     // MARK: - Background Processing
-    
+
     /// Starts background processing and immediately dismisses the flow.
     /// Video loading happens in background - user sees progress on home screen.
     func startBackgroundProcessing() {
@@ -471,9 +471,9 @@ final class HighlightCreationViewModel {
         // Dismiss immediately - processing continues in background
         shouldDismiss = true
     }
-    
+
     // MARK: - Project Management
-    
+
     func saveProject() {
         guard let project else { return }
         storageService?.saveProject(project)
@@ -486,4 +486,3 @@ final class HighlightCreationViewModel {
     HighlightCreationFlow()
         .environmentObject(AppState())
 }
-

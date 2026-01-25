@@ -100,7 +100,7 @@ final class HighlightCreationFlowTests: XCTestCase {
         // Then check for the video library button
         XCTAssertTrue(creationScreen.videoLibraryButton.waitForExistence(timeout: 5),
                       "Video library button should appear")
-        
+
         // Tap the test video button (which will inject the sample video)
         creationScreen.videoLibraryButton.tap()
 
@@ -144,18 +144,17 @@ final class HighlightCreationFlowTests: XCTestCase {
 
         XCTAssertTrue(creationScreen.shotModeButton.waitForExistence(timeout: 5),
                       "Shot mode button should appear on tennis mode selection screen")
-        
+
         // Verify Crunch button does not appear until a mode is selected
         XCTAssertFalse(creationScreen.crunchButton.exists,
                        "Crunch button should not appear until a mode is selected")
-        
-        
+
         creationScreen.shotModeButton.tap()
-        
+
         XCTAssertTrue(creationScreen.crunchButton.waitForExistence(timeout: 3),
                       "Crunch button should appear after a mode is selected")
     }
-    
+
     @MainActor
     func testHighlightCreationIsTriggered() throws {
         // Given: App is on home screen
@@ -183,17 +182,16 @@ final class HighlightCreationFlowTests: XCTestCase {
 
         XCTAssertTrue(creationScreen.shotModeButton.waitForExistence(timeout: 5),
                       "Shot mode button should appear on tennis mode selection screen")
-        
+
         // Verify Crunch button does not appear until a mode is selected
         XCTAssertFalse(creationScreen.crunchButton.exists,
                        "Crunch button should not appear until a mode is selected")
-        
-        
+
         creationScreen.shotModeButton.tap()
-        
+
         XCTAssertTrue(creationScreen.crunchButton.waitForExistence(timeout: 3),
                       "Crunch button should appear after a mode is selected")
-        
+
         creationScreen.crunchButton.tap()
 
         // Wait for the creation flow to dismiss (flow container should disappear)

@@ -127,14 +127,13 @@ struct CompletedProjectSheet: View {
   // MARK: - Video Player Area
 
   private var videoPlayerArea: some View {
-    GeometryReader { geometry in
+    GeometryReader { _ in
       ZStack {
         // Dark background to avoid any white showing through
         Color.black
 
         if let url = viewModel.project.highlightVideoURL,
-          FileManager.default.fileExists(atPath: url.path)
-        {
+          FileManager.default.fileExists(atPath: url.path) {
           ControllableVideoPlayer(
             url: url,
             currentTime: $currentTime,
@@ -151,7 +150,7 @@ struct CompletedProjectSheet: View {
               LinearGradient(
                 colors: [
                   viewModel.project.sport.accentColor.opacity(0.3),
-                  viewModel.project.sport.accentColor.opacity(0.1),
+                  viewModel.project.sport.accentColor.opacity(0.1)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -310,8 +309,7 @@ struct CompletedProjectSheet: View {
         onSegmentTap: { _, segment in
           // Jump to the segment using its actual position in all segments
           if let allIndex = viewModel.allSegments.firstIndex(where: { $0.id == segment.id }),
-            let seekTime = viewModel.seekTime(for: allIndex)
-          {
+            let seekTime = viewModel.seekTime(for: allIndex) {
             currentTime = seekTime
           }
         },
@@ -384,8 +382,7 @@ struct CompletedProjectExportSheet: View {
   /// Since the highlight is a concatenation of segments, we need to map
   /// each segment to its position within the highlight
   private var segmentOffsets:
-    [(segment: ActionSegment, startOffset: TimeInterval, endOffset: TimeInterval)]
-  {
+    [(segment: ActionSegment, startOffset: TimeInterval, endOffset: TimeInterval)] {
     var offset: TimeInterval = 0
     return project.segments.map { segment in
       let start = offset
@@ -745,7 +742,7 @@ struct CompletedProjectExportSheet: View {
 
     // Use VideoExporter to stitch only the starred segments
     let exporter = VideoExporter()
-    let _ = try await exporter.export(
+    _ = try await exporter.export(
       sourceURL: highlightURL,
       intervals: starredIntervals,
       outputURL: outputURL,

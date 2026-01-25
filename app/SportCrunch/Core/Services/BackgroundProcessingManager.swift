@@ -22,7 +22,7 @@ struct ProcessingJob: Identifiable {
   /// PhotosPickerItem if video needs to be loaded in background
   let pickerItem: PhotosPickerItem?
   let sport: Sport
-  let sportMode: SportMode?
+  let sportMode: (any SportMode)?
   var progress: Double = 0
   var status: ProcessingStatus = .pending
 }
@@ -83,7 +83,7 @@ final class BackgroundProcessingManager: ObservableObject {
     project: Project,
     pickerItem: PhotosPickerItem,
     sport: Sport,
-    sportMode: SportMode?
+    sportMode: (any SportMode)?
   ) {
     let job = ProcessingJob(
       id: UUID(),
@@ -108,7 +108,7 @@ final class BackgroundProcessingManager: ObservableObject {
     project: Project,
     sourceURL: URL,
     sport: Sport,
-    sportMode: SportMode?
+    sportMode: (any SportMode)?
   ) {
     let job = ProcessingJob(
       id: UUID(),

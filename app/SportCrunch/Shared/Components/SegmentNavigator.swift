@@ -172,7 +172,7 @@ struct SegmentChip: View {
               LinearGradient(
                 colors: [
                   Color.yellow.opacity(0.08),
-                  Color.orange.opacity(0.04),
+                  Color.orange.opacity(0.04)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -238,7 +238,7 @@ struct SegmentChip: View {
       ActionSegment(startTime: 45, endTime: 120),
       ActionSegment(startTime: 120, endTime: 180, isStarred: true),
       ActionSegment(startTime: 180, endTime: 240),
-      ActionSegment(startTime: 240, endTime: 300),
+      ActionSegment(startTime: 240, endTime: 300)
     ]
 
     var body: some View {

@@ -64,8 +64,7 @@ final class CompletedProjectViewModel {
 
   /// Calculate segment offsets within the highlight (concatenated segments)
   /// Uses all segments regardless of filter since offsets are for the full highlight video
-  var segmentOffsets: [(segment: ActionSegment, startOffset: TimeInterval, endOffset: TimeInterval)]
-  {
+  var segmentOffsets: [(segment: ActionSegment, startOffset: TimeInterval, endOffset: TimeInterval)] {
     var offset: TimeInterval = 0
     return allSegments.map { segment in
       let start = offset
@@ -76,8 +75,7 @@ final class CompletedProjectViewModel {
 
   /// Offsets for displayed segments only (for navigator UI)
   var displayedSegmentOffsets:
-    [(segment: ActionSegment, startOffset: TimeInterval, endOffset: TimeInterval)]
-  {
+    [(segment: ActionSegment, startOffset: TimeInterval, endOffset: TimeInterval)] {
     segmentOffsets.filter { offsetInfo in
       displayedSegments.contains(where: { $0.id == offsetInfo.segment.id })
     }

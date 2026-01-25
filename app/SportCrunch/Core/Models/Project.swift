@@ -12,41 +12,41 @@ struct Project: Identifiable, Equatable, Sendable {
     let id: UUID
     let sport: Sport
     let createdAt: Date
-    
+
     /// URL to the original source video (may not persist between launches - used during processing only)
     var sourceVideoURL: URL
-    
+
     /// Filename of the generated highlight video (stored relative to Documents/Highlights)
     /// Use `highlightVideoURL` computed property to get the full URL
     var highlightVideoFilename: String?
-    
+
     /// Duration of the original video in seconds
     let originalDuration: TimeInterval
-    
+
     /// Duration of the highlight video in seconds (nil if not yet processed)
     var highlightDuration: TimeInterval?
-    
+
     /// Processing status
     var status: ProcessingStatus
-    
+
     /// Detected action segments (start, end times in seconds)
     var segments: [ActionSegment]
-    
+
     /// Optional title for the project
     var title: String?
-    
+
     /// Thumbnail image data (stored as base64 for simplicity)
     var thumbnailData: Data?
-    
+
     /// Sport mode (e.g., Tennis Rally vs Individual)
     var sportMode: SportModeWrapper?
-    
+
     /// Size of the original video file in bytes
     var originalFileSize: Int64?
-    
+
     /// Size of the generated highlight file in bytes
     var highlightFileSize: Int64?
-    
+
     /// URL to the generated highlight video (reconstructed from filename)
     var highlightVideoURL: URL? {
         get {
@@ -57,13 +57,13 @@ struct Project: Identifiable, Equatable, Sendable {
             highlightVideoFilename = newValue?.lastPathComponent
         }
     }
-    
+
     /// The persistent Highlights directory in Documents
     static var highlightsDirectory: URL {
         let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         return documentsURL.appendingPathComponent("Highlights", isDirectory: true)
     }
-    
+
     init(
         id: UUID = UUID(),
         sport: Sport,
@@ -82,72 +82,72 @@ struct Project: Identifiable, Equatable, Sendable {
         self.title = title
         self.sportMode = sportMode
     }
-    
+
     // MARK: - Computed Properties
-    
+
     /// Formatted sport mode display name
     var formattedSportMode: String? {
         sportMode?.displayName
     }
-    
+
     /// Time saved by the highlight
     var timeSaved: TimeInterval? {
         guard let highlightDuration else { return nil }
         return originalDuration - highlightDuration
     }
-    
+
     /// Compression ratio (e.g., 0.15 means 15% of original)
     var compressionRatio: Double? {
         guard let highlightDuration, originalDuration > 0 else { return nil }
         return highlightDuration / originalDuration
     }
-    
+
     /// Formatted original duration (e.g., "2h 15m")
     var formattedOriginalDuration: String {
         formatDuration(originalDuration)
     }
-    
+
     /// Formatted highlight duration (e.g., "18m")
     var formattedHighlightDuration: String? {
         guard let highlightDuration else { return nil }
         return formatDuration(highlightDuration)
     }
-    
+
     /// Formatted time saved (e.g., "1h 57m removed")
     var formattedTimeSaved: String? {
         guard let timeSaved else { return nil }
         return "\(formatDuration(timeSaved)) removed"
     }
-    
+
     /// Space saved by the highlight in bytes
     var spaceSaved: Int64? {
         guard let originalFileSize, let highlightFileSize else { return nil }
         return originalFileSize - highlightFileSize
     }
-    
+
     /// Formatted space saved (e.g., "1.2 GB saved")
     var formattedSpaceSaved: String? {
         guard let spaceSaved, spaceSaved > 0 else { return nil }
         return "\(formatFileSize(spaceSaved)) saved"
     }
-    
+
     /// Formatted original file size (e.g., "2.5 GB")
     var formattedOriginalFileSize: String? {
         guard let originalFileSize else { return nil }
         return formatFileSize(originalFileSize)
     }
-    
+
     /// Formatted highlight file size (e.g., "350 MB")
     var formattedHighlightFileSize: String? {
         guard let highlightFileSize else { return nil }
         return formatFileSize(highlightFileSize)
     }
-    
+
     private func formatDuration(_ duration: TimeInterval) -> String {
         let hours = Int(duration) / 3600
         let minutes = Int(duration) % 3600 / 60
         let seconds = Int(duration) % 60
-        
+
         if hours > 0 {
             return "\(hours)h \(minutes)m"
         } else if minutes > 0 {
@@ -156,11 +156,11 @@ struct Project: Identifiable, Equatable, Sendable {
             return "\(seconds)s"
         }
     }
-    
+
     private func formatFileSize(_ bytes: Int64) -> String {
         let gb = Double(bytes) / 1_073_741_824 // 1024^3
         let mb = Double(bytes) / 1_048_576 // 1024^2
-        
+
         if gb >= 1.0 {
             return String(format: "%.1f GB", gb)
         } else if mb >= 1.0 {
@@ -175,17 +175,17 @@ struct Project: Identifiable, Equatable, Sendable {
 // MARK: - Codable (Custom Implementation for Path Persistence)
 
 extension Project: Codable {
-    
+
     private enum CodingKeys: String, CodingKey {
         case id, sport, createdAt, originalDuration, highlightDuration
         case status, segments, title, thumbnailData, sportMode
         case highlightVideoFilename, originalFileSize, highlightFileSize
         // Note: sourceVideoURL is NOT persisted - it's only valid during processing
     }
-    
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        
+
         id = try container.decode(UUID.self, forKey: .id)
         sport = try container.decode(Sport.self, forKey: .sport)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
@@ -199,15 +199,15 @@ extension Project: Codable {
         highlightVideoFilename = try container.decodeIfPresent(String.self, forKey: .highlightVideoFilename)
         originalFileSize = try container.decodeIfPresent(Int64.self, forKey: .originalFileSize)
         highlightFileSize = try container.decodeIfPresent(Int64.self, forKey: .highlightFileSize)
-        
+
         // sourceVideoURL is not persisted - use a placeholder
         // It's only used during initial processing
         sourceVideoURL = URL(fileURLWithPath: "/")
     }
-    
+
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        
+
         try container.encode(id, forKey: .id)
         try container.encode(sport, forKey: .sport)
         try container.encode(createdAt, forKey: .createdAt)
@@ -236,7 +236,7 @@ enum ProcessingStatus: String, Codable, Equatable, Sendable {
     case exporting
     case completed
     case failed
-    
+
     var displayText: String {
         switch self {
         case .pending: return "Waiting..."
@@ -249,7 +249,7 @@ enum ProcessingStatus: String, Codable, Equatable, Sendable {
         case .failed: return "Failed"
         }
     }
-    
+
     var progress: Double {
         switch self {
         case .pending: return 0.0
@@ -262,7 +262,7 @@ enum ProcessingStatus: String, Codable, Equatable, Sendable {
         case .failed: return 0.0
         }
     }
-    
+
     var isProcessing: Bool {
         switch self {
         case .pending, .loadingVideo, .analyzingAudio, .detectingAction, .creatingClips, .exporting:
@@ -280,16 +280,16 @@ struct ActionSegment: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
     let startTime: TimeInterval
     let endTime: TimeInterval
-    
+
     /// Confidence score (0.0 to 1.0)
     let confidence: Double
-    
+
     /// Whether this segment is included in the final highlight
     var isIncluded: Bool
-    
+
     /// Whether this segment is starred (for selective export)
     var isStarred: Bool
-    
+
     var duration: TimeInterval {
         endTime - startTime
     }
@@ -320,14 +320,14 @@ extension Project {
         originalDuration: 7200, // 2 hours
         title: "Morning Practice"
     )
-    
+
     static let sampleCricket = Project(
         sport: .cricket,
         sourceVideoURL: URL(fileURLWithPath: "/sample/cricket.mov"),
         originalDuration: 10800, // 3 hours
         title: "Weekend Match"
     )
-    
+
     static var sampleCompleted: Project {
         var project = sampleTennis
         project.status = .completed
@@ -338,7 +338,7 @@ extension Project {
         project.segments = [
             ActionSegment(startTime: 120, endTime: 180),
             ActionSegment(startTime: 300, endTime: 420),
-            ActionSegment(startTime: 600, endTime: 720),
+            ActionSegment(startTime: 600, endTime: 720)
         ]
         return project
     }

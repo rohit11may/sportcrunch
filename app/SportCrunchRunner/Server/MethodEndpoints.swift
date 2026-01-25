@@ -15,7 +15,7 @@ enum MethodEndpoints {
     static func register(on server: HttpServer, registry: MethodRegistry) {
 
         // GET /methods - List all available methods
-        server.GET["/methods"] = { request in
+        server.GET["/methods"] = { _ in
             let semaphore = DispatchSemaphore(value: 0)
             var responseJSON: String = "[]"
 

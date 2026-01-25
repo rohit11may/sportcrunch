@@ -58,7 +58,7 @@ struct ControllableVideoPlayer: View {
         player?.pause()
       }
     }
-    .onChange(of: currentTime) { oldValue, newValue in
+    .onChange(of: currentTime) { _, newValue in
       // Only seek if the change was external (not from our observer)
       let timeDiff = abs(newValue - lastReportedTime)
       if timeDiff > 0.5 && !isSeeking {
@@ -293,7 +293,7 @@ private class ZoomableVideoViewController: UIViewController, UIScrollViewDelegat
       scrollView.topAnchor.constraint(equalTo: view.topAnchor),
       scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
       scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-      scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+      scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
     ])
 
     // Setup Container View
@@ -306,7 +306,7 @@ private class ZoomableVideoViewController: UIViewController, UIScrollViewDelegat
       containerView.trailingAnchor.constraint(
         equalTo: scrollView.contentLayoutGuide.trailingAnchor),
       containerView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
-      containerView.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor),
+      containerView.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor)
     ])
 
     // Setup Player View
@@ -316,7 +316,7 @@ private class ZoomableVideoViewController: UIViewController, UIScrollViewDelegat
       playerView.topAnchor.constraint(equalTo: containerView.topAnchor),
       playerView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
       playerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-      playerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+      playerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor)
     ])
   }
 

@@ -110,7 +110,7 @@ import Foundation
         "--domain-type", domainType,
         "--domain-identifier", bundleID,
         "--source", sourcePath,
-        "--destination", destinationPath,
+        "--destination", destinationPath
       ]
 
       let pipe = Pipe()
@@ -147,7 +147,7 @@ import Foundation
         "--domain-type", domainType,
         "--domain-identifier", bundleID,
         "--source", path,
-        "--destination", "/dev/null",
+        "--destination", "/dev/null"
       ]
 
       let pipe = Pipe()
@@ -181,7 +181,7 @@ import Foundation
         "--domain-type", domainType,
         "--domain-identifier", bundleID,
         "--source", sourceDir,
-        "--destination", destDir,
+        "--destination", destDir
       ]
 
       let pipe = Pipe()

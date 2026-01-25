@@ -28,7 +28,7 @@ class RunEndpoints {
     }
 
     // GET /runs - List all runs
-    server.registerRoute(path: "/runs", method: "GET") { request in
+    server.registerRoute(path: "/runs", method: "GET") { _ in
       let semaphore = DispatchSemaphore(value: 0)
       var response: HttpResponse = .internalServerError
 
@@ -135,7 +135,7 @@ class RunEndpoints {
       // Return 202 Accepted with run ID
       let response: [String: Any] = [
         "id": run.id.uuidString,
-        "status": run.status.rawValue,
+        "status": run.status.rawValue
       ]
 
       print("📤 [RunEndpoints] Returning 202 response: \(response)")
@@ -209,7 +209,7 @@ class RunEndpoints {
       "method": run.method,
       "sport": run.sport,
       "config": run.config,
-      "createdAt": ISO8601DateFormatter().string(from: run.createdAt),
+      "createdAt": ISO8601DateFormatter().string(from: run.createdAt)
     ]
 
     print("  ✓ Added base fields (id, status, videoPath, method, sport, config, createdAt)")
@@ -235,7 +235,7 @@ class RunEndpoints {
         [
           "startTime": segment.startTime,
           "endTime": segment.endTime,
-          "type": segment.type,
+          "type": segment.type
         ] as [String: Any]
       }
       json["segments"] = segmentsArray
@@ -316,8 +316,7 @@ class RunEndpoints {
   private static func parseDeviceTarget(from json: [String: Any]) -> DeviceTarget {
     // Parse device target from JSON (defaults to simulator)
     if let targetString = json["deviceTarget"] as? String,
-      let target = DeviceTarget(rawValue: targetString)
-    {
+      let target = DeviceTarget(rawValue: targetString) {
       return target
     }
     return .simulator
@@ -334,8 +333,7 @@ class RunEndpoints {
     if path.hasPrefix("Documents/") {
       // Get the app's Documents directory
       if let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        .first
-      {
+        .first {
         // Remove "Documents/" prefix and append to actual Documents path
         let relativePath = String(path.dropFirst("Documents/".count))
         let fullPath = documentsURL.appendingPathComponent(relativePath).path

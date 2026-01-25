@@ -10,23 +10,23 @@ import SwiftUI
 struct SportSelectionView: View {
     var viewModel: HighlightCreationViewModel
     @State private var hoveredSport: Sport?
-    
+
     var body: some View {
         VStack(spacing: Spacing.xl) {
             // Video preview
             videoPreviewCard
-            
+
             // Sport selection
             VStack(spacing: Spacing.md) {
                 Text("What sport is this?")
                     .font(AppFont.headline())
                     .foregroundStyle(Color.scTextPrimary)
-                
+
                 Text("Select the sport so we can tune detection")
                     .font(AppFont.body())
                     .foregroundStyle(Color.scTextSecondary)
             }
-            
+
             // Sport options
             HStack(spacing: Spacing.md) {
                 ForEach(Sport.allCases) { sport in
@@ -45,9 +45,9 @@ struct SportSelectionView: View {
                 }
             }
             .padding(.horizontal, Spacing.md)
-            
+
             Spacer()
-            
+
             // Info card
             infoCard
         }
@@ -55,9 +55,9 @@ struct SportSelectionView: View {
         .padding(.top, Spacing.lg)
         .padding(.bottom, Spacing.xl)
     }
-    
+
     // MARK: - Video Preview Card
-    
+
     private var videoPreviewCard: some View {
         ZStack(alignment: .bottomLeading) {
             // Thumbnail
@@ -72,14 +72,14 @@ struct SportSelectionView: View {
                     .fill(Color.scSurfaceElevated)
                     .frame(height: 180)
             }
-            
+
             // Gradient overlay
             LinearGradient(
                 colors: [.clear, .black.opacity(0.7)],
                 startPoint: .top,
                 endPoint: .bottom
             )
-            
+
             // Duration badge
             HStack(spacing: Spacing.xs) {
                 Image(systemName: "clock")
@@ -103,23 +103,23 @@ struct SportSelectionView: View {
     }
 
     // MARK: - Info Card
-    
+
     private var infoCard: some View {
         HStack(spacing: Spacing.sm) {
             Image(systemName: "wand.and.stars")
                 .font(.system(size: 20))
                 .foregroundStyle(Color.scGradientStart)
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 Text("Processing takes 1-3 minutes")
                     .font(AppFont.callout())
                     .foregroundStyle(Color.scTextPrimary)
-                
+
                 Text("Your original video will remain unchanged")
                     .font(AppFont.caption())
                     .foregroundStyle(Color.scTextSecondary)
             }
-            
+
             Spacer()
         }
         .padding(Spacing.md)
@@ -140,4 +140,3 @@ struct SportSelectionView: View {
         .background(Color.scBackground)
     }
 }
-

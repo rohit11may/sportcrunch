@@ -13,32 +13,23 @@ import Combine
 /// Central app state that manages navigation and shared dependencies
 @MainActor
 final class AppState: ObservableObject {
-    
+
     // MARK: - Navigation State
-    
+
     @Published var hasCompletedOnboarding: Bool {
         didSet {
             UserDefaults.standard.set(hasCompletedOnboarding, forKey: onboardingKey)
         }
     }
-    
+
     @Published var selectedTab: Tab = .home
-    
-    // MARK: - Developer Settings
-    
-    @Published var developerModeEnabled: Bool {
-        didSet {
-            UserDefaults.standard.set(developerModeEnabled, forKey: developerModeKey)
-            updateDebugReportService()
-        }
-    }
-    
+
     // MARK: - Services
 
     let videoProcessingService: VideoProcessingServiceProtocol
     let projectStorageService: ProjectStorageServiceProtocol
     let videoLoaderService: VideoLoaderServiceProtocol
-    
+
     /// Background processing manager for non-blocking video processing
     /// Initialized on first access on the main actor
     @MainActor
@@ -48,12 +39,11 @@ final class AppState: ObservableObject {
             storageService: projectStorageService
         )
     }()
-    
+
     // MARK: - Constants
-    
+
     private let onboardingKey = "com.sportcrunch.hasCompletedOnboarding"
-    private let developerModeKey = "com.sportcrunch.developerModeEnabled"
-    
+
     // MARK: - Test Mode Detection
 
     /// Check if running in UI test mode with mock projects
@@ -73,20 +63,12 @@ final class AppState: ObservableObject {
         self.videoLoaderService = videoLoaderService
         self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: onboardingKey)
 
-        // Load developer mode setting
-        let developerMode = UserDefaults.standard.bool(forKey: developerModeKey)
-        self.developerModeEnabled = developerMode
-
-        // Create video processing service with report manager if in developer mode
+        // Create video processing service
         if let customService = videoProcessingService {
             self.videoProcessingService = customService
         } else {
-            let reportManager = developerMode ? RealProcessingReportManager() : nil
-            self.videoProcessingService = RealVideoProcessingService(reportManager: reportManager)
+            self.videoProcessingService = RealVideoProcessingService()
         }
-
-        // Apply developer mode setting to debug report service on init
-        updateDebugReportService()
 
         // Inject mock projects for UI testing
         if Self.shouldInjectMockProjects {
@@ -121,30 +103,21 @@ final class AppState: ObservableObject {
         mockProject.segments = [
             ActionSegment(startTime: 0, endTime: 2, isStarred: true),
             ActionSegment(startTime: 2, endTime: 4, isStarred: false),
-            ActionSegment(startTime: 4, endTime: 6, isStarred: true),
+            ActionSegment(startTime: 4, endTime: 6, isStarred: true)
         ]
 
         // Save the mock project
         projectStorageService.saveProject(mockProject)
     }
-    
+
     // MARK: - Actions
-    
+
     func completeOnboarding() {
         hasCompletedOnboarding = true
     }
-    
+
     func resetOnboarding() {
         hasCompletedOnboarding = false
-    }
-    
-    // MARK: - Developer Mode
-    
-    private func updateDebugReportService() {
-        Task { [weak self] in
-            guard let self else { return }
-            await DebugReportService.shared.setEnabled(self.developerModeEnabled)
-        }
     }
 }
 
@@ -153,14 +126,14 @@ final class AppState: ObservableObject {
 enum Tab: String, CaseIterable {
     case home
     case settings
-    
+
     var title: String {
         switch self {
         case .home: return "Home"
         case .settings: return "Settings"
         }
     }
-    
+
     var icon: String {
         switch self {
         case .home: return "house.fill"
@@ -168,5 +141,3 @@ enum Tab: String, CaseIterable {
         }
     }
 }
-
-

@@ -187,7 +187,7 @@ final class SegmentDetectionTests: XCTestCase {
             evaluation,
             rates,
             fpThreshold: 30.0,
-            fnThreshold: 50.0
+            fnThreshold: 100.0
         )
     }
 

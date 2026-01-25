@@ -13,15 +13,15 @@ struct PrimaryButton: View {
     let title: String
     let icon: String?
     let action: () -> Void
-    
+
     @State private var isPressed = false
-    
+
     init(_ title: String, icon: String? = nil, action: @escaping () -> Void) {
         self.title = title
         self.icon = icon
         self.action = action
     }
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: Spacing.xs) {
@@ -50,15 +50,15 @@ struct SecondaryButton: View {
     let title: String
     let icon: String?
     let action: () -> Void
-    
+
     @State private var isPressed = false
-    
+
     init(_ title: String, icon: String? = nil, action: @escaping () -> Void) {
         self.title = title
         self.icon = icon
         self.action = action
     }
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: Spacing.xs) {
@@ -91,11 +91,11 @@ struct SportButton: View {
     let sport: Sport
     let isSelected: Bool
     let action: () -> Void
-    
+
     @State private var isPressed = false
-    
+
     private var isDisabled: Bool { sport.isComingSoon }
-    
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: Spacing.md) {
@@ -105,19 +105,19 @@ struct SportButton: View {
                         .fill(isDisabled ? LinearGradient(colors: [.gray.opacity(0.3)], startPoint: .top, endPoint: .bottom) :
                               (isSelected ? sport.gradient : LinearGradient(colors: [.scSurfaceElevated], startPoint: .top, endPoint: .bottom)))
                         .frame(width: 80, height: 80)
-                    
+
                     Text(sport.emoji)
                         .font(.system(size: 36))
                         .grayscale(isDisabled ? 1.0 : 0)
                         .opacity(isDisabled ? 0.5 : 1.0)
                 }
-                
+
                 // Sport Name
                 VStack(spacing: Spacing.xxs) {
                     Text(sport.displayName)
                         .font(AppFont.subheadline())
                         .foregroundStyle(isDisabled ? Color.scTextTertiary : Color.scTextPrimary)
-                    
+
                     if isDisabled {
                         Text("Coming soon!")
                             .font(AppFont.captionBold())
@@ -150,7 +150,7 @@ struct SportButton: View {
 
 struct PressableButtonStyle: ButtonStyle {
     @Binding var isPressed: Bool
-    
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .onChange(of: configuration.isPressed) { _, newValue in
@@ -178,4 +178,3 @@ struct PressableButtonStyle: ButtonStyle {
     .padding()
     .background(Color.scBackground)
 }
-

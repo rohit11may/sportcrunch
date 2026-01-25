@@ -53,10 +53,9 @@ struct HighlightProgressBar: View {
             .fill(Color.scSurfaceElevated)
 
           // Starred segment glowing overlays (behind progress)
-          ForEach(Array(segmentOffsets.enumerated()), id: \.offset) { index, offsetInfo in
+          ForEach(Array(segmentOffsets.enumerated()), id: \.offset) { _, offsetInfo in
             if offsetInfo.segment.isStarred {
               let startX = (offsetInfo.startOffset / totalDuration) * geometry.size.width
-              let endOffset = offsetInfo.startOffset + offsetInfo.segment.duration
               let width = (offsetInfo.segment.duration / totalDuration) * geometry.size.width
 
               // Glowing starred segment indicator
@@ -83,7 +82,7 @@ struct HighlightProgressBar: View {
             .frame(width: geometry.size.width * progress)
 
           // Starred segment indicators on top of progress (visible part)
-          ForEach(Array(segmentOffsets.enumerated()), id: \.offset) { index, offsetInfo in
+          ForEach(Array(segmentOffsets.enumerated()), id: \.offset) { _, offsetInfo in
             if offsetInfo.segment.isStarred {
               let startX = (offsetInfo.startOffset / totalDuration) * geometry.size.width
               let width = (offsetInfo.segment.duration / totalDuration) * geometry.size.width
@@ -99,7 +98,7 @@ struct HighlightProgressBar: View {
                     LinearGradient(
                       colors: [
                         Color.yellow.opacity(0.6),
-                        Color.orange.opacity(0.4),
+                        Color.orange.opacity(0.4)
                       ],
                       startPoint: .leading,
                       endPoint: .trailing
@@ -218,7 +217,7 @@ struct StarredSegmentGlow: View {
       ActionSegment(startTime: 0, endTime: 60, isStarred: true),
       ActionSegment(startTime: 60, endTime: 120),
       ActionSegment(startTime: 120, endTime: 180, isStarred: true),
-      ActionSegment(startTime: 180, endTime: 224),
+      ActionSegment(startTime: 180, endTime: 224)
     ]
 
     var body: some View {

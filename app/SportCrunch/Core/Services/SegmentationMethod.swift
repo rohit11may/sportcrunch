@@ -8,80 +8,29 @@
 
 import Foundation
 
-// MARK: - Method Configuration
-
-/// Configuration parameters for method execution.
-/// Maps to JSON config files in methods/{family}/{version}/configs/
-///
-/// This struct decouples methods from sport-specific logic. Methods only know about
-/// config values - the app layer maps Sport/SportMode selections to configs.
-struct MethodConfig: Sendable {
-    // Audio parameters
-    let audioThresholdMultiplier: Double
-    let peakMinDistance: Double
-
-    // Clustering parameters
-    let clusterMaxGapSec: Double
-    let clusterMinHits: Int
-
-    // Padding parameters
-    let paddingPreSec: Double
-    let paddingPostSec: Double
-
-    // Visual validation parameters (optional, only for methods with visual validation)
-    let motionThreshold: Double?
-
-    /// Create config from JSON config parameters
-    init(
-        audioThresholdMultiplier: Double = 1.5,
-        peakMinDistance: Double = 0.5,
-        clusterMaxGapSec: Double = 2.0,
-        clusterMinHits: Int = 2,
-        paddingPreSec: Double = 1.5,
-        paddingPostSec: Double = 1.0,
-        motionThreshold: Double? = nil
-    ) {
-        self.audioThresholdMultiplier = audioThresholdMultiplier
-        self.peakMinDistance = peakMinDistance
-        self.clusterMaxGapSec = clusterMaxGapSec
-        self.clusterMinHits = clusterMinHits
-        self.paddingPreSec = paddingPreSec
-        self.paddingPostSec = paddingPostSec
-        self.motionThreshold = motionThreshold
-    }
-}
-
 // MARK: - Segmentation Method Protocol
 
 /// Protocol for swappable segment detection algorithms.
 ///
 /// Implementing this protocol allows different detection methods to be used
-/// interchangeably in the video processing pipeline. Each method accepts a
-/// config object and returns detected action segments.
+/// interchangeably in the video processing pipeline. Methods are "hydrated"
+/// with their configuration at initialization and are ready to use.
 ///
-/// Methods are config-driven and decoupled from app-specific sport selection logic.
-/// The app layer (VideoProcessingService, RunExecutor) maps Sport/SportMode to
-/// appropriate MethodConfig instances before calling methods.
+/// The app layer (Sport.swift) provides factory methods that return configured
+/// methods based on sport and mode selection.
 ///
 /// Example implementations:
-/// - SpectralFluxMethod (v1): Audio-only spectral flux detection
-/// - SpectralFluxVisualValidationMethod (v2): Audio + visual validation
+/// - SpectralFluxMethod: Audio + visual validation detection
 /// - MLMethod: Machine learning-based detection (future)
 protocol SegmentationMethod: Sendable {
 
     /// Human-readable name identifying this detection method.
-    /// Used for logging and debug reports.
     var name: String { get }
 
-    /// Detect action segments in a video using the provided configuration.
+    /// Detect action segments in a video.
     ///
-    /// - Parameters:
-    ///   - videoURL: URL to the source video file
-    ///   - config: Method configuration parameters (matches JSON config structure)
+    /// - Parameter videoURL: URL to the source video file
     /// - Returns: Array of detected action segments
     /// - Throws: If video access fails or detection encounters an error
-    func detectSegments(
-        videoURL: URL,
-        config: MethodConfig
-    ) async throws -> [ActionSegment]
+    func detectSegments(videoURL: URL) async throws -> [ActionSegment]
 }

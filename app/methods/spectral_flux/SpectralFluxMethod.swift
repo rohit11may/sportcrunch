@@ -1,8 +1,8 @@
 //
-//  SpectralFluxVisualValidationMethod.swift
+//  SpectralFluxMethod.swift
 //  SportCrunch
 //
-//  Spectral flux + visual validation detection method (v2).
+//  Spectral flux + visual validation detection method.
 //  Wraps AudioAnalyzer and VisualValidator into a pluggable method.
 //
 
@@ -17,36 +17,28 @@ import Foundation
 /// 2. Visual validation via VisualValidator (motion confirmation)
 /// 3. Returns validated ActionSegments
 ///
-/// This is the current production detection method (v2), extracted from the
-/// VideoProcessingService for swappability.
-///
 /// Note: This is a final class (not an actor) to simplify protocol conformance.
 /// The underlying AudioAnalyzer and VisualValidator are actors, providing
 /// thread safety for the actual processing work.
-final class SpectralFluxVisualValidationMethod: SegmentationMethod {
+final class SpectralFluxMethod: SegmentationMethod {
 
     // MARK: - Properties
 
-    var name: String {
-        "SpectralFluxVisualValidation"
-    }
+    var name: String { "SpectralFlux" }
 
-    // Components (actors provide thread safety)
-    private let audioAnalyzer = AudioAnalyzer()
-    private let visualValidator = VisualValidator()
+    private let config: SpectralFluxMethodConfig
+    private let audioAnalyzer = SpectralFluxAudioAnalyzer()
+    private let visualValidator = SpectralFluxVisualValidator()
 
     // MARK: - Initialization
 
-    init() {
-        // Default initialization with standard components
+    init(config: SpectralFluxMethodConfig) {
+        self.config = config
     }
 
     // MARK: - Segmentation Method Protocol
 
-    func detectSegments(
-        videoURL: URL,
-        config: MethodConfig
-    ) async throws -> [ActionSegment] {
+    func detectSegments(videoURL: URL) async throws -> [ActionSegment] {
         let logger = ProcessingLogger.shared
 
         // Phase 1: Audio Analysis
@@ -58,24 +50,24 @@ final class SpectralFluxVisualValidationMethod: SegmentationMethod {
         do {
             audioResult = try await audioAnalyzer.analyze(
                 videoURL: videoURL,
-                config: config
+                config: self.config
             )
         } catch {
-            print("⚙️ [SpectralFluxVisualValidationMethod] ❌ Audio analysis failed: \(error.localizedDescription)")
+            print("⚙️ [SpectralFluxMethod] ❌ Audio analysis failed: \(error.localizedDescription)")
             throw error
         }
 
         guard !audioResult.candidateIntervals.isEmpty else {
-            print("⚙️ [SpectralFluxVisualValidationMethod] ❌ No action detected in audio analysis")
+            print("⚙️ [SpectralFluxMethod] ❌ No action detected in audio analysis")
             throw ProcessingError.noActionDetected
         }
 
         // Phase 2: Visual Validation (or skip if motion threshold not specified)
         let segments: [ActionSegment]
 
-        if config.motionThreshold == nil {
+        if self.config.motionThreshold == nil {
             // Audio-only mode
-            print("⚙️ [SpectralFluxVisualValidationMethod] ✓ Skipping visual validation (audio-only mode)")
+            print("⚙️ [SpectralFluxMethod] ✓ Skipping visual validation (audio-only mode)")
             await MainActor.run {
                 logger.success("Using audio-only mode (visual validation skipped)")
             }
@@ -98,13 +90,13 @@ final class SpectralFluxVisualValidationMethod: SegmentationMethod {
                 validations = try await visualValidator.validate(
                     videoURL: videoURL,
                     candidates: audioResult.candidateIntervals,
-                    config: config,
+                    config: self.config,
                     progressHandler: nil  // No progress reporting in method layer
                 )
             } catch {
                 // Fallback to audio-only if visual validation fails
-                print("⚙️ [SpectralFluxVisualValidationMethod] ⚠️ Visual validation failed, using audio-only")
-                print("⚙️ [SpectralFluxVisualValidationMethod] Error: \(error.localizedDescription)")
+                print("⚙️ [SpectralFluxMethod] ⚠️ Visual validation failed, using audio-only")
+                print("⚙️ [SpectralFluxMethod] Error: \(error.localizedDescription)")
                 await MainActor.run {
                     logger.warning("Visual validation unavailable, using audio-only")
                 }
@@ -125,7 +117,7 @@ final class SpectralFluxVisualValidationMethod: SegmentationMethod {
 
             if validIntervals.isEmpty {
                 // No segments passed validation, use audio-only with lower confidence
-                print("⚙️ [SpectralFluxVisualValidationMethod] ⚠️ No segments passed visual validation, using audio-only")
+                print("⚙️ [SpectralFluxMethod] ⚠️ No segments passed visual validation, using audio-only")
                 await MainActor.run {
                     logger.warning("Low motion detected, using audio-only results")
                 }
@@ -139,7 +131,7 @@ final class SpectralFluxVisualValidationMethod: SegmentationMethod {
                 }
             } else {
                 // Use validated segments
-                print("⚙️ [SpectralFluxVisualValidationMethod] ✓ \(validIntervals.count) segments validated with motion")
+                print("⚙️ [SpectralFluxMethod] ✓ \(validIntervals.count) segments validated with motion")
                 await MainActor.run {
                     logger.success("\(validIntervals.count) segments verified with motion")
                 }
@@ -159,7 +151,7 @@ final class SpectralFluxVisualValidationMethod: SegmentationMethod {
         }
 
         guard !segments.isEmpty else {
-            print("⚙️ [SpectralFluxVisualValidationMethod] ❌ No action detected after processing")
+            print("⚙️ [SpectralFluxMethod] ❌ No action detected after processing")
             throw ProcessingError.noActionDetected
         }
 
