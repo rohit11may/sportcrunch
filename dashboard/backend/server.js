@@ -167,9 +167,14 @@ app.post('/api/videos/upload', upload.single('video'), (req, res) => {
 // ==========================================
 
 // GET /api/sports - List available sports (proxy to iOS Runner)
-app.get('/api/sports', async (req, res) => {
+// ==========================================
+// Method Discovery Endpoints
+// ==========================================
+
+// GET /api/methods - List available methods (proxy to iOS Runner)
+app.get('/api/methods', async (req, res) => {
   try {
-    const response = await fetch(`${RUNNER_URL}/sports`, {
+    const response = await fetch(`${RUNNER_URL}/methods`, {
       method: 'GET',
       signal: AbortSignal.timeout(5000)
     });
@@ -192,40 +197,8 @@ app.get('/api/sports', async (req, res) => {
       });
     }
 
-    console.error('❌ Error fetching sports:', error);
-    res.status(500).json({ error: 'Failed to fetch sports' });
-  }
-});
-
-// GET /api/sports/:sport - Get specific sport details (proxy to iOS Runner)
-app.get('/api/sports/:sport', async (req, res) => {
-  try {
-    const { sport } = req.params;
-    const response = await fetch(`${RUNNER_URL}/sports/${sport}`, {
-      method: 'GET',
-      signal: AbortSignal.timeout(5000)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ iOS Runner error (${response.status}):`, errorText);
-      return res.status(response.status).json({
-        error: `iOS Runner error: ${errorText}`
-      });
-    }
-
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    if (error.name === 'AbortError' || error.code === 'ECONNREFUSED') {
-      console.error('❌ iOS Runner unavailable:', error.message);
-      return res.status(503).json({
-        error: 'iOS Runner unavailable. Please ensure the Runner app is running.'
-      });
-    }
-
-    console.error('❌ Error fetching sport:', error);
-    res.status(500).json({ error: 'Failed to fetch sport details' });
+    console.error('❌ Error fetching methods:', error);
+    res.status(500).json({ error: 'Failed to fetch methods' });
   }
 });
 
@@ -236,14 +209,17 @@ app.get('/api/sports/:sport', async (req, res) => {
 // POST /api/runs - Create new run
 app.post('/api/runs', async (req, res) => {
   try {
-    const { videoPath, sport, sportMode, deviceId, deviceIp } = req.body;
+    const { videoPath, method, config, deviceId, deviceIp } = req.body;
 
     // Validate required fields
     if (!videoPath) {
       return res.status(400).json({ error: 'Missing required field: videoPath' });
     }
-    if (!sport) {
-      return res.status(400).json({ error: 'Missing required field: sport' });
+    if (!method) {
+      return res.status(400).json({ error: 'Missing required field: method' });
+    }
+    if (!config) {
+      return res.status(400).json({ error: 'Missing required field: config' });
     }
 
     // Determine the runner URL based on device selection
@@ -270,8 +246,8 @@ app.post('/api/runs', async (req, res) => {
       },
       body: JSON.stringify({
         videoPath,
-        sport,
-        sportMode,
+        method,
+        config,
         deviceTarget: deviceId === 'simulator' ? 'simulator' : 'device'
       }),
       signal: AbortSignal.timeout(10000) // 10 second timeout
@@ -304,7 +280,7 @@ app.post('/api/runs', async (req, res) => {
 
     res.status(202).json(data);
 
-    console.log(`✅ Created run: ${data.id} (${sport}${sportMode ? `/${sportMode}` : ''})`);
+    console.log(`✅ Created run: ${data.id} (${method}/${config})`);
   } catch (error) {
     if (error.name === 'AbortError' || error.code === 'ECONNREFUSED') {
       console.error('❌ iOS Runner unavailable:', error.message);
