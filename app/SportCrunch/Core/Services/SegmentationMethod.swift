@@ -29,8 +29,10 @@ protocol SegmentationMethod: Sendable {
 
     /// Detect action segments in a video.
     ///
-    /// - Parameter videoURL: URL to the source video file
+    /// - Parameters:
+    ///   - videoURL: URL to the source video file
+    ///   - observation: Optional observation recorder for telemetry and debugging
     /// - Returns: Array of detected action segments
     /// - Throws: If video access fails or detection encounters an error
-    func detectSegments(videoURL: URL) async throws -> [ActionSegment]
+    func detectSegments(videoURL: URL, observation: RunObservation?) async throws -> [ActionSegment]
 }

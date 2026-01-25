@@ -96,7 +96,7 @@ actor RunExecutor {
       print("🔄 [RunExecutor] Using method: \(method.name)")
 
       // Detect segments using configured method
-      let segments = try await method.detectSegments(videoURL: videoURL)
+      let segments = try await method.detectSegments(videoURL: videoURL, observation: nil)
 
       print("🔄 [RunExecutor] ✓ Detected \(segments.count) segments")
 

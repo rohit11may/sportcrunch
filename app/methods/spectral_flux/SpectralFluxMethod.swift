@@ -38,7 +38,7 @@ final class SpectralFluxMethod: SegmentationMethod {
 
     // MARK: - Segmentation Method Protocol
 
-    func detectSegments(videoURL: URL) async throws -> [ActionSegment] {
+    func detectSegments(videoURL: URL, observation: RunObservation?) async throws -> [ActionSegment] {
         // Phase 1: Audio Analysis
 
         let audioResult: AudioAnalysisResult

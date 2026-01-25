@@ -151,7 +151,7 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             progressSubject.send(0.40)
 
             // Detect segments using configured method
-            segments = try await method.detectSegments(videoURL: sourceURL)
+            segments = try await method.detectSegments(videoURL: sourceURL, observation: nil)
 
         } catch {
             print("⚙️ [VideoProcessor] ❌ Segment detection failed: \(error.localizedDescription)")
