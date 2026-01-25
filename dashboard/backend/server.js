@@ -750,6 +750,85 @@ app.get('/api/runs/:id/highlight', async (req, res) => {
 });
 
 // ==========================================
+// Observation & Artifact Endpoints
+// ==========================================
+
+// GET /api/runs/:id/observations - Get observation data for a run
+app.get('/api/runs/:id/observations', async (req, res) => {
+  const { id } = req.params;
+  const observationsPath = path.join(__dirname, 'cache', 'runs', id, 'observations.json');
+
+  // Check if observations file exists
+  if (fs.existsSync(observationsPath)) {
+    return res.sendFile(observationsPath);
+  }
+
+  // If not cached, return 404
+  res.status(404).json({ error: 'Observations not found. Device may not have synced yet.' });
+});
+
+// POST /api/sync/observations - Sync observations from device to backend
+app.post('/api/sync/observations', async (req, res) => {
+  const { runId, observations } = req.body;
+
+  if (!runId || !observations) {
+    return res.status(400).json({ error: 'runId and observations are required' });
+  }
+
+  try {
+    // Create run cache directory
+    const runDir = path.join(__dirname, 'cache', 'runs', runId);
+    if (!fs.existsSync(runDir)) {
+      fs.mkdirSync(runDir, { recursive: true });
+    }
+
+    // Write observations.json
+    const observationsPath = path.join(runDir, 'observations.json');
+    fs.writeFileSync(observationsPath, JSON.stringify(observations, null, 2));
+
+    console.log(`✅ Synced observations for run ${runId}`);
+    res.json({ success: true, path: observationsPath });
+  } catch (error) {
+    console.error(`❌ Failed to sync observations: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/sync/artifacts - Sync artifact files from device to backend
+// Expects multipart/form-data with:
+// - runId (text field)
+// - artifactId (text field)
+// - file (file upload)
+app.post('/api/sync/artifacts', upload.single('file'), async (req, res) => {
+  const { runId, artifactId } = req.body;
+  const file = req.file;
+
+  if (!runId || !artifactId || !file) {
+    return res.status(400).json({ error: 'runId, artifactId, and file are required' });
+  }
+
+  try {
+    // Create artifacts directory for this run
+    const artifactsDir = path.join(__dirname, 'cache', 'runs', runId, 'artifacts');
+    if (!fs.existsSync(artifactsDir)) {
+      fs.mkdirSync(artifactsDir, { recursive: true });
+    }
+
+    // Move uploaded file to artifacts directory with correct name
+    const ext = path.extname(file.originalname) || '.jpg';
+    const destPath = path.join(artifactsDir, `${artifactId}${ext}`);
+
+    fs.renameSync(file.path, destPath);
+
+    console.log(`✅ Synced artifact ${artifactId} for run ${runId}`);
+    res.json({ success: true, path: destPath });
+  } catch (error) {
+    console.error(`❌ Failed to sync artifact: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==========================================
 // Error Handling Middleware
 // ==========================================
 
