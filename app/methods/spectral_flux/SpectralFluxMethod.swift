@@ -67,8 +67,7 @@ final class SpectralFluxMethod: SegmentationMethod {
             segments = audioResult.candidateIntervals.map { interval in
                 ActionSegment(
                     startTime: interval.start,
-                    endTime: interval.end,
-                    confidence: 0.9  // High confidence for audio-only
+                    endTime: interval.end
                 )
             }
         } else {
@@ -90,8 +89,7 @@ final class SpectralFluxMethod: SegmentationMethod {
                 segments = audioResult.candidateIntervals.map { interval in
                     ActionSegment(
                         startTime: interval.start,
-                        endTime: interval.end,
-                        confidence: 0.8  // Lower confidence for fallback
+                        endTime: interval.end
                     )
                 }
 
@@ -108,8 +106,7 @@ final class SpectralFluxMethod: SegmentationMethod {
                 segments = audioResult.candidateIntervals.map { interval in
                     ActionSegment(
                         startTime: interval.start,
-                        endTime: interval.end,
-                        confidence: 0.6  // Lower confidence when no motion detected
+                        endTime: interval.end
                     )
                 }
             } else {
@@ -117,14 +114,9 @@ final class SpectralFluxMethod: SegmentationMethod {
                 print("⚙️ [SpectralFluxMethod] ✓ \(validIntervals.count) segments validated with motion")
 
                 segments = validations.filter { $0.isValid }.map { validation in
-                    // Normalize motion score to confidence (0.7-1.0 range)
-                    let normalizedScore = min(1.0, validation.motionScore / 2000.0)
-                    let confidence = 0.7 + (normalizedScore * 0.3)
-
                     return ActionSegment(
                         startTime: validation.start,
-                        endTime: validation.end,
-                        confidence: confidence
+                        endTime: validation.end
                     )
                 }
             }

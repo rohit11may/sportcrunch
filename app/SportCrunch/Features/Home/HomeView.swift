@@ -14,13 +14,13 @@ struct HomeView: View {
   @State private var showCreateFlow = false
   @State private var selectedCompletedProject: Project?
 
-  // Track progress and status for reactive updates
-  @State private var progressByProject: [UUID: Double] = [:]
-  @State private var statusByProject: [UUID: ProcessingStatus] = [:]
-
   // Delete confirmation
   @State private var showDeleteConfirmation = false
   @State private var projectToDelete: Project?
+
+  // Progress tracking from background manager
+  @State private var progressByProject: [UUID: Double] = [:]
+  @State private var statusByProject: [UUID: ProcessingStatus] = [:]
 
   var body: some View {
     NavigationStack {
@@ -278,7 +278,6 @@ struct HomeView: View {
 /// Wrapper view that holds the CompletedProjectViewModel in @State to prevent
 /// recreation on every SwiftUI render cycle.
 struct CompletedProjectSheetWrapper: View {
-  let storageService: ProjectStorageServiceProtocol
   var onProjectUpdate: ((Project) -> Void)?
 
   @State private var sheetViewModel: CompletedProjectViewModel
@@ -287,7 +286,6 @@ struct CompletedProjectSheetWrapper: View {
     project: Project, storageService: ProjectStorageServiceProtocol,
     onProjectUpdate: ((Project) -> Void)? = nil
   ) {
-    self.storageService = storageService
     self.onProjectUpdate = onProjectUpdate
     // Initialize the viewModel immediately to avoid layout issues
     _sheetViewModel = State(

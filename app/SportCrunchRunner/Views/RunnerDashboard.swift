@@ -11,14 +11,10 @@ import SwiftUI
 struct RunnerDashboard: View {
   @ObservedObject var server: HTTPServer
   let store: RunStore
-  let deviceManager: DeviceManager
 
   @State private var runs: [Run] = []
   @State private var serverURL: String = ""
   @State private var copyButtonText: String = "Copy"
-  @State private var availableDevices: [DeviceInfo] = []
-  @State private var selectedDevice: DeviceTarget = .simulator
-  @State private var isLoadingDevices = false
 
   var body: some View {
     NavigationStack {
@@ -197,7 +193,6 @@ struct RunnerDashboard: View {
       let server = HTTPServer()
       return server
     }(),
-    store: RunStore(),
-    deviceManager: DeviceManager()
+    store: RunStore()
   )
 }

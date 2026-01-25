@@ -65,141 +65,6 @@ protocol VideoProcessingServiceProtocol {
     ///   - sportMode: Optional sport-specific mode (e.g., TennisMode.rally)
     /// - Returns: Processing result with segments and highlight URL
     func processVideo(sourceURL: URL, sport: Sport, sportMode: (any SportMode)?) async throws -> ProcessingResult
-
-    /// Cancel any ongoing processing
-    func cancel()
-}
-
-// MARK: - Protocol Extension for Default Parameter
-
-extension VideoProcessingServiceProtocol {
-    /// Convenience method without sport mode (uses default)
-    func processVideo(sourceURL: URL, sport: Sport) async throws -> ProcessingResult {
-        try await processVideo(sourceURL: sourceURL, sport: sport, sportMode: nil)
-    }
-}
-
-// MARK: - Dummy Implementation
-
-/// Dummy implementation that simulates processing with delays.
-/// Replace this with real implementation using Accelerate/Vision frameworks.
-final class DummyVideoProcessingService: VideoProcessingServiceProtocol {
-
-    private let statusSubject = CurrentValueSubject<ProcessingStatus, Never>(.pending)
-    private let progressSubject = CurrentValueSubject<Double, Never>(0.0)
-    private var isCancelled = false
-
-    var statusPublisher: AnyPublisher<ProcessingStatus, Never> {
-        statusSubject.eraseToAnyPublisher()
-    }
-
-    var progressPublisher: AnyPublisher<Double, Never> {
-        progressSubject.eraseToAnyPublisher()
-    }
-
-    func processVideo(sourceURL: URL, sport: Sport, sportMode: (any SportMode)?) async throws -> ProcessingResult {
-        isCancelled = false
-
-        // Simulate processing stages
-        try await simulateStage(.analyzingAudio, duration: 1.5)
-        try await simulateStage(.detectingAction, duration: 2.0)
-        try await simulateStage(.creatingClips, duration: 1.5)
-        try await simulateStage(.exporting, duration: 1.0)
-
-        // Generate dummy segments based on mode
-        let segments = generateDummySegments(sport: sport, sportMode: sportMode)
-
-        // Calculate highlight duration (sum of all segments)
-        let highlightDuration = segments.reduce(0) { $0 + $1.duration }
-
-        // For dummy, just return the source URL as the highlight
-        // In real implementation, this would be the exported file URL
-        let highlightURL = sourceURL
-
-        // Get original file size (or use dummy value)
-        let originalFileSize: Int64
-        if let attrs = try? FileManager.default.attributesOfItem(atPath: sourceURL.path),
-           let size = attrs[.size] as? Int64 {
-            originalFileSize = size
-        } else {
-            originalFileSize = 2_684_354_560 // Dummy: 2.5 GB
-        }
-
-        // Estimate highlight file size based on duration ratio
-        let durationRatio = highlightDuration / 7200.0 // Assume 2 hour original
-        let highlightFileSize = Int64(Double(originalFileSize) * min(durationRatio, 0.3))
-
-        statusSubject.send(.completed)
-        progressSubject.send(1.0)
-
-        return ProcessingResult(
-            segments: segments,
-            highlightURL: highlightURL,
-            highlightDuration: highlightDuration,
-            originalFileSize: originalFileSize,
-            highlightFileSize: highlightFileSize
-        )
-    }
-
-    func cancel() {
-        isCancelled = true
-        statusSubject.send(.pending)
-        progressSubject.send(0.0)
-    }
-
-    // MARK: - Private Helpers
-
-    private func simulateStage(_ status: ProcessingStatus, duration: TimeInterval) async throws {
-        guard !isCancelled else { throw ProcessingError.cancelled }
-
-        statusSubject.send(status)
-
-        let steps = 20
-        let stepDuration = duration / Double(steps)
-        let baseProgress = status.progress - 0.25
-
-        for i in 0..<steps {
-            guard !isCancelled else { throw ProcessingError.cancelled }
-
-            try await Task.sleep(nanoseconds: UInt64(stepDuration * 1_000_000_000))
-
-            let stageProgress = Double(i + 1) / Double(steps) * 0.25
-            progressSubject.send(baseProgress + stageProgress)
-        }
-    }
-
-    private func generateDummySegments(sport: Sport, sportMode: (any SportMode)?) -> [ActionSegment] {
-        // Check if individual mode for tennis - generate more, shorter clips
-        let isIndividualMode = (sportMode as? TennisMode) == .individual
-
-        // Generate segments based on mode
-        let segmentCount = isIndividualMode ? Int.random(in: 20...40) : Int.random(in: 8...15)
-        var segments: [ActionSegment] = []
-        var currentTime: TimeInterval = 10 // Start after 10 seconds
-
-        for _ in 0..<segmentCount {
-            // Individual mode: short 1-2s clips; Rally mode: 15-60s clips
-            let duration = isIndividualMode
-                ? TimeInterval.random(in: 1...2)
-                : TimeInterval.random(in: 15...60)
-
-            // Gap between segments
-            let gap = isIndividualMode
-                ? TimeInterval.random(in: 5...30)  // Shorter gaps in individual mode
-                : TimeInterval.random(in: 30...180)
-
-            let segment = ActionSegment(
-                startTime: currentTime,
-                endTime: currentTime + duration,
-                confidence: Double.random(in: 0.7...1.0)
-            )
-
-            segments.append(segment)
-            currentTime += duration + gap
-        }
-
-        return segments
-    }
 }
 
 // MARK: - Real Implementation
@@ -212,7 +77,6 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
 
     private let statusSubject = CurrentValueSubject<ProcessingStatus, Never>(.pending)
     private let progressSubject = CurrentValueSubject<Double, Never>(0.0)
-    private var processingTask: Task<ProcessingResult, Error>?
     private var isCancelled = false
 
     // Components
@@ -236,9 +100,6 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
     func processVideo(sourceURL: URL, sport: Sport, sportMode: (any SportMode)?) async throws -> ProcessingResult {
         isCancelled = false
         let pipelineStart = Date()
-
-        // Track timing for each phase
-        var detectionTime: Double = 0
 
         let modeDescription = (sportMode as? TennisMode)?.displayName ?? "Default"
 
@@ -292,8 +153,6 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             // Detect segments using configured method
             segments = try await method.detectSegments(videoURL: sourceURL)
 
-            detectionTime = Date().timeIntervalSince(detectionPhaseStart)
-
         } catch {
             print("⚙️ [VideoProcessor] ❌ Segment detection failed: \(error.localizedDescription)")
             throw error
@@ -325,8 +184,7 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
             intervals: finalIntervals,
             segments: segments,
             pipelineStart: pipelineStart,
-            originalFileSize: originalFileSize,
-            detectionTime: detectionTime
+            originalFileSize: originalFileSize
         )
     }
 
@@ -337,8 +195,7 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         intervals: [(start: TimeInterval, end: TimeInterval)],
         segments: [ActionSegment],
         pipelineStart: Date,
-        originalFileSize: Int64,
-        detectionTime: Double = 0
+        originalFileSize: Int64
     ) async throws -> ProcessingResult {
         print("⚙️ [VideoProcessor] ┌─────────────────────────────────────────┐")
         print("⚙️ [VideoProcessor] │  PHASE 3/3: VIDEO EXPORT                │")
@@ -429,15 +286,5 @@ final class RealVideoProcessingService: VideoProcessingServiceProtocol {
         let mins = Int(seconds) / 60
         let secs = Int(seconds) % 60
         return String(format: "%d:%02d", mins, secs)
-    }
-
-    // MARK: - Debug Data Recording
-    // MARK: - Cancellation
-
-    func cancel() {
-        isCancelled = true
-        processingTask?.cancel()
-        statusSubject.send(.pending)
-        progressSubject.send(0.0)
     }
 }

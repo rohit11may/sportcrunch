@@ -20,42 +20,6 @@ struct SegmentValidation {
     let end: TimeInterval
     let isValid: Bool
     let motionScore: Double
-
-    // Enhanced debug data
-    let debugData: SegmentValidationDebugData?
-}
-
-/// Detailed debug data for a segment validation (for comparing simulator vs device)
-struct SegmentValidationDebugData {
-    let framesRequested: Int
-    let framesExtracted: Int
-    let usedEarlyExit: Bool
-    let framesProcessedBeforeDecision: Int
-    let allFrameScores: [Double]
-    let framePairDetails: [FramePairDebugData]
-
-    /// Errors encountered during frame extraction (for debugging device issues)
-    let extractionErrors: [String]
-}
-
-/// Debug data for a single frame pair comparison
-struct FramePairDebugData {
-    let pairIndex: Int
-    let frameATime: Double
-    let frameBTime: Double
-    let frameAWidth: Int
-    let frameAHeight: Int
-    let frameBWidth: Int
-    let frameBHeight: Int
-    let frameAGrayscaleMean: Float
-    let frameAGrayscaleStdDev: Float
-    let frameBGrayscaleMean: Float
-    let frameBGrayscaleStdDev: Float
-    let rawDiffSum: Float
-    let rawDiffMean: Float
-    let rawDiffMax: Float
-    let pixelsAboveThreshold: Int
-    let motionScore: Double
 }
 
 // MARK: - Visual Validator Errors
@@ -98,30 +62,11 @@ private final class FrameBuffers {
         floatB = [Float](repeating: 0, count: pixelCount)
         diff = [Float](repeating: 0, count: pixelCount)
     }
-
-    func resize(to pixelCount: Int) {
-        guard pixelCount != grayscaleA.count else { return }
-        grayscaleA = [UInt8](repeating: 0, count: pixelCount)
-        grayscaleB = [UInt8](repeating: 0, count: pixelCount)
-        floatA = [Float](repeating: 0, count: pixelCount)
-        floatB = [Float](repeating: 0, count: pixelCount)
-        diff = [Float](repeating: 0, count: pixelCount)
-    }
 }
 
 /// Result of motion computation with debug statistics
 struct MotionComputationResult {
     let motionScore: Double
-    let rawDiffSum: Float
-    let rawDiffMean: Float
-    let rawDiffMax: Float
-    let pixelsAboveThreshold: Int
-}
-
-/// Statistics for a grayscale buffer
-struct GrayscaleStats {
-    let mean: Float
-    let stdDev: Float
 }
 
 // MARK: - Visual Validator
@@ -283,14 +228,6 @@ actor SpectralFluxVisualValidator {
         return allValidations
     }
 
-    // MARK: - Formatting Helpers
-
-    private nonisolated func formatTime(_ seconds: TimeInterval) -> String {
-        let mins = Int(seconds) / 60
-        let secs = Int(seconds) % 60
-        return String(format: "%d:%02d", mins, secs)
-    }
-
     // MARK: - Batch Segment Validation
 
     /// Validates a segment using batch frame extraction for better performance.
@@ -309,29 +246,16 @@ actor SpectralFluxVisualValidator {
 
         // Build list of times to extract
         var times: [NSValue] = []
-        var frameTimes: [Double] = []  // Track actual times for debug
         var frameIndex = startFrame
         while frameIndex < endFrame {
             let timeSeconds = Double(frameIndex) / fps
             let time = CMTime(seconds: timeSeconds, preferredTimescale: 600)
             times.append(NSValue(time: time))
-            frameTimes.append(timeSeconds)
             frameIndex += videoSampleStride
         }
 
-        let framesRequested = times.count
-
         guard !times.isEmpty else {
-            let debugData = SegmentValidationDebugData(
-                framesRequested: 0,
-                framesExtracted: 0,
-                usedEarlyExit: false,
-                framesProcessedBeforeDecision: 0,
-                allFrameScores: [],
-                framePairDetails: [],
-                extractionErrors: []
-            )
-            return SegmentValidation(start: start, end: end, isValid: false, motionScore: 0, debugData: debugData)
+            return SegmentValidation(start: start, end: end, isValid: false, motionScore: 0)
         }
 
         // Use batch frame extraction with continuation
@@ -340,16 +264,7 @@ actor SpectralFluxVisualValidator {
         let extractionErrors = extractionResult.errors
 
         guard extractedFrames.count >= 2 else {
-            let debugData = SegmentValidationDebugData(
-                framesRequested: framesRequested,
-                framesExtracted: extractedFrames.count,
-                usedEarlyExit: false,
-                framesProcessedBeforeDecision: 0,
-                allFrameScores: [],
-                framePairDetails: [],
-                extractionErrors: extractionErrors
-            )
-            return SegmentValidation(start: start, end: end, isValid: false, motionScore: 0, debugData: debugData)
+            return SegmentValidation(start: start, end: end, isValid: false, motionScore: 0)
         }
 
         // Pre-allocate buffers based on first frame size
@@ -358,10 +273,8 @@ actor SpectralFluxVisualValidator {
         let buffers = FrameBuffers(pixelCount: pixelCount)
 
         var frameScores: [Double] = []
-        var framePairDetails: [FramePairDebugData] = []
         var runningTotal: Double = 0
         var framesProcessed = 0
-        var usedEarlyExit = false
 
         // Process consecutive frame pairs
         for i in 1..<extractedFrames.count {
@@ -372,12 +285,8 @@ actor SpectralFluxVisualValidator {
             extractGrayscaleIntoBuffer(from: prevFrame, buffer: &buffers.grayscaleA)
             extractGrayscaleIntoBuffer(from: currFrame, buffer: &buffers.grayscaleB)
 
-            // Calculate grayscale statistics for debug
-            let statsA = computeGrayscaleStats(buffer: buffers.grayscaleA)
-            let statsB = computeGrayscaleStats(buffer: buffers.grayscaleB)
-
-            // Compute motion score with vectorized operations and get debug details
-            let result = computeMotionScoreVectorizedWithDebug(
+            // Compute motion score with vectorized operations
+            let result = computeMotionScoreVectorized(
                 buffers: buffers,
                 pixelThreshold: motionPixelThreshold
             )
@@ -387,53 +296,14 @@ actor SpectralFluxVisualValidator {
             runningTotal += score
             framesProcessed += 1
 
-            // Capture frame pair debug data (limit to first 10 pairs to avoid huge reports)
-            if framePairDetails.count < 10 {
-                let frameATime = i - 1 < frameTimes.count ? frameTimes[i - 1] : 0
-                let frameBTime = i < frameTimes.count ? frameTimes[i] : 0
-
-                let pairDebug = FramePairDebugData(
-                    pairIndex: i - 1,
-                    frameATime: frameATime,
-                    frameBTime: frameBTime,
-                    frameAWidth: prevFrame.width,
-                    frameAHeight: prevFrame.height,
-                    frameBWidth: currFrame.width,
-                    frameBHeight: currFrame.height,
-                    frameAGrayscaleMean: statsA.mean,
-                    frameAGrayscaleStdDev: statsA.stdDev,
-                    frameBGrayscaleMean: statsB.mean,
-                    frameBGrayscaleStdDev: statsB.stdDev,
-                    rawDiffSum: result.rawDiffSum,
-                    rawDiffMean: result.rawDiffMean,
-                    rawDiffMax: result.rawDiffMax,
-                    pixelsAboveThreshold: result.pixelsAboveThreshold,
-                    motionScore: score
-                )
-                framePairDetails.append(pairDebug)
-            }
-
             // EARLY EXIT: If running average already exceeds threshold, we can stop
             let runningAverage = runningTotal / Double(framesProcessed)
             if runningAverage >= motionAreaThreshold && framesProcessed >= 3 {
-                usedEarlyExit = true
-
-                let debugData = SegmentValidationDebugData(
-                    framesRequested: framesRequested,
-                    framesExtracted: extractedFrames.count,
-                    usedEarlyExit: true,
-                    framesProcessedBeforeDecision: framesProcessed,
-                    allFrameScores: frameScores,
-                    framePairDetails: framePairDetails,
-                    extractionErrors: extractionErrors
-                )
-
                 return SegmentValidation(
                     start: start,
                     end: end,
                     isValid: true,
-                    motionScore: runningAverage,
-                    debugData: debugData
+                    motionScore: runningAverage
                 )
             }
         }
@@ -448,45 +318,12 @@ actor SpectralFluxVisualValidator {
 
         let isValid = motionScore >= motionAreaThreshold
 
-        let debugData = SegmentValidationDebugData(
-            framesRequested: framesRequested,
-            framesExtracted: extractedFrames.count,
-            usedEarlyExit: usedEarlyExit,
-            framesProcessedBeforeDecision: framesProcessed,
-            allFrameScores: frameScores,
-            framePairDetails: framePairDetails,
-            extractionErrors: extractionErrors
-        )
-
         return SegmentValidation(
             start: start,
             end: end,
             isValid: isValid,
-            motionScore: motionScore,
-            debugData: debugData
+            motionScore: motionScore
         )
-    }
-
-    /// Compute grayscale statistics for debug logging.
-    private nonisolated func computeGrayscaleStats(buffer: [UInt8]) -> GrayscaleStats {
-        guard !buffer.isEmpty else {
-            return GrayscaleStats(mean: 0, stdDev: 0)
-        }
-
-        var sum: Float = 0
-        for value in buffer {
-            sum += Float(value)
-        }
-        let mean = sum / Float(buffer.count)
-
-        var varianceSum: Float = 0
-        for value in buffer {
-            let diff = Float(value) - mean
-            varianceSum += diff * diff
-        }
-        let stdDev = sqrt(varianceSum / Float(buffer.count))
-
-        return GrayscaleStats(mean: mean, stdDev: stdDev)
     }
 
     // MARK: - Batch Frame Extraction
@@ -581,23 +418,14 @@ actor SpectralFluxVisualValidator {
         }
     }
 
-    /// Compute motion score between two grayscale frames using fully vectorized vDSP operations.
-    /// Returns count of pixels with difference above threshold.
+    /// Compute motion score with vectorized operations.
     private nonisolated func computeMotionScoreVectorized(
-        buffers: FrameBuffers,
-        pixelThreshold: Int
-    ) -> Double {
-        return computeMotionScoreVectorizedWithDebug(buffers: buffers, pixelThreshold: pixelThreshold).motionScore
-    }
-
-    /// Compute motion score with detailed debug statistics for platform comparison.
-    private nonisolated func computeMotionScoreVectorizedWithDebug(
         buffers: FrameBuffers,
         pixelThreshold: Int
     ) -> MotionComputationResult {
         let count = buffers.grayscaleA.count
         guard count > 0, count == buffers.grayscaleB.count else {
-            return MotionComputationResult(motionScore: 0, rawDiffSum: 0, rawDiffMean: 0, rawDiffMax: 0, pixelsAboveThreshold: 0)
+            return MotionComputationResult(motionScore: 0)
         }
 
         let length = vDSP_Length(count)
@@ -610,7 +438,7 @@ actor SpectralFluxVisualValidator {
         vDSP_vsub(buffers.floatB, 1, buffers.floatA, 1, &buffers.diff, 1, length)
         vDSP_vabs(buffers.diff, 1, &buffers.diff, 1, length)
 
-        // DEBUG: Capture raw difference statistics BEFORE thresholding
+        // Capture raw difference statistics BEFORE thresholding
         var rawDiffSum: Float = 0
         vDSP_sve(buffers.diff, 1, &rawDiffSum, length)
         let rawDiffMean = rawDiffSum / Float(count)
@@ -643,11 +471,7 @@ actor SpectralFluxVisualValidator {
         vDSP_sve(buffers.diff, 1, &sum, length)
 
         return MotionComputationResult(
-            motionScore: Double(sum),
-            rawDiffSum: rawDiffSum,
-            rawDiffMean: rawDiffMean,
-            rawDiffMax: rawDiffMax,
-            pixelsAboveThreshold: Int(sum)
+            motionScore: Double(sum)
         )
     }
 }

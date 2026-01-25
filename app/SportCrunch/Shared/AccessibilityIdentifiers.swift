@@ -54,7 +54,6 @@ enum AccessibilityID {
     enum Project {
         static let sheet = "project_sheet"
         static let videoPlayer = "project_videoPlayer"
-        static let progressBar = "project_progressBar"
         static let segmentNavigator = "project_segmentNavigator"
         static let filterToggle = "project_filterToggle"
         static let exportButton = "project_export"

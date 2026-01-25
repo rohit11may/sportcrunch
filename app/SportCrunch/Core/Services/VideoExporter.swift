@@ -16,85 +16,7 @@ struct ExportResult {
     let outputURL: URL
     let inputDuration: TimeInterval
     let outputDuration: TimeInterval
-    let segmentCount: Int
     let compressionRatio: Double  // Percentage of video kept
-
-    // Enhanced debug data for diagnosing timing/slow-mo issues
-    let debugData: ExportDebugData?
-}
-
-/// Comprehensive debug data for export - critical for slow-mo diagnosis
-struct ExportDebugData {
-    let sourceVideoProperties: SourceVideoDebugProperties
-    let compositionConfig: CompositionDebugConfig
-    let segmentTimingDetails: [SegmentTimingDebugDetail]
-    let outputVerification: OutputVerificationDebug?
-}
-
-/// Source video properties for debug
-struct SourceVideoDebugProperties {
-    let duration: Double
-    let durationCMTime: CMTime
-    let nominalFrameRate: Float
-    let minFrameDuration: CMTime
-    let naturalTimeScale: CMTimeScale
-    let videoTrackCount: Int
-    let audioTrackCount: Int
-    let naturalSize: CGSize
-    let preferredTransform: CGAffineTransform
-    let isVideoPortrait: Bool
-    let colorPrimaries: String?
-    let transferFunction: String?
-    let ycbcrMatrix: String?
-    let videoCodecType: String?
-    let hasVariableFrameRate: Bool
-}
-
-/// Composition configuration for debug
-struct CompositionDebugConfig {
-    let exportPreset: String
-    let outputFileType: String
-    let shouldOptimizeForNetworkUse: Bool
-    let usedVideoComposition: Bool
-    let renderSize: CGSize?
-    let frameDuration: CMTime?
-    let frameRate: Double?
-    let colorPrimariesApplied: String?
-    let transferFunctionApplied: String?
-    let ycbcrMatrixApplied: String?
-    let appliedTransform: CGAffineTransform?
-}
-
-/// Per-segment timing details for debug
-struct SegmentTimingDebugDetail {
-    let segmentIndex: Int
-    let requestedStartTime: Double
-    let requestedEndTime: Double
-    let requestedDuration: Double
-    let startCMTime: CMTime
-    let endCMTime: CMTime
-    let durationCMTime: CMTime
-    let insertionPosition: CMTime
-    let insertedSuccessfully: Bool
-    let errorMessage: String?
-    let timeRangeValid: Bool
-    let clampedToVideoBounds: Bool
-}
-
-/// Output video verification for debug
-struct OutputVerificationDebug {
-    let duration: Double
-    let durationCMTime: CMTime
-    let expectedDuration: Double
-    let durationMismatch: Double
-    let durationMismatchPercent: Double
-    let nominalFrameRate: Float?
-    let frameRateMismatch: Bool
-    let sourceFrameRate: Float
-    let naturalSize: CGSize?
-    let videoCodecType: String?
-    let timingAccurate: Bool
-    let timingIssueDescription: String?
 }
 
 // MARK: - Video Export Preset
@@ -307,29 +229,9 @@ actor VideoExporter {
             print("📼 [VideoExporter] ✓ Video track configured (no audio)")
         }
 
-        // DEBUG: Create source video properties for debug report
-        let sourceVideoProperties = SourceVideoDebugProperties(
-            duration: duration,
-            durationCMTime: durationCMTime,
-            nominalFrameRate: nominalFrameRate,
-            minFrameDuration: minFrameDuration,
-            naturalTimeScale: naturalTimeScale,
-            videoTrackCount: 1,
-            audioTrackCount: audioTracks.count,
-            naturalSize: naturalSize,
-            preferredTransform: preferredTransform,
-            isVideoPortrait: isVideoPortrait,
-            colorPrimaries: colorPrimaries,
-            transferFunction: transferFunction,
-            ycbcrMatrix: ycbcrMatrix,
-            videoCodecType: videoCodecType,
-            hasVariableFrameRate: hasVariableFrameRate
-        )
-
-        // Insert each interval into the composition - track timing details for debug
+        // Insert each interval into the composition
         var insertionTime = CMTime.zero
         var insertedCount = 0
-        var segmentTimingDetails: [SegmentTimingDebugDetail] = []
 
         for (index, interval) in mergedIntervals.enumerated() {
             // Use the source video's natural time scale for better accuracy
@@ -338,14 +240,7 @@ actor VideoExporter {
             let segEndTime = CMTime(seconds: interval.end, preferredTimescale: preferredTimescale)
             let timeRange = CMTimeRange(start: segStartTime, end: segEndTime)
 
-            // Check if time range is valid and within bounds
-            let timeRangeValid = timeRange.duration.seconds > 0
-            let clampedToVideoBounds = interval.start < 0 || interval.end > duration
-
             print("📼 [VideoExporter] DEBUG Segment \(index): start=\(segStartTime.value)/\(segStartTime.timescale), end=\(segEndTime.value)/\(segEndTime.timescale), duration=\(timeRange.duration.value)/\(timeRange.duration.timescale)")
-
-            var insertSuccess = false
-            var errorMsg: String?
 
             do {
                 try compositionVideoTrack.insertTimeRange(
@@ -362,32 +257,10 @@ actor VideoExporter {
                     )
                 }
 
-                insertSuccess = true
                 insertedCount += 1
+                insertionTime = CMTimeAdd(insertionTime, timeRange.duration)
             } catch {
                 print("📼 [VideoExporter] ⚠️ Failed to insert segment \(index + 1): \(error.localizedDescription)")
-                errorMsg = error.localizedDescription
-            }
-
-            // Record timing detail for debug
-            let timingDetail = SegmentTimingDebugDetail(
-                segmentIndex: index,
-                requestedStartTime: interval.start,
-                requestedEndTime: interval.end,
-                requestedDuration: interval.end - interval.start,
-                startCMTime: segStartTime,
-                endCMTime: segEndTime,
-                durationCMTime: timeRange.duration,
-                insertionPosition: insertionTime,
-                insertedSuccessfully: insertSuccess,
-                errorMessage: errorMsg,
-                timeRangeValid: timeRangeValid,
-                clampedToVideoBounds: clampedToVideoBounds
-            )
-            segmentTimingDetails.append(timingDetail)
-
-            if insertSuccess {
-                insertionTime = CMTimeAdd(insertionTime, timeRange.duration)
             }
         }
 
@@ -396,7 +269,6 @@ actor VideoExporter {
 
         // Create video composition only for non-fast presets (to avoid unnecessary work)
         var videoComposition: AVMutableVideoComposition?
-        var compositionDebugConfig: CompositionDebugConfig
 
         if preset != .fast {
             videoComposition = try await createVideoComposition(
@@ -405,39 +277,6 @@ actor VideoExporter {
                 naturalSize: naturalSize,
                 preferredTransform: preferredTransform,
                 nominalFrameRate: nominalFrameRate
-            )
-
-            let computedFrameRate: Double? = {
-                guard let vc = videoComposition, vc.frameDuration.seconds > 0 else { return nil }
-                return 1.0 / vc.frameDuration.seconds
-            }()
-
-            compositionDebugConfig = CompositionDebugConfig(
-                exportPreset: preset.presetName,
-                outputFileType: AVFileType.mp4.rawValue,
-                shouldOptimizeForNetworkUse: true,
-                usedVideoComposition: true,
-                renderSize: videoComposition?.renderSize,
-                frameDuration: videoComposition?.frameDuration,
-                frameRate: computedFrameRate,
-                colorPrimariesApplied: videoComposition?.colorPrimaries,
-                transferFunctionApplied: videoComposition?.colorTransferFunction,
-                ycbcrMatrixApplied: videoComposition?.colorYCbCrMatrix,
-                appliedTransform: preferredTransform
-            )
-        } else {
-            compositionDebugConfig = CompositionDebugConfig(
-                exportPreset: preset.presetName,
-                outputFileType: AVFileType.mp4.rawValue,
-                shouldOptimizeForNetworkUse: false,
-                usedVideoComposition: false,
-                renderSize: nil,
-                frameDuration: nil,
-                frameRate: nil,
-                colorPrimariesApplied: nil,
-                transferFunctionApplied: nil,
-                ycbcrMatrixApplied: nil,
-                appliedTransform: nil
             )
         }
 
@@ -525,7 +364,7 @@ actor VideoExporter {
         let elapsed = Date().timeIntervalSince(startTime)
 
         // Verify output video properties
-        let outputVerification = await verifyOutputVideo(
+        await verifyOutputVideo(
             outputURL: outputURL,
             expectedDuration: insertionTime.seconds,
             sourceFrameRate: nominalFrameRate
@@ -547,37 +386,13 @@ actor VideoExporter {
         print("📼 [VideoExporter]    • Segments: \(mergedIntervals.count)")
         print("📼 [VideoExporter]    • File size: \(fileSizeStr)")
 
-        // Print timing verification
-        if let verification = outputVerification {
-            print("📼 [VideoExporter] 🔍 Output Verification:")
-            print("📼 [VideoExporter]    • Actual duration: \(String(format: "%.3f", verification.duration))s")
-            print("📼 [VideoExporter]    • Expected duration: \(String(format: "%.3f", verification.expectedDuration))s")
-            print("📼 [VideoExporter]    • Mismatch: \(String(format: "%.3f", verification.durationMismatch))s (\(String(format: "%.1f", verification.durationMismatchPercent))%)")
-            if let outputFPS = verification.nominalFrameRate {
-                print("📼 [VideoExporter]    • Output FPS: \(String(format: "%.2f", outputFPS)) (source: \(String(format: "%.2f", nominalFrameRate)))")
-            }
-            if !verification.timingAccurate {
-                print("📼 [VideoExporter]    ⚠️ TIMING ISSUE: \(verification.timingIssueDescription ?? "Unknown")")
-            }
-        }
-
         print("📼 [VideoExporter] ═══════════════════════════════════════════")
-
-        // Build debug data
-        let debugData = ExportDebugData(
-            sourceVideoProperties: sourceVideoProperties,
-            compositionConfig: compositionDebugConfig,
-            segmentTimingDetails: segmentTimingDetails,
-            outputVerification: outputVerification
-        )
 
         return ExportResult(
             outputURL: outputURL,
             inputDuration: duration,
             outputDuration: outputDuration,
-            segmentCount: mergedIntervals.count,
-            compressionRatio: compressionRatio,
-            debugData: debugData
+            compressionRatio: compressionRatio
         )
     }
 
@@ -588,7 +403,7 @@ actor VideoExporter {
         outputURL: URL,
         expectedDuration: TimeInterval,
         sourceFrameRate: Float
-    ) async -> OutputVerificationDebug? {
+    ) async {
         let outputAsset = AVURLAsset(url: outputURL)
 
         do {
@@ -600,18 +415,9 @@ actor VideoExporter {
 
             // Load output video track properties
             var outputFPS: Float?
-            var outputSize: CGSize?
-            var outputCodec: String?
 
             if let outputVideoTrack = try await outputAsset.loadTracks(withMediaType: .video).first {
                 outputFPS = try await outputVideoTrack.load(.nominalFrameRate)
-                outputSize = try await outputVideoTrack.load(.naturalSize)
-
-                let formatDescriptions = try await outputVideoTrack.load(.formatDescriptions)
-                if let formatDescription = formatDescriptions.first {
-                    let codecType = CMFormatDescriptionGetMediaSubType(formatDescription)
-                    outputCodec = fourCharCodeToString(codecType)
-                }
             }
 
             // Check for frame rate mismatch (could indicate slow-mo)
@@ -620,36 +426,25 @@ actor VideoExporter {
             // Determine timing accuracy (within 1% tolerance or 0.5 seconds)
             let timingAccurate = durationMismatchPercent < 1.0 || abs(durationMismatch) < 0.5
 
-            var timingIssueDescription: String?
+            print("📼 [VideoExporter] 🔍 Output Verification:")
+            print("📼 [VideoExporter]    • Actual duration: \(String(format: "%.3f", outputDuration))s")
+            print("📼 [VideoExporter]    • Expected duration: \(String(format: "%.3f", expectedDuration))s")
+            print("📼 [VideoExporter]    • Mismatch: \(String(format: "%.3f", durationMismatch))s (\(String(format: "%.1f", durationMismatchPercent))%)")
+            if let outputFPS = outputFPS {
+                print("📼 [VideoExporter]    • Output FPS: \(String(format: "%.2f", outputFPS)) (source: \(String(format: "%.2f", sourceFrameRate)))")
+            }
             if !timingAccurate {
                 if durationMismatch > 0 {
-                    timingIssueDescription = "Output \(String(format: "%.1f", durationMismatch))s LONGER than expected - possible SLOW-MO issue"
+                    print("📼 [VideoExporter]    ⚠️ TIMING ISSUE: Output \(String(format: "%.1f", durationMismatch))s LONGER than expected - possible SLOW-MO issue")
                 } else {
-                    timingIssueDescription = "Output \(String(format: "%.1f", abs(durationMismatch)))s SHORTER than expected - possible frame dropping"
+                    print("📼 [VideoExporter]    ⚠️ TIMING ISSUE: Output \(String(format: "%.1f", abs(durationMismatch)))s SHORTER than expected - possible frame dropping")
                 }
             }
             if frameRateMismatch {
-                let fpsIssue = "Frame rate changed from \(String(format: "%.1f", sourceFrameRate)) to \(String(format: "%.1f", outputFPS ?? 0)) fps"
-                timingIssueDescription = timingIssueDescription != nil ? "\(timingIssueDescription!); \(fpsIssue)" : fpsIssue
+                print("📼 [VideoExporter]    ⚠️ Frame rate changed from \(String(format: "%.1f", sourceFrameRate)) to \(String(format: "%.1f", outputFPS ?? 0)) fps")
             }
-
-            return OutputVerificationDebug(
-                duration: outputDuration,
-                durationCMTime: outputDurationCMTime,
-                expectedDuration: expectedDuration,
-                durationMismatch: durationMismatch,
-                durationMismatchPercent: durationMismatchPercent,
-                nominalFrameRate: outputFPS,
-                frameRateMismatch: frameRateMismatch,
-                sourceFrameRate: sourceFrameRate,
-                naturalSize: outputSize,
-                videoCodecType: outputCodec,
-                timingAccurate: timingAccurate,
-                timingIssueDescription: timingIssueDescription
-            )
         } catch {
             print("📼 [VideoExporter] ⚠️ Could not verify output video: \(error.localizedDescription)")
-            return nil
         }
     }
 
@@ -797,32 +592,4 @@ actor VideoExporter {
         return clamped
     }
 
-    // MARK: - Preview
-
-    /// Get preview statistics for intervals without exporting.
-    /// - Parameters:
-    ///   - sourceURL: URL to the source video
-    ///   - intervals: List of (start, end) tuples in seconds
-    /// - Returns: Dictionary with duration stats
-    func previewExport(
-        sourceURL: URL,
-        intervals: [(start: TimeInterval, end: TimeInterval)]
-    ) async throws -> [String: Any] {
-        let asset = AVURLAsset(url: sourceURL)
-        let duration = try await asset.load(.duration).seconds
-
-        let merged = mergeIntervals(intervals, videoDuration: duration)
-        let outputDuration = merged.reduce(0) { $0 + ($1.end - $1.start) }
-        let removedDuration = duration - outputDuration
-        let compressionRatio = duration > 0 ? (1 - outputDuration / duration) * 100 : 0
-
-        return [
-            "inputDuration": duration,
-            "outputDuration": outputDuration,
-            "removedDuration": removedDuration,
-            "compressionRatio": compressionRatio,
-            "segmentCount": merged.count,
-            "intervals": merged
-        ]
-    }
 }

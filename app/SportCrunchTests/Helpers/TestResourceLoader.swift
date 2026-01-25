@@ -126,18 +126,4 @@ class TestResourceLoader {
         return groundTruthURL
     }
 
-    // MARK: - Validation
-
-    /// Check if TestResources directory exists in the test bundle
-    ///
-    /// This can be used in test setup to verify resources are properly configured.
-    ///
-    /// - Returns: `true` if TestResources directory exists, `false` otherwise
-    static func testResourcesExist() -> Bool {
-        let bundle = Bundle(for: Self.self)
-        guard let resourcePath = bundle.resourcePath else { return false }
-
-        let testResourcesPath = (resourcePath as NSString).appendingPathComponent("TestResources")
-        return FileManager.default.fileExists(atPath: testResourcesPath)
-    }
 }

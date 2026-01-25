@@ -12,10 +12,6 @@ import SwiftUI
 // via ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS
 
 extension Color {
-    // Additional brand colors (scPrimary is auto-generated from Asset Catalog)
-    static let scSecondary = Color(hex: "0066FF") // Electric blue
-    static let scAccent = Color(hex: "F7931E") // Warm amber accent
-
     // Sport-specific accents
     static let scTennis = Color(hex: "C8E038") // Vibrant tennis ball yellow-green
     static let scCricket = Color(hex: "E63946") // Cricket red
@@ -110,15 +106,6 @@ struct AppFont {
     static func captionBold() -> Font {
         .system(size: 13, weight: .semibold, design: .default)
     }
-
-    // Stats - For time displays
-    static func stats() -> Font {
-        .system(size: 48, weight: .bold, design: .rounded)
-    }
-
-    static func statsMedium() -> Font {
-        .system(size: 32, weight: .bold, design: .rounded)
-    }
 }
 
 // MARK: - Spacing
@@ -139,8 +126,6 @@ struct CornerRadius {
     static let small: CGFloat = 8
     static let medium: CGFloat = 12
     static let large: CGFloat = 16
-    static let xl: CGFloat = 24
-    static let full: CGFloat = 9999
 }
 
 // MARK: - Shadows
@@ -148,10 +133,6 @@ struct CornerRadius {
 extension View {
     func scShadow() -> some View {
         self.shadow(color: .black.opacity(0.25), radius: 12, x: 0, y: 4)
-    }
-
-    func scShadowLight() -> some View {
-        self.shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 2)
     }
 }
 
@@ -179,18 +160,6 @@ struct AppGradient {
             colors: [Color(hex: "E63946"), Color(hex: "C41E3A")],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
-        )
-    }
-
-    static var backgroundMesh: LinearGradient {
-        LinearGradient(
-            colors: [
-                Color(hex: "0D0D0F"),
-                Color(hex: "1A1A1E"),
-                Color(hex: "0D0D0F")
-            ],
-            startPoint: .top,
-            endPoint: .bottom
         )
     }
 }

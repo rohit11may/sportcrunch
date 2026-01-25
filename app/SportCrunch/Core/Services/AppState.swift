@@ -22,8 +22,6 @@ final class AppState: ObservableObject {
         }
     }
 
-    @Published var selectedTab: Tab = .home
-
     // MARK: - Services
 
     let videoProcessingService: VideoProcessingServiceProtocol
@@ -118,26 +116,5 @@ final class AppState: ObservableObject {
 
     func resetOnboarding() {
         hasCompletedOnboarding = false
-    }
-}
-
-// MARK: - Tab Enum
-
-enum Tab: String, CaseIterable {
-    case home
-    case settings
-
-    var title: String {
-        switch self {
-        case .home: return "Home"
-        case .settings: return "Settings"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .home: return "house.fill"
-        case .settings: return "gearshape.fill"
-        }
     }
 }

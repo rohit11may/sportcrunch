@@ -258,37 +258,6 @@ final class RealVideoLoaderService: VideoLoaderServiceProtocol {
     }
 }
 
-// MARK: - Mock Implementation
-
-/// Mock implementation for testing
-final class MockVideoLoaderService: VideoLoaderServiceProtocol {
-
-    /// URL to return from loadVideo. If nil, throws an error.
-    var urlToReturn: URL?
-
-    /// Error to throw. Takes precedence over urlToReturn.
-    var errorToThrow: Error?
-
-    /// Track how many times loadVideo was called
-    var loadVideoCallCount = 0
-
-    func loadVideo(
-        from item: PhotosPickerItem
-    ) async throws -> URL {
-        loadVideoCallCount += 1
-
-        if let error = errorToThrow {
-            throw error
-        }
-
-        guard let url = urlToReturn else {
-            throw VideoLoaderError.loadFailed("Mock not configured with URL")
-        }
-
-        return url
-    }
-}
-
 // MARK: - Video Transferable
 
 /// Transferable wrapper for video files that handles multiple video formats

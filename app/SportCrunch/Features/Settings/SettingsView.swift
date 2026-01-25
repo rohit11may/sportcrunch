@@ -9,7 +9,6 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
-    @Environment(\.dismiss) private var dismiss
     @State private var defaultSport: Sport = .tennis
     @State private var autoSaveToLibrary = true
     @State private var showResetAlert = false

@@ -23,8 +23,6 @@ struct ProcessingJob: Identifiable {
   let pickerItem: PhotosPickerItem?
   let sport: Sport
   let sportMode: (any SportMode)?
-  var progress: Double = 0
-  var status: ProcessingStatus = .pending
 }
 
 // MARK: - Background Processing Manager
@@ -132,28 +130,6 @@ final class BackgroundProcessingManager: ObservableObject {
     activeJobs[projectId] != nil
   }
 
-  /// Get current progress for a project (0.0 to 1.0)
-  func progress(for projectId: UUID) -> Double {
-    progressByProject[projectId] ?? 0
-  }
-
-  /// Get current status for a project
-  func status(for projectId: UUID) -> ProcessingStatus {
-    statusByProject[projectId] ?? .pending
-  }
-
-  /// Cancel processing for a project
-  func cancelProcessing(projectId: UUID) {
-    processingTasks[projectId]?.cancel()
-    cleanupJob(projectId: projectId)
-
-    // Update project status to failed
-    if var project = storageService.getProject(id: projectId) {
-      project.status = .failed
-      storageService.updateProject(project)
-    }
-  }
-
   // MARK: - Private Methods
 
   private func setupSubscriptions() {
@@ -234,14 +210,6 @@ final class BackgroundProcessingManager: ObservableObject {
         // Load video in background
         sourceURL = try await videoLoaderService.loadVideo(from: pickerItem)
         mutableJob.sourceURL = sourceURL
-
-        // Update project with loaded URL
-        await MainActor.run {
-          if var project = storageService.getProject(id: job.projectId) {
-            project.sourceVideoURL = sourceURL
-            storageService.updateProject(project)
-          }
-        }
       } else {
         throw ProcessingError.invalidVideoURL
       }
@@ -298,5 +266,3 @@ final class BackgroundProcessingManager: ObservableObject {
     }
   }
 }
-
-// MARK: - Thumbnail Generation (delegated to ThumbnailService)

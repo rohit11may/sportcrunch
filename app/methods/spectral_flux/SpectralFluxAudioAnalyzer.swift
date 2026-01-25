@@ -14,26 +14,12 @@ import Accelerate
 // MARK: - Audio Analysis Result
 
 struct AudioAnalysisResult {
-    let duration: TimeInterval
-    let peakTimes: [TimeInterval]
     let candidateIntervals: [(start: TimeInterval, end: TimeInterval)]
-
-    // Debug data for comparison reports (only populated when debug reporting is enabled)
-    let debugData: AudioAnalysisDebugData?
 }
 
 // MARK: - Audio Analysis Debug Data
 
 /// All intermediate values captured during audio analysis for debug comparison.
-struct AudioAnalysisDebugData {
-    let rawSamples: [Float]
-    let filteredSamples: [Float]
-    let onsetStrength: [Float]
-    let thresholds: [Float]
-    let peakIndices: [Int]
-    let clusters: [[TimeInterval]]
-    let framesPerSecond: Double
-}
 
 // MARK: - Audio Analyzer Errors
 
@@ -115,15 +101,8 @@ actor SpectralFluxAudioAnalyzer {
         }
 
         let sampleCount = samples.count
-        print("🎵 [SpectralFluxAudioAnalyzer] ✓ Extracted \(formatNumber(sampleCount)) samples")
-        print("🎵 [SpectralFluxAudioAnalyzer] ✓ Duration: \(formatTime(duration))")
-
-        // DEBUG: Compute audio fingerprint to detect extraction differences between simulator and device
-        // This helps identify if the discrepancy starts at audio extraction or later processing
-        let fingerprint = computeAudioFingerprint(samples)
-        print("🎵 [SpectralFluxAudioAnalyzer] 🔍 DEBUG: Audio fingerprint: \(fingerprint)")
-        print("🎵 [SpectralFluxAudioAnalyzer] 🔍 DEBUG: First 10 samples: \(samples.prefix(10).map { String(format: "%.6f", $0) }.joined(separator: ", "))")
-        print("🎵 [SpectralFluxAudioAnalyzer] 🔍 DEBUG: Samples at 1s: \(samples.dropFirst(Int(sampleRate)).prefix(5).map { String(format: "%.6f", $0) }.joined(separator: ", "))")
+        print("🎵 [SpectralFluxAudioAnalyzer] ✓ Extracted \(sampleCount) samples")
+        print("🎵 [SpectralFluxAudioAnalyzer] ✓ Duration: \(String(format: "%d:%02d", Int(duration) / 60, Int(duration) % 60))")
 
         // Step 2: Apply bandpass filter
         print("🎵 [SpectralFluxAudioAnalyzer] Step 2/5: Applying bandpass filter (\(Int(bandpassLow))-\(Int(bandpassHigh)) Hz)...")
@@ -135,14 +114,10 @@ actor SpectralFluxAudioAnalyzer {
         )
         print("🎵 [SpectralFluxAudioAnalyzer] ✓ Bandpass filter applied")
 
-        // DEBUG: Fingerprint after filtering to isolate where divergence occurs
-        let filteredFingerprint = computeAudioFingerprint(filteredSamples)
-        print("🎵 [SpectralFluxAudioAnalyzer] 🔍 DEBUG: Filtered audio fingerprint: \(filteredFingerprint)")
-
         // Step 3: Compute onset strength (spectral flux)
         print("🎵 [SpectralFluxAudioAnalyzer] Step 3/5: Computing spectral flux (FFT)...")
         let onsetStrength = computeOnsetStrength(filteredSamples)
-        print("🎵 [SpectralFluxAudioAnalyzer] ✓ Computed \(formatNumber(onsetStrength.count)) onset frames")
+        print("🎵 [SpectralFluxAudioAnalyzer] ✓ Computed \(onsetStrength.count) onset frames")
 
         // Log detailed stats about onset strength for debugging simulator vs device differences
         if !onsetStrength.isEmpty {
@@ -189,13 +164,13 @@ actor SpectralFluxAudioAnalyzer {
         }
 
         if !peakTimes.isEmpty {
-            let firstFew = peakTimes.prefix(5).map { formatTime($0) }.joined(separator: ", ")
+            let firstFew = peakTimes.prefix(5).map { String(format: "%.3f", $0) }.joined(separator: ", ")
             print("🎵 [SpectralFluxAudioAnalyzer]   First hits at: \(firstFew)\(peakTimes.count > 5 ? "..." : "")")
         }
 
         // Step 5: Cluster peaks into intervals
         print("🎵 [SpectralFluxAudioAnalyzer] Step 5/5: Clustering peaks (max gap: \(config.clusterMaxGapSec)s, min hits: \(config.clusterMinHits))...")
-        let (candidateIntervals, rawClusters) = clusterPeaksWithDetails(
+        let candidateIntervals = clusterPeaks(
             peakTimes: peakTimes,
             maxGapSeconds: config.clusterMaxGapSec,
             minHitsPerSegment: config.clusterMinHits,
@@ -205,71 +180,25 @@ actor SpectralFluxAudioAnalyzer {
         )
 
         let elapsed = Date().timeIntervalSince(startTime)
+        let durationStr = String(format: "%d:%02d", Int(duration) / 60, Int(duration) % 60)
         print("🎵 [SpectralFluxAudioAnalyzer] ═══════════════════════════════════════════")
         print("🎵 [SpectralFluxAudioAnalyzer] ✅ ANALYSIS COMPLETE in \(String(format: "%.2f", elapsed))s")
         print("🎵 [SpectralFluxAudioAnalyzer] 📊 Results:")
-        print("🎵 [SpectralFluxAudioAnalyzer]    • Video duration: \(formatTime(duration))")
+        print("🎵 [SpectralFluxAudioAnalyzer]    • Video duration: \(durationStr)")
         print("🎵 [SpectralFluxAudioAnalyzer]    • Hits detected: \(peakTimes.count)")
         print("🎵 [SpectralFluxAudioAnalyzer]    • Candidate segments: \(candidateIntervals.count)")
 
         for (i, interval) in candidateIntervals.enumerated() {
             let segDuration = interval.end - interval.start
-            print("🎵 [SpectralFluxAudioAnalyzer]    Segment \(i+1): \(formatTime(interval.start)) → \(formatTime(interval.end)) (\(String(format: "%.1f", segDuration))s)")
+            let startStr = String(format: "%d:%02d", Int(interval.start) / 60, Int(interval.start) % 60)
+            let endStr = String(format: "%d:%02d", Int(interval.end) / 60, Int(interval.end) % 60)
+            print("🎵 [SpectralFluxAudioAnalyzer]    Segment \(i+1): \(startStr) → \(endStr) (\(String(format: "%.1f", segDuration))s)")
         }
         print("🎵 [SpectralFluxAudioAnalyzer] ═══════════════════════════════════════════")
 
-        // Build debug data for comparison reports
-        let debugData = AudioAnalysisDebugData(
-            rawSamples: samples,
-            filteredSamples: filteredSamples,
-            onsetStrength: onsetStrength,
-            thresholds: thresholds,
-            peakIndices: peakIndices,
-            clusters: rawClusters,
-            framesPerSecond: framesPerSecond
-        )
-
         return AudioAnalysisResult(
-            duration: duration,
-            peakTimes: peakTimes,
-            candidateIntervals: candidateIntervals,
-            debugData: debugData
+            candidateIntervals: candidateIntervals
         )
-    }
-
-    // MARK: - Formatting Helpers
-
-    private func formatTime(_ seconds: TimeInterval) -> String {
-        let mins = Int(seconds) / 60
-        let secs = Int(seconds) % 60
-        let ms = Int((seconds.truncatingRemainder(dividingBy: 1)) * 10)
-        return String(format: "%d:%02d.%d", mins, secs, ms)
-    }
-
-    private func formatNumber(_ n: Int) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter.string(from: NSNumber(value: n)) ?? "\(n)"
-    }
-
-    // MARK: - Debug Helpers
-
-    /// Computes a simple fingerprint of audio samples for comparing between simulator and device.
-    /// Uses sum, sum of squares, min, max, and count to create a reproducible hash.
-    private func computeAudioFingerprint(_ samples: [Float]) -> String {
-        guard !samples.isEmpty else { return "empty" }
-
-        var sum: Float = 0
-        var sumSq: Float = 0
-        vDSP_sve(samples, 1, &sum, vDSP_Length(samples.count))
-        vDSP_svesq(samples, 1, &sumSq, vDSP_Length(samples.count))
-
-        let min = samples.min() ?? 0
-        let max = samples.max() ?? 0
-
-        // Create a fingerprint string that's easy to compare
-        return String(format: "n=%d sum=%.4f ssq=%.4f min=%.6f max=%.6f",
-                      samples.count, sum, sumSq, min, max)
     }
 
     // MARK: - Audio Extraction
@@ -663,16 +592,15 @@ actor SpectralFluxAudioAnalyzer {
     // MARK: - Peak Clustering
 
     /// Cluster detected peaks into action intervals.
-    /// Returns tuple of (intervals, rawClusters) for debug reporting.
-    private func clusterPeaksWithDetails(
+    private func clusterPeaks(
         peakTimes: [TimeInterval],
         maxGapSeconds: Double,
         minHitsPerSegment: Int,
         paddingPre: Double,
         paddingPost: Double,
         videoDuration: TimeInterval
-    ) -> (intervals: [(start: TimeInterval, end: TimeInterval)], clusters: [[TimeInterval]]) {
-        guard !peakTimes.isEmpty else { return ([], []) }
+    ) -> [(start: TimeInterval, end: TimeInterval)] {
+        guard !peakTimes.isEmpty else { return [] }
 
         let sortedPeaks = peakTimes.sorted()
 
@@ -710,6 +638,6 @@ actor SpectralFluxAudioAnalyzer {
             intervals.append((start: start, end: end))
         }
 
-        return (intervals, clusters)
+        return intervals
     }
 }

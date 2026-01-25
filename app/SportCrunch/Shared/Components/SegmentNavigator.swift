@@ -22,7 +22,6 @@ struct SegmentNavigator: View {
   var displayIndices: [Int]?
 
   @State private var scrollProxy: ScrollViewProxy?
-  @Namespace private var segmentNamespace
 
   var body: some View {
     ScrollViewReader { proxy in

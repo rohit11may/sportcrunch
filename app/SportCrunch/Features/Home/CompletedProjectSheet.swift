@@ -15,7 +15,6 @@ struct CompletedProjectSheet: View {
   @State private var currentTime: TimeInterval = 0
   @State private var currentSegmentIndex: Int?
   @State private var showShareSheet = false
-  @State private var isSavedToCameraRoll = false
   @State private var showExportSheet = false
 
   var body: some View {

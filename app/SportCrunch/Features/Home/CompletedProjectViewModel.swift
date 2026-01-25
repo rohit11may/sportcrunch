@@ -73,14 +73,6 @@ final class CompletedProjectViewModel {
     }
   }
 
-  /// Offsets for displayed segments only (for navigator UI)
-  var displayedSegmentOffsets:
-    [(segment: ActionSegment, startOffset: TimeInterval, endOffset: TimeInterval)] {
-    segmentOffsets.filter { offsetInfo in
-      displayedSegments.contains(where: { $0.id == offsetInfo.segment.id })
-    }
-  }
-
   /// Total highlight duration (sum of all segment durations)
   var highlightDuration: TimeInterval {
     project.highlightDuration ?? project.segments.reduce(0) { $0 + $1.duration }

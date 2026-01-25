@@ -54,7 +54,6 @@ struct Run: Identifiable, Codable, Sendable {
     let videoPath: String
     let method: String
     let config: String
-    let deviceTarget: DeviceTarget
     let createdAt: Date
     var startedAt: Date?
     var completedAt: Date?
@@ -67,15 +66,13 @@ struct Run: Identifiable, Codable, Sendable {
         status: RunStatus = .queued,
         videoPath: String,
         method: String,
-        config: String,
-        deviceTarget: DeviceTarget = .simulator
+        config: String
     ) {
         self.id = id
         self.status = status
         self.videoPath = videoPath
         self.method = method
         self.config = config
-        self.deviceTarget = deviceTarget
         self.createdAt = Date()
     }
 }

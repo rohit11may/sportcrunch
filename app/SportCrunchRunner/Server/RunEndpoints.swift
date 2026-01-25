@@ -19,7 +19,7 @@ class RunEndpoints {
       var response: HttpResponse = .internalServerError
 
       Task.detached {
-        response = await handleCreateRun(request: request, store: store, executor: executor)
+        response = await handleCreateRun(request: request, executor: executor)
         semaphore.signal()
       }
 
@@ -62,7 +62,6 @@ class RunEndpoints {
 
   private static func handleCreateRun(
     request: HttpRequest,
-    store: RunStore,
     executor: RunExecutor
   ) async -> HttpResponse {
     print("📥 [RunEndpoints] POST /runs - Received request")
@@ -106,15 +105,11 @@ class RunEndpoints {
         return errorResponse(message: "Video file not found: \(resolvedVideoPath)", statusCode: 404)
       }
 
-      // Parse device target (defaults to simulator)
-      let deviceTarget = parseDeviceTarget(from: json)
-
       // Create run (use resolved path so executor can find the file)
       let run = Run(
         videoPath: resolvedVideoPath,
         method: method,
-        config: config,
-        deviceTarget: deviceTarget
+        config: config
       )
 
       print("✅ [RunEndpoints] Created run: \(run.id.uuidString)")
@@ -297,15 +292,6 @@ class RunEndpoints {
           Data("{\"error\":\"Serialisation error: \(error.localizedDescription)\"}".utf8))
       }
     }
-  }
-
-  private static func parseDeviceTarget(from json: [String: Any]) -> DeviceTarget {
-    // Parse device target from JSON (defaults to simulator)
-    if let targetString = json["deviceTarget"] as? String,
-      let target = DeviceTarget(rawValue: targetString) {
-      return target
-    }
-    return .simulator
   }
 
   /// Resolve video path - converts relative paths like Documents/... to absolute paths

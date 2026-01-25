@@ -10,7 +10,6 @@ import PhotosUI
 
 struct VideoSelectionView: View {
     @Bindable var viewModel: HighlightCreationViewModel
-    @State private var showPicker = false
 
     var body: some View {
         VStack(spacing: Spacing.xl) {

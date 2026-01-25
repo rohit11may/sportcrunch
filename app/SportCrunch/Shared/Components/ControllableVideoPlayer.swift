@@ -14,7 +14,6 @@ struct ControllableVideoPlayer: View {
   let url: URL
   @Binding var currentTime: TimeInterval
   @Binding var isPlaying: Bool
-  var onSegmentChange: ((UUID?) -> Void)?
 
   @State private var player: AVPlayer?
   @State private var timeObserverToken: Any?

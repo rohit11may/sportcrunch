@@ -35,9 +35,4 @@ actor RunStore {
     func getAll() -> [Run] {
         return runs.values.sorted { $0.createdAt > $1.createdAt }
     }
-
-    /// Delete a run by ID
-    func delete(id: UUID) {
-        runs.removeValue(forKey: id)
-    }
 }

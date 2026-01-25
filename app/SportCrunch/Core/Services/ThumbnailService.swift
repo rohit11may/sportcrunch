@@ -60,16 +60,3 @@ final class RealThumbnailService: ThumbnailServiceProtocol {
         }
     }
 }
-
-// MARK: - Mock Implementation
-
-/// Mock implementation for testing that returns nil (no thumbnail)
-final class MockThumbnailService: ThumbnailServiceProtocol {
-
-    /// Configurable return value for tests
-    var thumbnailDataToReturn: Data?
-
-    func generateThumbnail(from videoURL: URL, maxSize: CGSize?) async -> Data? {
-        return thumbnailDataToReturn
-    }
-}

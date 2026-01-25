@@ -11,10 +11,6 @@ import SwiftUI
 
 /// Protocol for sport-specific modes (e.g., Tennis Rally vs Individual)
 protocol SportMode: Identifiable, Codable, CaseIterable, Hashable {
-  var id: String { get }
-  var displayName: String { get }
-  var description: String { get }
-  var iconName: String { get }
 }
 
 // MARK: - Tennis Mode
@@ -53,12 +49,6 @@ enum TennisMode: String, SportMode, CaseIterable, Codable, Sendable {
 /// Type-erased wrapper for sport modes to enable storage in Project
 enum SportModeWrapper: Codable, Equatable, Sendable {
   case tennis(TennisMode)
-
-  var displayName: String {
-    switch self {
-    case .tennis(let mode): return mode.displayName
-    }
-  }
 
   // Coding keys for polymorphic encoding
   private enum CodingKeys: String, CodingKey {
@@ -136,13 +126,6 @@ enum Sport: String, CaseIterable, Identifiable, Codable, Sendable {
     }
   }
 
-  var iconName: String {
-    switch self {
-    case .tennis: return "figure.tennis"
-    case .cricket: return "cricket.ball"
-    }
-  }
-
   /// Whether this sport is coming soon and should be disabled
   var isComingSoon: Bool {
     switch self {
@@ -158,32 +141,6 @@ enum Sport: String, CaseIterable, Identifiable, Codable, Sendable {
     switch self {
     case .tennis: return true
     case .cricket: return false
-    }
-  }
-
-  /// Available modes for this sport (empty if no modes)
-  var availableTennisModes: [TennisMode] {
-    switch self {
-    case .tennis: return TennisMode.allCases
-    case .cricket: return []
-    }
-  }
-
-  /// Default mode for sports that have modes
-  var defaultTennisMode: TennisMode? {
-    switch self {
-    case .tennis: return .rally
-    case .cricket: return nil
-    }
-  }
-
-  /// Returns all available modes for this sport
-  var availableModes: [any SportMode] {
-    switch self {
-    case .tennis:
-      return TennisMode.allCases.map { $0 as any SportMode }
-    case .cricket:
-      return []  // No modes yet
     }
   }
 

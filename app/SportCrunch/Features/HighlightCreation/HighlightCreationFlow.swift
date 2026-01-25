@@ -400,7 +400,6 @@ final class HighlightCreationViewModel {
         if let existingURL = selectedVideoURL {
             let newProject = Project(
                 sport: sport,
-                sourceVideoURL: existingURL,
                 originalDuration: videoDuration,
                 title: defaultTitle,
                 sportMode: sportModeWrapper
@@ -431,14 +430,8 @@ final class HighlightCreationViewModel {
             return
         }
 
-        // Create project with placeholder URL (will be updated when video loads)
-        // Use a temporary placeholder - BackgroundProcessingManager will update it
-        let placeholderURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("pending-\(UUID().uuidString).mov")
-
         let newProject = Project(
             sport: sport,
-            sourceVideoURL: placeholderURL,
             originalDuration: videoDuration,  // May be 0 if not loaded yet
             title: defaultTitle,
             sportMode: sportModeWrapper
@@ -465,12 +458,6 @@ final class HighlightCreationViewModel {
         shouldDismiss = true
     }
 
-    // MARK: - Project Management
-
-    func saveProject() {
-        guard let project else { return }
-        storageService?.saveProject(project)
-    }
 }
 
 // MARK: - Preview
