@@ -52,11 +52,11 @@ enum MethodEndpoints {
 
     /// Returns the absolute path to the methods directory
     private static func getMethodsDirectoryPath() -> String {
-        // Get path relative to app bundle
-        // In Xcode, methods/ is at the project root, sibling to SportCrunch.xcodeproj
-        let bundlePath = Bundle.main.bundlePath
-        let projectRoot = ((bundlePath as NSString).deletingLastPathComponent as NSString).deletingLastPathComponent
-        return "\(projectRoot)/methods"
+        // Methods directory is bundled as a resource in the app
+        guard let resourcePath = Bundle.main.resourcePath else {
+            return ""
+        }
+        return "\(resourcePath)/methods"
     }
 
     /// Scans the methods directory and returns structured method information
