@@ -26,7 +26,7 @@ function MethodSelector({ onChange }) {
         const saved = localStorage.getItem(STORAGE_KEY)
         if (saved) {
           const { methodFamily, configName } = JSON.parse(saved)
-          const method = data.find(m => m.family === methodFamily)
+          const method = data.find(m => m.method === methodFamily)
           if (method) {
             setSelectedMethod(method)
             // Find config
@@ -58,13 +58,13 @@ function MethodSelector({ onChange }) {
     if (selectedMethod && selectedConfig) {
       // Save to localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        methodFamily: selectedMethod.family,
+        methodFamily: selectedMethod.method,
         configName: selectedConfig.name
       }))
 
       // Notify parent
       onChange({
-        method: selectedMethod.family,
+        method: selectedMethod.method,
         config: selectedConfig.name,
         methodDisplayName: selectedMethod.displayName,
         configDisplayName: selectedConfig.displayName
@@ -74,7 +74,7 @@ function MethodSelector({ onChange }) {
 
   const handleMethodChange = useCallback((e) => {
     const methodFamily = e.target.value
-    const method = methods.find(m => m.family === methodFamily)
+    const method = methods.find(m => m.method === methodFamily)
     if (method) {
       setSelectedMethod(method)
       // Reset to first config
@@ -126,11 +126,11 @@ function MethodSelector({ onChange }) {
         <label htmlFor="method-select">Method</label>
         <select
           id="method-select"
-          value={selectedMethod?.family || ''}
+          value={selectedMethod?.method || ''}
           onChange={handleMethodChange}
         >
           {methods.map(method => (
-            <option key={method.family} value={method.family}>
+            <option key={method.method} value={method.method}>
               {method.displayName} ({method.version})
             </option>
           ))}

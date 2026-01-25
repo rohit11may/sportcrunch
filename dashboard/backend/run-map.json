@@ -3637,5 +3637,339 @@
       }
     ],
     "highlightPath": "/Users/rohit/Documents/sportcrunch/dashboard/backend/cache/highlights/ECFDF0FF-94DF-44DF-A926-9ADCD1E9F762-highlight.mp4"
+  },
+  "11355553-BEEF-408D-88A5-D4D6A6015377": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "type": "segment",
+        "startTime": 0,
+        "endTime": 11.344
+      },
+      {
+        "endTime": 17.136,
+        "type": "segment",
+        "startTime": 12.464
+      },
+      {
+        "startTime": 20.944,
+        "endTime": 31.248,
+        "type": "segment"
+      },
+      {
+        "startTime": 50.064,
+        "endTime": 65.168,
+        "type": "segment"
+      },
+      {
+        "startTime": 72.816,
+        "type": "segment",
+        "endTime": 89.04
+      },
+      {
+        "startTime": 88.688,
+        "endTime": 105.648,
+        "type": "segment"
+      },
+      {
+        "endTime": 112.912,
+        "type": "segment",
+        "startTime": 105.328
+      },
+      {
+        "startTime": 115.664,
+        "endTime": 120.368,
+        "type": "segment"
+      }
+    ],
+    "highlightPath": "/Users/rohit/Documents/sportcrunch/dashboard/backend/cache/highlights/11355553-BEEF-408D-88A5-D4D6A6015377-highlight.mp4"
+  },
+  "804E0AAA-7F40-4CFA-8724-F02CFFDF54BC": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "startTime": 0,
+        "endTime": 11.344,
+        "type": "segment"
+      },
+      {
+        "endTime": 17.136,
+        "startTime": 12.464,
+        "type": "segment"
+      },
+      {
+        "startTime": 20.944,
+        "endTime": 31.248,
+        "type": "segment"
+      },
+      {
+        "endTime": 65.168,
+        "type": "segment",
+        "startTime": 50.064
+      },
+      {
+        "startTime": 72.816,
+        "type": "segment",
+        "endTime": 89.04
+      },
+      {
+        "endTime": 105.648,
+        "type": "segment",
+        "startTime": 88.688
+      },
+      {
+        "endTime": 112.912,
+        "type": "segment",
+        "startTime": 105.328
+      },
+      {
+        "startTime": 115.664,
+        "endTime": 120.368,
+        "type": "segment"
+      }
+    ],
+    "highlightPath": "/Users/rohit/Documents/sportcrunch/dashboard/backend/cache/highlights/804E0AAA-7F40-4CFA-8724-F02CFFDF54BC-highlight.mp4"
+  },
+  "08816A9F-ACC8-4561-A1BB-3CEB42B44E12": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "endTime": 11.344,
+        "type": "segment",
+        "startTime": 0
+      },
+      {
+        "startTime": 12.464,
+        "endTime": 17.136,
+        "type": "segment"
+      },
+      {
+        "endTime": 31.248,
+        "startTime": 20.944,
+        "type": "segment"
+      },
+      {
+        "startTime": 50.064,
+        "endTime": 65.168,
+        "type": "segment"
+      },
+      {
+        "startTime": 72.816,
+        "type": "segment",
+        "endTime": 89.04
+      },
+      {
+        "endTime": 105.648,
+        "startTime": 88.688,
+        "type": "segment"
+      },
+      {
+        "type": "segment",
+        "endTime": 112.912,
+        "startTime": 105.328
+      },
+      {
+        "startTime": 115.664,
+        "type": "segment",
+        "endTime": 120.368
+      }
+    ],
+    "highlightPath": "/Users/rohit/Documents/sportcrunch/dashboard/backend/cache/highlights/08816A9F-ACC8-4561-A1BB-3CEB42B44E12-highlight.mp4"
+  },
+  "9E9F05B4-41AE-47A6-9172-A5194BAE93F5": {
+    "videoPath": "/Users/rohit/Documents/sportcrunch/app/SportCrunchTests/TestResources/Videos/tennis-shot-1.mp4",
+    "segments": [
+      {
+        "startTime": 0.45999999999999996,
+        "type": "segment",
+        "endTime": 2.964
+      },
+      {
+        "endTime": 4.756,
+        "startTime": 3.02,
+        "type": "segment"
+      },
+      {
+        "type": "segment",
+        "endTime": 7.028,
+        "startTime": 5.132
+      },
+      {
+        "startTime": 8.844,
+        "endTime": 9.844,
+        "type": "segment"
+      },
+      {
+        "endTime": 15.636,
+        "type": "segment",
+        "startTime": 13.964
+      },
+      {
+        "type": "segment",
+        "endTime": 18.836,
+        "startTime": 17.836
+      },
+      {
+        "startTime": 22.444,
+        "endTime": 23.444,
+        "type": "segment"
+      },
+      {
+        "type": "segment",
+        "startTime": 23.788,
+        "endTime": 24.788
+      },
+      {
+        "type": "segment",
+        "endTime": 26.644,
+        "startTime": 25.644
+      },
+      {
+        "type": "segment",
+        "startTime": 27.052,
+        "endTime": 28.052
+      },
+      {
+        "endTime": 29.748,
+        "type": "segment",
+        "startTime": 28.748
+      },
+      {
+        "startTime": 33.196,
+        "endTime": 34.196,
+        "type": "segment"
+      },
+      {
+        "startTime": 37.324,
+        "endTime": 38.324,
+        "type": "segment"
+      },
+      {
+        "endTime": 42.58,
+        "startTime": 41.58,
+        "type": "segment"
+      },
+      {
+        "startTime": 45.292,
+        "endTime": 46.292,
+        "type": "segment"
+      },
+      {
+        "type": "segment",
+        "endTime": 49.46,
+        "startTime": 48.46
+      },
+      {
+        "type": "segment",
+        "startTime": 51.564,
+        "endTime": 52.564
+      },
+      {
+        "endTime": 62.292,
+        "startTime": 61.292,
+        "type": "segment"
+      },
+      {
+        "type": "segment",
+        "endTime": 63.668,
+        "startTime": 62.668
+      },
+      {
+        "endTime": 69.172,
+        "type": "segment",
+        "startTime": 68.172
+      },
+      {
+        "endTime": 78.164,
+        "type": "segment",
+        "startTime": 77.164
+      },
+      {
+        "startTime": 80.14,
+        "endTime": 81.14,
+        "type": "segment"
+      },
+      {
+        "startTime": 82.188,
+        "endTime": 83.188,
+        "type": "segment"
+      },
+      {
+        "startTime": 83.532,
+        "type": "segment",
+        "endTime": 84.532
+      },
+      {
+        "endTime": 86.132,
+        "startTime": 85.132,
+        "type": "segment"
+      },
+      {
+        "startTime": 86.54,
+        "endTime": 87.54,
+        "type": "segment"
+      },
+      {
+        "startTime": 90.188,
+        "type": "segment",
+        "endTime": 91.188
+      },
+      {
+        "endTime": 92.82,
+        "type": "segment",
+        "startTime": 91.82
+      },
+      {
+        "type": "segment",
+        "startTime": 93.516,
+        "endTime": 94.516
+      },
+      {
+        "endTime": 98.836,
+        "type": "segment",
+        "startTime": 97.836
+      },
+      {
+        "startTime": 99.212,
+        "endTime": 100.212,
+        "type": "segment"
+      },
+      {
+        "endTime": 101.524,
+        "startTime": 100.524,
+        "type": "segment"
+      },
+      {
+        "type": "segment",
+        "startTime": 103.148,
+        "endTime": 104.148
+      },
+      {
+        "endTime": 107.828,
+        "type": "segment",
+        "startTime": 106.828
+      },
+      {
+        "startTime": 108.3,
+        "endTime": 109.3,
+        "type": "segment"
+      },
+      {
+        "endTime": 111.412,
+        "startTime": 110.412,
+        "type": "segment"
+      },
+      {
+        "endTime": 114.996,
+        "startTime": 113.996,
+        "type": "segment"
+      },
+      {
+        "endTime": 118.868,
+        "startTime": 117.164,
+        "type": "segment"
+      }
+    ],
+    "highlightPath": "/Users/rohit/Documents/sportcrunch/dashboard/backend/cache/highlights/9E9F05B4-41AE-47A6-9172-A5194BAE93F5-highlight.mp4"
   }
 }
