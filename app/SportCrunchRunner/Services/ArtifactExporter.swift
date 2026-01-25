@@ -49,12 +49,12 @@ class ArtifactExporter {
         print("📦 [ArtifactExporter] Exporting artifacts for run \(run.id.uuidString)")
         print("📦 [ArtifactExporter] Run directory: \(runDirectory.path)")
 
-        // Generate filename with timestamp and sport
+        // Generate filename with timestamp and method
         let timestamp = formatTimestamp(run.createdAt)
-        let sportName = run.sport
+        let methodName = run.method
 
         // Export segments.json
-        let segmentsFilename = "\(timestamp)-\(sportName)-segments.json"
+        let segmentsFilename = "\(timestamp)-\(methodName)-segments.json"
         let segmentsURL = runDirectory.appendingPathComponent(segmentsFilename)
         try exportSegmentsJSON(segments: segments, metadata: run, to: segmentsURL)
         print("📦 [ArtifactExporter] ✓ Wrote segments.json: \(segmentsFilename)")
@@ -92,8 +92,8 @@ class ArtifactExporter {
             },
             "metadata": [
                 "runId": metadata.id.uuidString,
-                "sport": metadata.sport,
-                "sportMode": metadata.sportMode as Any,
+                "method": metadata.method,
+                "config": metadata.config,
                 "videoPath": metadata.videoPath,
                 "createdAt": ISO8601DateFormatter().string(from: metadata.createdAt),
                 "completedAt": metadata.completedAt.map { ISO8601DateFormatter().string(from: $0) } as Any

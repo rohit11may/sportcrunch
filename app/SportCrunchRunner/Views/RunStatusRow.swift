@@ -86,11 +86,7 @@ struct RunStatusRow: View {
     }
 
     private var sportDisplayText: String {
-        if let mode = run.sportMode {
-            return "\(run.sport)/\(mode)"
-        } else {
-            return run.sport
-        }
+        return "\(run.method)/\(run.config)"
     }
 
     private var relativeTimeText: String {
@@ -130,8 +126,8 @@ struct RunStatusRow: View {
         RunStatusRow(run: Run(
             status: .queued,
             videoPath: "/path/to/video.mov",
-            sport: "tennis",
-            sportMode: "rally"
+            method: "spectral_flux",
+            config: "TennisRally"
         ))
         .padding(.horizontal)
 
@@ -141,8 +137,8 @@ struct RunStatusRow: View {
             var run = Run(
                 status: .running,
                 videoPath: "/path/to/video.mov",
-                sport: "tennis",
-                sportMode: "rally"
+                method: "spectral_flux",
+                config: "TennisRally"
             )
             run.startedAt = Date().addingTimeInterval(-30)
             return run
@@ -155,8 +151,8 @@ struct RunStatusRow: View {
             var run = Run(
                 status: .completed,
                 videoPath: "/path/to/video.mov",
-                sport: "tennis",
-                sportMode: "rally"
+                method: "spectral_flux",
+                config: "TennisRally"
             )
             run.startedAt = Date().addingTimeInterval(-60)
             run.completedAt = Date()
@@ -175,8 +171,8 @@ struct RunStatusRow: View {
             var run = Run(
                 status: .failed,
                 videoPath: "/path/to/video.mov",
-                sport: "tennis",
-                sportMode: "rally"
+                method: "spectral_flux",
+                config: "TennisRally"
             )
             run.error = "File not found"
             return run

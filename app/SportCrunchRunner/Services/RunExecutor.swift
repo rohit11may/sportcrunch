@@ -88,22 +88,12 @@ actor RunExecutor {
         throw RunExecutorError.videoNotFound(run.videoPath)
       }
 
-      // Parse sport
-      guard let sport = Sport(rawValue: run.sport) else {
-        throw RunExecutorError.invalidSport(run.sport)
-      }
-
-      // Parse sport mode (optional)
-      print("🔄 [RunExecutor] Raw sportMode string: \(run.sportMode ?? "nil")")
-      let sportMode: SportMode? = parseSportMode(sport: sport, modeString: run.sportMode)
-      print("🔄 [RunExecutor] Parsed sportMode: \(sportMode?.displayName ?? "nil (defaulting to rally)")")
-
-      // Get configured segmentation method for this sport/mode
-      let method = sport.segmentationMethod(for: sportMode)
-      print("🔄 [RunExecutor] Using method: \(method.name)")
+      print("🔄 [RunExecutor] Method: \(run.method), Config: \(run.config)")
       print("🔄 [RunExecutor] Executing on \(videoURL.lastPathComponent)")
-      print(
-        "🔄 [RunExecutor] Sport: \(sport.displayName), Mode: \(sportMode?.displayName ?? "default")")
+
+      // Instantiate the segmentation method based on method + config
+      let method = try instantiateMethod(methodFamily: run.method, configName: run.config)
+      print("🔄 [RunExecutor] Using method: \(method.name)")
 
       // Detect segments using configured method
       let segments = try await method.detectSegments(videoURL: videoURL)
@@ -115,7 +105,7 @@ actor RunExecutor {
         ExportedSegment(
           startTime: segment.startTime,
           endTime: segment.endTime,
-          type: determineSportType(sport: sport, sportMode: sportMode)
+          type: "segment"  // Generic type
         )
       }
 
@@ -147,47 +137,53 @@ actor RunExecutor {
     }
   }
 
-  // MARK: - Helpers
+  // MARK: - Method Instantiation
 
-  private func parseSportMode(sport: Sport, modeString: String?) -> SportMode? {
-    guard let modeString = modeString else { return nil }
+  /// Instantiates a segmentation method based on method family and config name
+  private func instantiateMethod(methodFamily: String, configName: String) throws -> any SegmentationMethod {
+    print("🔄 [RunExecutor] Instantiating method: \(methodFamily)/\(configName)")
 
-    switch sport {
-    case .tennis:
-      return TennisMode(rawValue: modeString)
-    case .cricket:
-      return nil  // No modes for cricket yet
+    switch methodFamily.lowercased() {
+    case "spectral_flux":
+      return try instantiateSpectralFluxMethod(configName: configName)
+    default:
+      throw RunExecutorError.methodNotFound("\(methodFamily)/\(configName)")
     }
   }
 
-  private func determineSportType(sport: Sport, sportMode: SportMode?) -> String {
-    if let tennisMode = sportMode as? TennisMode {
-      switch tennisMode {
-      case .rally:
-        return "rally"
-      case .individual:
-        return "shot"
-      }
+  /// Instantiates SpectralFluxMethod with the specified config
+  private func instantiateSpectralFluxMethod(configName: String) throws -> SpectralFluxMethod {
+    let config: SpectralFluxMethodConfig
+
+    switch configName {
+    case "TennisRally":
+      config = SpectralFluxTennisRallyConfig.instance
+    case "TennisIndividual":
+      config = SpectralFluxTennisIndividualConfig.instance
+    default:
+      throw RunExecutorError.configNotFound(configName)
     }
-    return "segment"
+
+    return SpectralFluxMethod(config: config)
   }
+
 }
 
 // MARK: - Errors
 
 enum RunExecutorError: LocalizedError {
   case videoNotFound(String)
-  case invalidSport(String)
   case methodNotFound(String)
+  case configNotFound(String)
 
   var errorDescription: String? {
     switch self {
     case .videoNotFound(let path):
       return "Video file not found: \(path)"
-    case .invalidSport(let sport):
-      return "Invalid sport: \(sport)"
     case .methodNotFound(let method):
       return "Method not found: \(method)"
+    case .configNotFound(let config):
+      return "Config not found: \(config)"
     }
   }
 }
