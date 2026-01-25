@@ -2,7 +2,7 @@
 
 ## Overview
 
-SportCrunchRunner provides an HTTP API for triggering video segmentation runs. The API uses a sport + mode discovery pattern instead of method family/version.
+SportCrunchRunner provides an HTTP API for triggering video segmentation runs. The API uses a method-based discovery pattern that scans the filesystem for available methods.
 
 **Base URL:** `http://localhost:8080` (when running in simulator)
 
@@ -24,73 +24,41 @@ Body: "OK"
 
 ---
 
-### Sport Discovery
+### Method Discovery
 
-**GET** `/sports`
+**GET** `/methods`
 
-List all available sports and their modes.
+List all available methods by scanning the `app/methods/` directory.
 
 **Response:**
 ```json
 [
   {
-    "id": "tennis",
-    "displayName": "Tennis",
-    "description": "Detects racket-ball impacts",
-    "modes": [
+    "family": "spectral_flux",
+    "version": "v1",
+    "displayName": "Spectral Flux",
+    "description": "Audio-based detection using spectral flux analysis",
+    "configs": [
       {
-        "id": "rally",
-        "displayName": "Rally Mode",
+        "name": "TennisRally",
+        "displayName": "Tennis Rally",
         "description": "Groups consecutive shots into rallies"
       },
       {
-        "id": "individual",
-        "displayName": "Shot Mode",
+        "name": "TennisIndividual",
+        "displayName": "Tennis Individual",
         "description": "Captures each shot separately"
       }
     ]
-  },
-  {
-    "id": "cricket",
-    "displayName": "Cricket",
-    "description": "Detects bat-ball contacts",
-    "modes": []
   }
 ]
 ```
 
----
-
-**GET** `/sports/:sport`
-
-Get details for a specific sport.
-
-**Parameters:**
-- `sport` (path) - Sport ID (e.g., "tennis", "cricket")
-
-**Response:**
-```json
-{
-  "id": "tennis",
-  "displayName": "Tennis",
-  "description": "Detects racket-ball impacts",
-  "modes": [
-    {
-      "id": "rally",
-      "displayName": "Rally Mode",
-      "description": "Groups consecutive shots into rallies"
-    },
-    {
-      "id": "individual",
-      "displayName": "Shot Mode",
-      "description": "Captures each shot separately"
-    }
-  ]
-}
-```
-
-**Errors:**
-- `400 Bad Request` - Invalid sport ID
+**Method Discovery Logic:**
+- Scans `app/methods/` for method family directories (e.g., `spectral_flux/`)
+- Scans `app/methods/<family>/configs/` for config files (e.g., `SpectralFluxTennisRally.swift`)
+- Extracts config name by removing method family prefix from filename
+- Returns structured JSON with method families and their available configs
 
 ---
 
@@ -104,16 +72,16 @@ Create a new segmentation run.
 ```json
 {
   "videoPath": "/path/to/video.mp4",
-  "sport": "tennis",
-  "sportMode": "rally",
+  "method": "spectral_flux",
+  "config": "TennisRally",
   "deviceTarget": "simulator"
 }
 ```
 
 **Parameters:**
 - `videoPath` (required) - Absolute path to video file
-- `sport` (required) - Sport ID (from `/sports`)
-- `sportMode` (optional) - Mode ID (from `/sports/:sport/modes`)
+- `method` (required) - Method family name (from `/methods`)
+- `config` (required) - Config name (from `/methods` configs array)
 - `deviceTarget` (required) - Target device ("simulator" or "device")
 
 **Response:**
@@ -139,8 +107,8 @@ Get status and results for a run.
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "running",
   "videoPath": "/path/to/video.mp4",
-  "sport": "tennis",
-  "sportMode": "rally",
+  "method": "spectral_flux",
+  "config": "TennisRally",
   "createdAt": "2026-01-25T12:00:00Z",
   "startedAt": "2026-01-25T12:00:05Z"
 }
@@ -152,8 +120,8 @@ Get status and results for a run.
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "completed",
   "videoPath": "/path/to/video.mp4",
-  "sport": "tennis",
-  "sportMode": "rally",
+  "method": "spectral_flux",
+  "config": "TennisRally",
   "createdAt": "2026-01-25T12:00:00Z",
   "startedAt": "2026-01-25T12:00:05Z",
   "completedAt": "2026-01-25T12:00:45Z",
@@ -161,12 +129,12 @@ Get status and results for a run.
     {
       "startTime": 5.2,
       "endTime": 12.8,
-      "type": "rally"
+      "type": "segment"
     },
     {
       "startTime": 18.5,
       "endTime": 25.1,
-      "type": "rally"
+      "type": "segment"
     }
   ],
   "artifactPaths": {
@@ -182,8 +150,8 @@ Get status and results for a run.
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "failed",
   "videoPath": "/path/to/video.mp4",
-  "sport": "tennis",
-  "sportMode": "rally",
+  "method": "spectral_flux",
+  "config": "TennisRally",
   "createdAt": "2026-01-25T12:00:00Z",
   "startedAt": "2026-01-25T12:00:05Z",
   "completedAt": "2026-01-25T12:00:10Z",
@@ -204,8 +172,8 @@ List all runs.
     {
       "id": "550e8400-e29b-41d4-a716-446655440000",
       "status": "completed",
-      "sport": "tennis",
-      "sportMode": "rally",
+      "method": "spectral_flux",
+      "config": "TennisRally",
       "createdAt": "2026-01-25T12:00:00Z"
     }
   ]
@@ -214,40 +182,15 @@ List all runs.
 
 ---
 
-## Migration from Legacy API
-
-If you were using the old method registry API:
-
-**OLD:**
-```bash
-GET /methods
-GET /methods/spectral_flux/v2
-POST /runs { "method": "spectral_flux", ... }
-```
-
-**NEW:**
-```bash
-GET /sports
-GET /sports/tennis
-POST /runs { "sport": "tennis", "sportMode": "rally", ... }
-```
-
-**Key changes:**
-1. Discovery is now sport-based, not method-based
-2. Use `sport` + `sportMode` instead of `method`/`methodFamily`/`methodVersion`
-3. No more method config parameters - configs are predetermined per sport/mode
-
----
-
 ## Example Workflows
 
-### Discover available options
+### Discover available methods
 
 ```bash
-# Get all sports and modes
-curl http://localhost:8080/sports | jq
+# Get all methods and configs
+curl http://localhost:8080/methods | jq
 
-# Result: tennis has rally + individual modes
+# Result: spectral_flux has TennisRally + TennisIndividual configs
 ```
 
 ### Create and monitor a run
@@ -258,8 +201,8 @@ curl -X POST http://localhost:8080/runs \
   -H "Content-Type: application/json" \
   -d '{
     "videoPath": "/path/to/tennis.mp4",
-    "sport": "tennis",
-    "sportMode": "rally",
+    "method": "spectral_flux",
+    "config": "TennisRally",
     "deviceTarget": "simulator"
   }' | jq
 
@@ -279,3 +222,18 @@ done
 # Get final results
 curl http://localhost:8080/runs/$RUN_ID | jq
 ```
+
+---
+
+## Adding New Methods
+
+To add a new method that will be discovered by the API:
+
+1. Create method family directory: `app/methods/<method_family>/`
+2. Implement method class: `<MethodFamily>Method.swift`
+3. Implement config struct: `<MethodFamily>MethodConfig.swift`
+4. Create config instances in `configs/` subdirectory:
+   - Example: `configs/<MethodFamily><ConfigName>.swift`
+   - Must define static `instance` property of config type
+5. Update `RunExecutor.instantiateMethod()` to handle new method family
+6. Restart SportCrunchRunner - new method will appear in `/methods` endpoint
