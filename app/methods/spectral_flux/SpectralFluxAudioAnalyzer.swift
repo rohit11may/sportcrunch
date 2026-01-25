@@ -68,8 +68,9 @@ actor SpectralFluxAudioAnalyzer {
     /// - Parameters:
     ///   - videoURL: URL to the video file
     ///   - config: Spectral flux method configuration parameters
+    ///   - observation: Optional observation recorder for telemetry
     /// - Returns: Analysis result with detected peaks and candidate intervals
-    func analyze(videoURL: URL, config: SpectralFluxMethodConfig) async throws -> AudioAnalysisResult {
+    func analyze(videoURL: URL, config: SpectralFluxMethodConfig, observation: RunObservation?) async throws -> AudioAnalysisResult {
         // Audio processing constants (not tunable parameters)
         let sampleRate: Double = 16000
         let bandpassLow: Double = 200
@@ -150,6 +151,26 @@ actor SpectralFluxAudioAnalyzer {
         let framesPerSecond = sampleRate / Double(hopLength)
         let peakTimes = peakIndices.map { Double($0) / framesPerSecond }
         print("🎵 [SpectralFluxAudioAnalyzer] ✓ Detected \(peakTimes.count) potential hits")
+
+        // Record observation data if provided
+        if let obs = observation {
+            // Record onset strength signal (downsampled automatically by Observation to 2 points/sec)
+            let frameDuration = Double(hopLength) / sampleRate
+            for (i, val) in onsetStrength.enumerated() {
+                await obs.addSignalPoint(name: "audio_flux", time: Double(i) * frameDuration, value: Double(val))
+            }
+
+            // Record peak events
+            for (i, peakIdx) in peakIndices.enumerated() {
+                let peakTime = Double(peakIdx) / framesPerSecond
+                let peakStrength = onsetStrength[peakIdx]
+                await obs.addEvent(
+                    name: "audio_peak",
+                    time: peakTime,
+                    metadata: ["strength": String(format: "%.2f", peakStrength)]
+                )
+            }
+        }
 
         // DEBUG: Log peak onset strengths for comparison between simulator and device
         print("🎵 [SpectralFluxAudioAnalyzer] 🔍 DEBUG: Peak indices and their onset strengths:")
