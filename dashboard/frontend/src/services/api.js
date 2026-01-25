@@ -49,7 +49,27 @@ export async function uploadVideo(file) {
   }
 }
 
-export async function createRun(videoPath, method, sport, sportMode, config = {}, deviceId = 'simulator', deviceIp = null) {
+export async function fetchSports() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/sports`)
+    return await handleResponse(response)
+  } catch (error) {
+    if (error instanceof APIError) throw error
+    throw new APIError(`Failed to fetch sports: ${error.message}`, 0)
+  }
+}
+
+export async function fetchSport(sportId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/sports/${sportId}`)
+    return await handleResponse(response)
+  } catch (error) {
+    if (error instanceof APIError) throw error
+    throw new APIError(`Failed to fetch sport: ${error.message}`, 0)
+  }
+}
+
+export async function createRun(videoPath, sport, sportMode, deviceId = 'simulator', deviceIp = null) {
   try {
     const response = await fetch(`${API_BASE_URL}/api/runs`, {
       method: 'POST',
@@ -58,10 +78,8 @@ export async function createRun(videoPath, method, sport, sportMode, config = {}
       },
       body: JSON.stringify({
         videoPath,
-        method,
         sport,
         sportMode,
-        config,
         deviceId,
         deviceIp
       })
