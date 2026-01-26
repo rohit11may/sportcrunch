@@ -39,6 +39,7 @@ final class HoughMethod: SegmentationMethod {
     private let config: HoughMethodConfig
     private let processor = HoughMotionProcessor()
     private let detector = HoughLinearityDetector()
+    private let tracker = HoughTracker()
 
     /// Frame stride: process every Nth frame to reduce overhead.
     /// At 30fps, stride of 2 = 15 effective fps, stride of 3 = 10 effective fps.
@@ -129,7 +130,13 @@ final class HoughMethod: SegmentationMethod {
 
         print("🎯 [HoughMethod] Processed \(processedFrames) frames, found \(allDetections.count) streak detections")
 
-        // Return empty for now - Task 5 adds temporal tracking
-        return []
+        let rallies = tracker.groupRallies(detections: allDetections, config: config)
+
+        print("🎯 [HoughMethod] Grouped into \(rallies.count) rallies")
+        for (i, rally) in rallies.enumerated() {
+            print("🎯 [HoughMethod]   Rally \(i + 1): \(String(format: "%.2f", rally.startTime))s - \(String(format: "%.2f", rally.endTime))s (\(String(format: "%.2f", rally.duration))s)")
+        }
+
+        return rallies
     }
 }
