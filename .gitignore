@@ -62,3 +62,6 @@ xcuserdata/
 # Test results
 *.xcresult
 .osgrep
+
+# ML Models
+app/ml-models/
