@@ -29,10 +29,20 @@ struct HealthEndpoint {
             let encoder = JSONEncoder()
             encoder.outputFormatting = .prettyPrinted
             let jsonData = try encoder.encode(response)
+            let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
 
-            return .ok(.data(jsonData, contentType: "application/json"))
+            var headers = HTTPServer.corsHeaders
+            headers["Content-Type"] = "application/json"
+
+            return .raw(200, "OK", headers) {
+                try? $0.write(Data(jsonString.utf8))
+            }
         } catch {
-            return .internalServerError
+            var headers = HTTPServer.corsHeaders
+            headers["Content-Type"] = "application/json"
+            return .raw(500, "Internal Server Error", headers) {
+                try? $0.write(Data("{\"error\":\"Internal server error\"}".utf8))
+            }
         }
     }
 }

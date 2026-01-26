@@ -53,6 +53,9 @@ class HTTPServer: ObservableObject {
 
         state = .starting
 
+        // Setup CORS middleware before starting
+        setupCORSMiddleware()
+
         do {
             try server.start(defaultPort, forceIPv4: true)
 
@@ -75,6 +78,29 @@ class HTTPServer: ObservableObject {
         server.stop()
         state = .stopped
         print("🛑 HTTPServer stopped")
+    }
+
+    // MARK: - CORS Headers
+
+    /// Standard CORS headers for cross-origin requests
+    static let corsHeaders: [String: String] = [
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+    ]
+
+    /// Setup CORS middleware to handle preflight requests
+    private func setupCORSMiddleware() {
+        // Middleware runs for every request
+        // Return a response to short-circuit, or nil to continue to route handler
+        server.middleware.append { request in
+            // Handle OPTIONS preflight requests
+            if request.method == "OPTIONS" {
+                return .raw(204, "No Content", Self.corsHeaders, nil)
+            }
+            // Let other requests continue to their handlers
+            return nil
+        }
     }
 
     // MARK: - Route Registration

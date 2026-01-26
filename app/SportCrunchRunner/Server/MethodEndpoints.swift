@@ -76,7 +76,10 @@ enum MethodEndpoints {
             return errorResponse(message: "Failed to encode methods", statusCode: 500)
         }
 
-        return .raw(200, "OK", ["Content-Type": "application/json"]) {
+        var headers = HTTPServer.corsHeaders
+        headers["Content-Type"] = "application/json"
+
+        return .raw(200, "OK", headers) {
             try? $0.write(Data(jsonString.utf8))
         }
     }
@@ -106,7 +109,10 @@ enum MethodEndpoints {
         let jsonData = try? JSONSerialization.data(withJSONObject: json)
         let jsonString = jsonData.flatMap { String(data: $0, encoding: .utf8) } ?? "{\"error\":\"Unknown error\"}"
 
-        return .raw(statusCode, "Error", ["Content-Type": "application/json"]) {
+        var headers = HTTPServer.corsHeaders
+        headers["Content-Type"] = "application/json"
+
+        return .raw(statusCode, "Error", headers) {
             try? $0.write(Data(jsonString.utf8))
         }
     }

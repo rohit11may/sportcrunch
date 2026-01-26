@@ -55,6 +55,20 @@ class RunEndpoints {
       return response
     }
 
+    // GET /runs/:id/observations - Get observations data for a run
+    server.registerRoute(path: "/runs/:id/observations", method: "GET") { request in
+      let semaphore = DispatchSemaphore(value: 0)
+      var response: HttpResponse = .internalServerError
+
+      Task.detached {
+        response = await handleGetObservations(request: request)
+        semaphore.signal()
+      }
+
+      semaphore.wait()
+      return response
+    }
+
     print("📡 [RunEndpoints] Registered /runs endpoints")
   }
 
@@ -152,6 +166,57 @@ class RunEndpoints {
 
     print("📤 [RunEndpoints] Returning list of \(runsJSON.count) runs")
     return jsonResponse(data: response)
+  }
+
+  // MARK: - GET /runs/:id/observations
+
+  private static func handleGetObservations(request: HttpRequest) async -> HttpResponse {
+    print("📥 [RunEndpoints] GET /runs/:id/observations - Received request")
+
+    // Extract ID from path
+    guard let idString = request.params[":id"],
+      let id = UUID(uuidString: idString)
+    else {
+      print("❌ [RunEndpoints] Invalid run ID format")
+      return errorResponse(message: "Invalid run ID", statusCode: 400)
+    }
+
+    print("🔍 [RunEndpoints] Looking for observations for run: \(id.uuidString)")
+
+    // Build path to observations.json
+    guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+      print("❌ [RunEndpoints] Could not access Documents directory")
+      return errorResponse(message: "Internal server error", statusCode: 500)
+    }
+
+    let observationsPath = documentsURL
+      .appendingPathComponent("SportCrunchRunner", isDirectory: true)
+      .appendingPathComponent("Runs", isDirectory: true)
+      .appendingPathComponent(id.uuidString, isDirectory: true)
+      .appendingPathComponent("observations.json")
+
+    print("📁 [RunEndpoints] Looking for file at: \(observationsPath.path)")
+
+    // Check if file exists
+    guard FileManager.default.fileExists(atPath: observationsPath.path) else {
+      print("❌ [RunEndpoints] Observations file not found")
+      return errorResponse(message: "Observations not found for this run", statusCode: 404)
+    }
+
+    // Read and return the file
+    do {
+      let data = try Data(contentsOf: observationsPath)
+      guard let jsonObject = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+        print("❌ [RunEndpoints] Invalid JSON in observations file")
+        return errorResponse(message: "Invalid observations data", statusCode: 500)
+      }
+
+      print("✅ [RunEndpoints] Successfully loaded observations")
+      return jsonResponse(data: jsonObject)
+    } catch {
+      print("❌ [RunEndpoints] Error reading observations: \(error)")
+      return errorResponse(message: "Failed to read observations: \(error.localizedDescription)", statusCode: 500)
+    }
   }
 
   // MARK: - GET /runs/:id
@@ -253,13 +318,17 @@ class RunEndpoints {
   private static func jsonResponse(data: Any, statusCode: Int = 200) -> HttpResponse {
     print("🔄 [RunEndpoints] Creating JSON response (status: \(statusCode))")
 
+    // Merge content-type with CORS headers
+    var headers = HTTPServer.corsHeaders
+    headers["Content-Type"] = "application/json"
+
     // Validate that the data is JSON-serializable
     guard JSONSerialization.isValidJSONObject(data) else {
       print("❌ [RunEndpoints] Data is NOT valid JSON object!")
       print("   Type: \(type(of: data))")
       print("   Data: \(data)")
 
-      return .raw(500, "Internal Server Error", ["Content-Type": "application/json"]) {
+      return .raw(500, "Internal Server Error", headers) {
         try? $0.write(
           Data("{\"error\":\"Serialisation error: invalidObject\"}".utf8))
       }
@@ -277,7 +346,7 @@ class RunEndpoints {
 
       return .raw(
         statusCode, statusCode == 200 ? "OK" : (statusCode == 201 ? "Created" : "Accepted"),
-        ["Content-Type": "application/json"]
+        headers
       ) {
         try? $0.write(Data(jsonString.utf8))
       }
@@ -287,7 +356,7 @@ class RunEndpoints {
       print("   LocalizedDescription: \(error.localizedDescription)")
       print("   Data attempted: \(data)")
 
-      return .raw(500, "Internal Server Error", ["Content-Type": "application/json"]) {
+      return .raw(500, "Internal Server Error", headers) {
         try? $0.write(
           Data("{\"error\":\"Serialisation error: \(error.localizedDescription)\"}".utf8))
       }
@@ -325,19 +394,25 @@ class RunEndpoints {
     let jsonString =
       jsonData.flatMap { String(data: $0, encoding: .utf8) } ?? "{\"error\":\"Unknown error\"}"
 
+    // Merge content-type with CORS headers
+    var headers = HTTPServer.corsHeaders
+    headers["Content-Type"] = "application/json"
+
     switch statusCode {
     case 400:
-      return .badRequest(.json(jsonString as AnyObject))
+      return .raw(400, "Bad Request", headers) {
+        try? $0.write(Data(jsonString.utf8))
+      }
     case 404:
-      return .raw(404, "Not Found", ["Content-Type": "application/json"]) {
+      return .raw(404, "Not Found", headers) {
         try? $0.write(Data(jsonString.utf8))
       }
     case 500:
-      return .raw(500, "Internal Server Error", ["Content-Type": "application/json"]) {
+      return .raw(500, "Internal Server Error", headers) {
         try? $0.write(Data(jsonString.utf8))
       }
     default:
-      return .raw(statusCode, "Error", ["Content-Type": "application/json"]) {
+      return .raw(statusCode, "Error", headers) {
         try? $0.write(Data(jsonString.utf8))
       }
     }

@@ -30,8 +30,8 @@ function Lab() {
 
   const fetchRun = async () => {
     try {
-      // Fetch from iOS device first
-      const response = await fetch(`${DEVICE_BASE}/runs/${runId}`);
+      // Fetch from backend API (which proxies to iOS device)
+      const response = await fetch(`${API_BASE}/api/runs/${runId}`);
       if (!response.ok) throw new Error('Run not found');
       const data = await response.json();
       setRun(data);
@@ -62,9 +62,8 @@ function Lab() {
     setSyncStatus('Fetching observations from device...');
 
     try {
-      // 1. Fetch observations.json from device
-      const devicePath = `/var/mobile/Containers/Data/Application/SportCrunchRuns/${runId}/observations.json`;
-      const obsResponse = await fetch(`${DEVICE_BASE}/files?path=${encodeURIComponent(devicePath)}`);
+      // 1. Fetch observations.json from device via new endpoint
+      const obsResponse = await fetch(`${DEVICE_BASE}/runs/${runId}/observations`);
 
       if (!obsResponse.ok) {
         throw new Error('Observations file not found on device');

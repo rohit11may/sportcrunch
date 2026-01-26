@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: - Export Errors
 
-enum ExportError: LocalizedError {
+enum ArtifactExportError: LocalizedError {
     case observationEncodingFailed(Error)
 
     var errorDescription: String? {
@@ -104,7 +104,7 @@ class ArtifactExporter {
                 obsData = try encoder.encode(snapshot)
             } catch {
                 print("📦 [ArtifactExporter] ❌ Failed to encode observation: \(error)")
-                throw ExportError.observationEncodingFailed(error)
+                throw ArtifactExportError.observationEncodingFailed(error)
             }
 
             let obsPath = runDirectory.appendingPathComponent("observations.json")
