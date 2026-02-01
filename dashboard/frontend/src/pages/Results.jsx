@@ -1,9 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { getRun } from '../services/api'
 import Timeline from '../components/Timeline'
 import VideoPlayer from '../components/VideoPlayer'
+import ObservationCharts from '../components/ObservationCharts'
+import EventLedger from '../components/EventLedger'
 import './Results.css'
+
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000'
+const DEVICE_BASE = import.meta.env.VITE_DEVICE_BASE || 'http://localhost:8080'
 
 function Results() {
     const { runId } = useParams()
@@ -12,13 +17,19 @@ function Results() {
     const [error, setError] = useState(null)
     const [currentTime, setCurrentTime] = useState(0)
     const [videoDuration, setVideoDuration] = useState(0)
-    const [showInfo, setShowInfo] = useState(false)
-    const [showJson, setShowJson] = useState(false)
     const originalVideoRef = useRef(null)
     const highlightVideoRef = useRef(null)
+    
+    // Observations State
+    const [observations, setObservations] = useState(null)
+    const [syncing, setSyncing] = useState(false)
+    const [syncStatus, setSyncStatus] = useState('')
 
     useEffect(() => {
         loadRun()
+        if (runId) {
+            fetchObservations()
+        }
     }, [runId])
 
     // Handle video metadata loaded - get duration from ORIGINAL video
@@ -45,6 +56,46 @@ function Results() {
             setError(err.message || 'Failed to load run')
         } finally {
             setLoading(false)
+        }
+    }
+
+    const fetchObservations = async () => {
+        try {
+            const response = await fetch(`${API_BASE}/api/runs/${runId}/observations`)
+            if (response.ok) {
+                const data = await response.json()
+                setObservations(data)
+            } else {
+                setObservations(null)
+            }
+        } catch (err) {
+            console.warn('Observations not available:', err.message)
+        }
+    }
+
+    const syncObservations = async () => {
+        setSyncing(true)
+        setSyncStatus('Fetching...')
+
+        try {
+            const obsResponse = await fetch(`${DEVICE_BASE}/runs/${runId}/observations`)
+            if (!obsResponse.ok) throw new Error('Observations not found on device')
+            const observationsData = await obsResponse.json()
+
+            await fetch(`${API_BASE}/api/sync/observations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ runId, observations: observationsData })
+            })
+
+            setObservations(observationsData)
+            setSyncStatus('✓')
+            setTimeout(() => setSyncStatus(''), 2000)
+        } catch (err) {
+            setSyncStatus('❌')
+            console.error(err)
+        } finally {
+            setSyncing(false)
         }
     }
 
@@ -81,8 +132,6 @@ function Results() {
         )
     }
 
-    const segmentCount = run.segments?.length || 0
-
     // Handle segment click - seek ORIGINAL video to timestamp
     const handleSegmentClick = (timestamp) => {
         if (originalVideoRef.current) {
@@ -105,39 +154,21 @@ function Results() {
     // Determine HIGHLIGHT video source
     const getHighlightVideoSource = () => {
         if (!run) return null
-
-        // Use highlightPath from run data (now a full URL from backend)
-        if (run.highlightPath) {
-            return run.highlightPath
-        }
-
-        // Fallback: If highlightVideo artifact exists (legacy), use that
-        if (run.artifactPaths?.highlightVideo) {
-            return run.artifactPaths.highlightVideo
-        }
-
+        if (run.highlightPath) return run.highlightPath
+        if (run.artifactPaths?.highlightVideo) return run.artifactPaths.highlightVideo
         return null
     }
 
     const originalSource = getOriginalVideoSource()
     const highlightSource = getHighlightVideoSource()
 
-    // Format the run ID for display (truncated)
-    const formatRunId = (id) => {
-        if (id && id.length > 8) {
-            return `${id.substring(0, 8)}...`
-        }
-        return id
-    }
-
     return (
         <div className="results-page">
-            {/* Split View: Original (Left) vs Highlight (Right) */}
-            <div className="video-main">
-                <div className="split-view-container">
-                    {/* LEFT: Original Video + Timeline Control */}
-                    <div className="video-column original-column">
-                        <div className="column-header">Original</div>
+            <div className="layout-grid">
+                {/* LEFT COLUMN: Media (25%) */}
+                <div className="left-column">
+                    <div className="panel video-panel">
+                        <div className="panel-header">Original Video</div>
                         <div className="video-wrapper">
                             {originalSource ? (
                                 <VideoPlayer
@@ -146,125 +177,63 @@ function Results() {
                                     onTimeUpdate={handleTimeUpdate}
                                 />
                             ) : (
-                                <div className="placeholder-box">
-                                    <p>No Original Video</p>
-                                </div>
+                                <div className="placeholder-box">No Video</div>
                             )}
                         </div>
                     </div>
 
-                    {/* RIGHT: Highlight Video */}
-                    <div className="video-column highlight-column">
-                        <div className="column-header">Highlight</div>
+                    <div className="panel video-panel">
+                        <div className="panel-header">Highlight Reel</div>
                         <div className="video-wrapper">
                             {highlightSource ? (
                                 <VideoPlayer
                                     videoRef={highlightVideoRef}
                                     videoSrc={highlightSource}
-                                // No onTimeUpdate for highlight - independent playback
                                 />
                             ) : (
-                                <div className="placeholder-box">
-                                    <p>No Highlight Generated</p>
-                                    <p className="placeholder-hint">Process segments to generate highlight</p>
-                                </div>
+                                <div className="placeholder-box">No Highlight</div>
                             )}
                         </div>
                     </div>
-                </div>
-
-                {/* Timeline below video - Controls ORIGINAL */}
-                <div className="timeline-container">
-                    <Timeline
-                        segments={run.segments || []}
-                        onSegmentClick={handleSegmentClick}
-                        currentTime={currentTime}
-                        videoDuration={videoDuration}
-                    />
-                </div>
-            </div>
-
-            {/* Compact info bar at bottom */}
-            <div className="info-bar">
-                <div className="info-bar-main">
-                    <div className="info-chips">
-                        <span className={`status-chip status-${run.status}`}>
-                            {run.status}
-                        </span>
-                        <span className="info-chip">
-                            <span className="chip-icon">🎾</span>
-                            {run.sport}
-                        </span>
-                        <span className="info-chip">
-                            <span className="chip-icon">⚙️</span>
-                            {run.method}
-                        </span>
-                        <span className="info-chip">
-                            <span className="chip-icon">📊</span>
-                            {segmentCount} segments
-                        </span>
-                    </div>
-                    <div className="info-actions">
-                        <span className="video-name" title={run.videoPath}>
-                            {run.videoPath.split('/').pop()}
-                        </span>
-                        <Link
-                            to={`/lab/${runId}`}
-                            className="info-toggle lab-link"
-                        >
-                            Lab 🔬
-                        </Link>
-                        <button
-                            className="info-toggle"
-                            onClick={() => setShowJson(!showJson)}
-                        >
-                            {showJson ? 'Hide JSON' : 'Show JSON'}
-                        </button>
-                        <button
-                            className="info-toggle"
-                            onClick={() => setShowInfo(!showInfo)}
-                        >
-                            {showInfo ? 'Hide Details' : 'Show Details'}
+                    
+                    <div className="panel info-panel">
+                        <div className="info-row">
+                            <span className={`status-badge ${run.status}`}>{run.status}</span>
+                            <span className="info-id">#{run.id.slice(0,6)}</span>
+                            <span className="info-meta">{run.method}</span>
+                        </div>
+                        <button className="sync-btn" onClick={syncObservations} disabled={syncing}>
+                            {syncing ? 'Syncing...' : 'Sync Device Data'} {syncStatus}
                         </button>
                     </div>
                 </div>
 
-                {/* Raw JSON Display */}
-                {showJson && (
-                    <div className="json-details">
-                        <pre>{JSON.stringify(run, null, 2)}</pre>
+                {/* RIGHT COLUMN: Data (75%) */}
+                <div className="right-column">
+                    <div className="panel charts-panel">
+                        <ObservationCharts 
+                            observations={observations} 
+                            onTimeClick={handleSegmentClick} 
+                        />
                     </div>
-                )}
+                    
+                    <div className="panel ledger-panel">
+                        <EventLedger 
+                            observations={observations} 
+                            runId={runId} 
+                            onTimeClick={handleSegmentClick} 
+                        />
+                    </div>
 
-                {/* Expandable details panel */}
-                {showInfo && (
-                    <div className="info-details">
-                        <div className="detail-row">
-                            <span className="detail-label">Run ID</span>
-                            <span className="detail-value mono">{run.id}</span>
-                        </div>
-                        <div className="detail-row">
-                            <span className="detail-label">Mode</span>
-                            <span className="detail-value">{run.sportMode}</span>
-                        </div>
-                        {run.createdAt && (
-                            <div className="detail-row">
-                                <span className="detail-label">Created</span>
-                                <span className="detail-value">
-                                    {new Date(run.createdAt).toLocaleString()}
-                                </span>
-                            </div>
-                        )}
-                        {run.completedAt && (
-                            <div className="detail-row">
-                                <span className="detail-label">Completed</span>
-                                <span className="detail-value">
-                                    {new Date(run.completedAt).toLocaleString()}
-                                </span>
-                            </div>
-                        )}
+                    <div className="panel timeline-panel">
+                        <Timeline
+                            segments={run.segments || []}
+                            onSegmentClick={handleSegmentClick}
+                            currentTime={currentTime}
+                            videoDuration={videoDuration}
+                        />
                     </div>
-                )}
+                </div>
             </div>
         </div>
     )
