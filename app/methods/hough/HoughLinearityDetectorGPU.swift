@@ -15,6 +15,11 @@ final class HoughLinearityDetectorGPU: @unchecked Sendable {
 
     private let gpu: HoughGPU
 
+    // Timing accumulators
+    private var detectCallCount: Int = 0
+    private var totalGpuDetectTime: Double = 0
+    private var totalConvertTime: Double = 0
+
     init() throws {
         self.gpu = try HoughGPU()
     }
@@ -36,21 +41,34 @@ final class HoughLinearityDetectorGPU: @unchecked Sendable {
         // A line of minStreakLength pixels should have roughly that many votes
         let voteThreshold = max(Int(config.minStreakLength / 2), 10)
 
+        let gpuStart = CFAbsoluteTimeGetCurrent()
         let gpuLines = try gpu.detectLines(
             points: points,
             imageWidth: imageWidth,
             imageHeight: imageHeight,
             voteThreshold: voteThreshold
         )
+        totalGpuDetectTime += CFAbsoluteTimeGetCurrent() - gpuStart
 
         // Convert Hough lines to LineSegments
-        return gpuLines.compactMap { gpuLine in
+        let convertStart = CFAbsoluteTimeGetCurrent()
+        let result = gpuLines.compactMap { gpuLine in
             convertToLineSegment(
                 gpuLine: gpuLine,
                 points: points,
                 config: config
             )
         }
+        totalConvertTime += CFAbsoluteTimeGetCurrent() - convertStart
+
+        detectCallCount += 1
+        if detectCallCount % 100 == 0 {
+            let avgGpu = totalGpuDetectTime / Double(detectCallCount) * 1000
+            let avgConvert = totalConvertTime / Double(detectCallCount) * 1000
+            print("⚙️ [GPUDetector] Avg over \(detectCallCount) calls: gpuHough=\(String(format: "%.2f", avgGpu))ms, inlierConvert=\(String(format: "%.2f", avgConvert))ms, linesFound=\(gpuLines.count)")
+        }
+
+        return result
     }
 
     // MARK: - Private Helpers

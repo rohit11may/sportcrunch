@@ -1,5 +1,5 @@
 .agent/
-run-map.json
+run-map*
 .DS_Store
 *.bak
 sample-debug-reports/

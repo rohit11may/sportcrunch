@@ -12,7 +12,7 @@ final class HoughLinearityDetectorTests: XCTestCase {
     func testHorizontalLineDetection() {
         let detector = HoughLinearityDetector()
         let config = HoughMethodConfig(
-            diffThreshold: 0, minMotionArea: 0, // irrelevant for this test
+            diffThreshold: 0, minMotionArea: 0, maxMotionPoints: 15000, // irrelevant for this test
             minStreakLength: 10,
             maxStreakGap: 5,
             lineTolerance: 2,
@@ -38,7 +38,7 @@ final class HoughLinearityDetectorTests: XCTestCase {
     func testLinearityDetectorPerformance() {
         let detector = HoughLinearityDetector()
         let config = HoughMethodConfig(
-            diffThreshold: 0, minMotionArea: 0,
+            diffThreshold: 0, minMotionArea: 0, maxMotionPoints: 15000,
             minStreakLength: 50,
             maxStreakGap: 20,
             lineTolerance: 5,
@@ -77,6 +77,7 @@ final class HoughLinearityDetectorTests: XCTestCase {
         let config = HoughMethodConfig(
             diffThreshold: 25,
             minMotionArea: 50,
+            maxMotionPoints: 15000,
             minStreakLength: 50.0,
             maxStreakGap: 10.0,
             lineTolerance: 5.0,

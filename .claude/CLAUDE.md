@@ -1,7 +1,8 @@
 # Rules for gracefully handling changes to xcodeproj
 
 NEVER edit .xcodeproj files directly. If you think a change is required in xcode project configuration, then always defer to the human with instructions
-on what you'd like them to do.
+on what you'd like them to do. These changes don't require changes to xcode project 
+- Adding a file to SportCrunch/ folder or methods/ folder. It will automatically be included in the build for the relevant targets
 
 # Testing
 ## Rules for building/testing

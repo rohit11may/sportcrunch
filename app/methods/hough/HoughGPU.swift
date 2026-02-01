@@ -85,6 +85,12 @@ final class HoughGPU: @unchecked Sendable {
     private var currentMaxRho: Float = 0
     private var currentNumRhoSteps: Int = 0
 
+    // Timing accumulators
+    private var gpuCallCount: Int = 0
+    private var totalEncodeTime: Double = 0
+    private var totalGpuTime: Double = 0
+    private var totalReadTime: Double = 0
+
     // MARK: - Initialization
 
     init() throws {
@@ -214,6 +220,8 @@ final class HoughGPU: @unchecked Sendable {
             throw HoughGPUError.bufferCreationFailed
         }
 
+        let encodeStart = CFAbsoluteTimeGetCurrent()
+
         // 1. Clear accumulator
         encodeClearKernel(commandBuffer: commandBuffer, accumulator: accumulatorBuffer, size: numThetaSteps * numRhoSteps)
 
@@ -235,11 +243,16 @@ final class HoughGPU: @unchecked Sendable {
             params: paramsBuffer
         )
 
+        let encodeTime = CFAbsoluteTimeGetCurrent() - encodeStart
+
         // Execute and wait
+        let gpuStart = CFAbsoluteTimeGetCurrent()
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
+        let gpuTime = CFAbsoluteTimeGetCurrent() - gpuStart
 
         // Read results
+        let readStart = CFAbsoluteTimeGetCurrent()
         let peakCount = peakCountBuffer.contents().assumingMemoryBound(to: UInt32.self).pointee
         let resultCount = min(Int(peakCount), maxPeaks)
 
@@ -249,6 +262,20 @@ final class HoughGPU: @unchecked Sendable {
             results = Array(UnsafeBufferPointer(start: peaksPtr, count: resultCount))
             // Sort by vote count descending
             results.sort { $0.votes > $1.votes }
+        }
+        let readTime = CFAbsoluteTimeGetCurrent() - readStart
+
+        // Log timing periodically (accumulate and report)
+        gpuCallCount += 1
+        totalEncodeTime += encodeTime
+        totalGpuTime += gpuTime
+        totalReadTime += readTime
+
+        if gpuCallCount % 100 == 0 {
+            let avgEncode = totalEncodeTime / Double(gpuCallCount) * 1000
+            let avgGpu = totalGpuTime / Double(gpuCallCount) * 1000
+            let avgRead = totalReadTime / Double(gpuCallCount) * 1000
+            print("⚙️ [HoughGPU] Avg over \(gpuCallCount) calls: encode=\(String(format: "%.2f", avgEncode))ms, gpu=\(String(format: "%.2f", avgGpu))ms, read=\(String(format: "%.2f", avgRead))ms, points=\(points.count)")
         }
 
         return results

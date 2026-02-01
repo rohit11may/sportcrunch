@@ -159,12 +159,11 @@ enum Sport: String, CaseIterable, Identifiable, Codable, Sendable {
 
       switch tennisMode {
       case .rally:
-        // Using HoughMethod for testing visual-based detection
+        // Groups consecutive shots into rallies
         return HoughMethod(config: HoughTennisConfig.instance)
       case .individual:
-        return SpectralFluxMethod(
-          config: SpectralFluxTennisIndividualConfig.instance
-        )
+        // Captures each shot separately
+        return HoughMethod(config: HoughTennisIndividualConfig.instance)
       }
 
     case .cricket:

@@ -13,6 +13,10 @@ struct HoughMethodConfig: Sendable {
     let diffThreshold: UInt8
     /// Minimum motion area to consider (noise filter)
     let minMotionArea: Int
+    /// Maximum motion points to process per frame.
+    /// Frames with more points are likely camera shake/scene changes, not ball motion.
+    /// Default 15000 balances accuracy with performance.
+    let maxMotionPoints: Int
 
     // MARK: - Linearity Detection
     /// Minimum length of a streak (pixels)

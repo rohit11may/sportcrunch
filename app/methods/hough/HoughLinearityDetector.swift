@@ -7,12 +7,16 @@
 //
 
 import Foundation
+import simd
 
 /// A point in 2D space representing a motion pixel location.
 /// Named MotionPoint to avoid collision with CGPoint or other Point types.
 struct MotionPoint: Hashable, Sendable {
     let x: Double
     let y: Double
+
+    @inline(__always)
+    var simd: simd_double2 { simd_double2(x, y) }
 }
 
 struct LineSegment: Sendable {
@@ -22,30 +26,119 @@ struct LineSegment: Sendable {
     let points: [MotionPoint]
 }
 
+/// Spatial hash grid for O(1) average-case neighbor lookups.
+/// Cell size is set to maxStreakGap so neighbors are always in adjacent cells.
+private struct SpatialHashGrid {
+    private var cells: [Int: Set<MotionPoint>]
+    private let cellSize: Double
+    private var allPoints: Set<MotionPoint>
+
+    init(points: [MotionPoint], cellSize: Double) {
+        self.cellSize = cellSize
+        self.cells = [:]
+        self.allPoints = Set(points)
+
+        for p in points {
+            let key = cellKey(for: p)
+            cells[key, default: []].insert(p)
+        }
+    }
+
+    @inline(__always)
+    private func cellKey(for p: MotionPoint) -> Int {
+        let cx = Int(floor(p.x / cellSize))
+        let cy = Int(floor(p.y / cellSize))
+        // Use a large multiplier to avoid collisions for typical image sizes
+        return cy * 100_000 + cx
+    }
+
+    /// Returns neighbors within maxDistanceSquared (excluding the point itself).
+    /// Only checks the 3x3 cell neighborhood for O(1) average case.
+    func neighbors(of point: MotionPoint, maxDistanceSquared: Double) -> [MotionPoint] {
+        let cx = Int(floor(point.x / cellSize))
+        let cy = Int(floor(point.y / cellSize))
+
+        var result: [MotionPoint] = []
+
+        // Check 3x3 neighborhood
+        for dy in -1...1 {
+            for dx in -1...1 {
+                let key = (cy + dy) * 100_000 + (cx + dx)
+                guard let cellPoints = cells[key] else { continue }
+                for p in cellPoints {
+                    if p != point {
+                        let distSq = distanceSquared(point, p)
+                        if distSq <= maxDistanceSquared {
+                            result.append(p)
+                        }
+                    }
+                }
+            }
+        }
+
+        return result
+    }
+
+    /// Remove a point from the grid
+    mutating func remove(_ point: MotionPoint) {
+        allPoints.remove(point)
+        let key = cellKey(for: point)
+        cells[key]?.remove(point)
+    }
+
+    /// Check if the grid contains a point
+    func contains(_ point: MotionPoint) -> Bool {
+        return allPoints.contains(point)
+    }
+
+    /// Get a random point from the grid, or nil if empty
+    func randomElement() -> MotionPoint? {
+        return allPoints.randomElement()
+    }
+
+    /// Check if the grid is empty
+    var isEmpty: Bool {
+        return allPoints.isEmpty
+    }
+
+    /// Get all remaining points as a set
+    var remainingPoints: Set<MotionPoint> {
+        return allPoints
+    }
+
+    @inline(__always)
+    private func distanceSquared(_ a: MotionPoint, _ b: MotionPoint) -> Double {
+        let dx = a.x - b.x
+        let dy = a.y - b.y
+        return dx * dx + dy * dy
+    }
+}
+
 struct HoughLinearityDetector: Sendable {
 
     func detect(points: [MotionPoint], config: HoughMethodConfig) -> [LineSegment] {
-        var remainingPoints = Set(points)
+        // Build spatial hash grid for O(1) neighbor lookups
+        var grid = SpatialHashGrid(points: points, cellSize: config.maxStreakGap)
         var segments: [LineSegment] = []
+
+        // Pre-compute squared thresholds to avoid sqrt in hot paths
+        let maxStreakGapSquared = config.maxStreakGap * config.maxStreakGap
+        let lineToleranceSquared = config.lineTolerance * config.lineTolerance
 
         // Max iterations to avoid infinite loops
         var iterations = 0
         let maxIterations = points.count * 2
 
-        while !remainingPoints.isEmpty && iterations < maxIterations {
+        while !grid.isEmpty && iterations < maxIterations {
             iterations += 1
             // 1. Pick a random seed point
-            guard let seed = remainingPoints.randomElement() else { break }
+            guard let seed = grid.randomElement() else { break }
 
-            // 2. Find local neighborhood (potential next points)
-            // Optimization: In real image processing, we might use a grid.
-            // For now, naive O(N) search is okay for sparse points (< 1000).
-            let neighbors = remainingPoints.filter { p in
-                p != seed && distance(seed, p) <= config.maxStreakGap
-            }
+            // 2. Find local neighborhood using spatial hash (O(1) average case)
+            let neighbors = grid.neighbors(of: seed, maxDistanceSquared: maxStreakGapSquared)
 
             if neighbors.isEmpty {
-                remainingPoints.remove(seed)
+                grid.remove(seed)
                 continue
             }
 
@@ -53,17 +146,17 @@ struct HoughLinearityDetector: Sendable {
             var bestLine: LineSegment?
 
             for neighbor in neighbors {
-                let vector = subtract(neighbor, seed)
-                let length = magnitude(vector)
-                if length == 0 { continue }
-                let unitVector = MotionPoint(x: vector.x / length, y: vector.y / length)
+                let vectorSimd = neighbor.simd - seed.simd
+                let lengthSquared = simd_length_squared(vectorSimd)
+                if lengthSquared == 0 { continue }
+                let direction = simd_normalize(vectorSimd)
 
                 // Grow forward and backward
                 let (linePoints, start, end) = growLine(
                     center: seed,
-                    direction: unitVector,
-                    candidates: remainingPoints,
-                    config: config
+                    direction: direction,
+                    candidates: grid.remainingPoints,
+                    lineToleranceSquared: lineToleranceSquared
                 )
 
                 let lineLength = distance(start, end)
@@ -79,13 +172,13 @@ struct HoughLinearityDetector: Sendable {
 
             if let found = bestLine {
                 segments.append(found)
-                // Remove used points
+                // Remove used points from spatial grid
                 for p in found.points {
-                    remainingPoints.remove(p)
+                    grid.remove(p)
                 }
             } else {
                 // If we couldn't form a line from this seed, remove it to prevent retry
-                remainingPoints.remove(seed)
+                grid.remove(seed)
             }
         }
 
@@ -93,19 +186,18 @@ struct HoughLinearityDetector: Sendable {
     }
 
     // Helpers
+    @inline(__always)
+    private func distanceSquared(_ a: MotionPoint, _ b: MotionPoint) -> Double {
+        let dx = a.x - b.x
+        let dy = a.y - b.y
+        return dx * dx + dy * dy
+    }
+
     private func distance(_ a: MotionPoint, _ b: MotionPoint) -> Double {
-        return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2))
+        return sqrt(distanceSquared(a, b))
     }
 
-    private func subtract(_ a: MotionPoint, _ b: MotionPoint) -> MotionPoint {
-        return MotionPoint(x: a.x - b.x, y: a.y - b.y)
-    }
-
-    private func magnitude(_ v: MotionPoint) -> Double {
-        return sqrt(v.x * v.x + v.y * v.y)
-    }
-
-    private func growLine(center: MotionPoint, direction: MotionPoint, candidates: Set<MotionPoint>, config: HoughMethodConfig) -> ([MotionPoint], MotionPoint, MotionPoint) {
+    private func growLine(center: MotionPoint, direction: simd_double2, candidates: Set<MotionPoint>, lineToleranceSquared: Double) -> ([MotionPoint], MotionPoint, MotionPoint) {
         var inliers: [MotionPoint] = []
         var minProj: Double = 0
         var maxProj: Double = 0
@@ -117,21 +209,24 @@ struct HoughLinearityDetector: Sendable {
         // t = (P - center) dot direction
         // Distance to line = |(P - center) - t * direction|
 
-        for p in candidates {
-            let relative = subtract(p, center)
-            let t = relative.x * direction.x + relative.y * direction.y
-            let projected = MotionPoint(x: center.x + t * direction.x, y: center.y + t * direction.y)
-            let distToLine = distance(p, projected)
+        let centerSimd = center.simd
 
-            if distToLine <= config.lineTolerance {
+        for p in candidates {
+            let pSimd = p.simd
+            let relative = pSimd - centerSimd
+            let t = simd_dot(relative, direction)
+            let projected = centerSimd + t * direction
+            let distToLineSquared = simd_length_squared(pSimd - projected)
+
+            if distToLineSquared <= lineToleranceSquared {
                 inliers.append(p)
                 if t < minProj {
                     minProj = t
-                    minP = projected
+                    minP = MotionPoint(x: projected.x, y: projected.y)
                 }
                 if t > maxProj {
                     maxProj = t
-                    maxP = projected
+                    maxP = MotionPoint(x: projected.x, y: projected.y)
                 }
             }
         }
