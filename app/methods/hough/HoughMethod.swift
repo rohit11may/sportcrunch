@@ -44,6 +44,13 @@ final class HoughMethod: SegmentationMethod {
     private let cpuDetector = HoughLinearityDetector()
     private var useGPU: Bool = true
     private let tracker = HoughTracker()
+    private let debugRenderer = HoughDebugRenderer()
+    private var lastArtifactTime: TimeInterval = -1.0
+    private var lastDetectionTime: TimeInterval = -1.0
+
+    /// Temporary artifact files (artifact ID -> file URL).
+    /// Stored here so RunExecutor can access them for export.
+    private(set) var tempArtifactPaths: [String: URL] = [:]
 
     /// Target effective fps for processing. Motion streak detection works well at 8-12 fps.
     /// The actual stride is calculated dynamically based on source video fps.
@@ -143,7 +150,7 @@ final class HoughMethod: SegmentationMethod {
 
                 // 4. Detect Lines (GPU with CPU fallback)
                 let detectStart = CFAbsoluteTimeGetCurrent()
-                let lines: [LineSegment]
+                let detectionResult: LineDetectionResult
 
                 // Get dimensions from pixel buffer (plane 0 for Y-channel)
                 let width = CVPixelBufferGetWidthOfPlane(frame.pixelBuffer, 0)
@@ -151,7 +158,7 @@ final class HoughMethod: SegmentationMethod {
 
                 if useGPU, let gpuDetector = gpuDetector {
                     do {
-                        lines = try gpuDetector.detect(
+                        detectionResult = try gpuDetector.detect(
                             points: points,
                             config: config,
                             imageWidth: width,
@@ -160,11 +167,13 @@ final class HoughMethod: SegmentationMethod {
                     } catch {
                         // GPU failed, fall back to CPU
                         print("⚙️ [HoughMethod] ⚠️ GPU detection failed, using CPU: \(error.localizedDescription)")
-                        lines = cpuDetector.detect(points: points, config: config)
+                        detectionResult = cpuDetector.detect(points: points, config: config)
                     }
                 } else {
-                    lines = cpuDetector.detect(points: points, config: config)
+                    detectionResult = cpuDetector.detect(points: points, config: config)
                 }
+
+                let lines = detectionResult.lines
                 let detectTime = CFAbsoluteTimeGetCurrent() - detectStart
                 totalLines += lines.count
 
@@ -180,12 +189,20 @@ final class HoughMethod: SegmentationMethod {
                     allDetections.append(TimestampedLine(line: line, time: frame.time))
                 }
 
-                // 4. Record Observations (only if observation exists and we have data)
+                // 4. Record Observations (only if observation exists)
                 if let obs = observation {
-                    await obs.addSignalPoint(name: "motion_points", time: frame.time, value: Double(points.count))
+                    // Stage 1: Motion signals
+                    await obs.addSignalPoint(name: "motion_points", time: frame.time, value: Double(rawPoints.count))
+                    let frameArea = Double(width * height)
+                    let motionAreaRatio = frameArea > 0 ? Double(rawPoints.count) / frameArea : 0
+                    await obs.addSignalPoint(name: "motion_area_ratio", time: frame.time, value: motionAreaRatio)
 
+                    // Stage 2: Linearity signals
                     if !lines.isEmpty {
                         await obs.addSignalPoint(name: "streak_count", time: frame.time, value: Double(lines.count))
+                        let maxLength = lines.map { $0.length }.max() ?? 0
+                        await obs.addSignalPoint(name: "streak_max_length", time: frame.time, value: maxLength)
+                        await obs.addSignalPoint(name: "linearity_score", time: frame.time, value: detectionResult.linearityScore)
 
                         // Record first streak as event (limit to reduce overhead)
                         let line = lines[0]
@@ -199,6 +216,46 @@ final class HoughMethod: SegmentationMethod {
                                 "count": "\(lines.count)"
                             ]
                         )
+
+                        // Track last detection time for artifact capture
+                        self.lastDetectionTime = frame.time
+                    }
+
+                    // Stage 2: Debug artifact capture (1 per second during active detection)
+                    let timeSinceLastArtifact = frame.time - self.lastArtifactTime
+                    let timeSinceLastDetection = frame.time - self.lastDetectionTime
+                    let isActiveDetection = !lines.isEmpty || timeSinceLastDetection <= 1.0
+
+                    if isActiveDetection && timeSinceLastArtifact >= 1.0 {
+                        // Convert rawPoints to MotionPoint array for renderer
+                        if let jpegData = self.debugRenderer.render(
+                            pixelBuffer: frame.pixelBuffer,
+                            motionPoints: rawPoints,
+                            lines: lines
+                        ) {
+                            let artifactId = "hough_debug_\(Int(frame.time * 1000))"
+                            let tempDir = FileManager.default.temporaryDirectory
+                            let tempURL = tempDir.appendingPathComponent("\(artifactId).jpg")
+
+                            do {
+                                try jpegData.write(to: tempURL)
+                                self.tempArtifactPaths[artifactId] = tempURL
+                                self.lastArtifactTime = frame.time
+
+                                await obs.addEvent(
+                                    name: "hough_debug_frame",
+                                    time: frame.time,
+                                    metadata: [
+                                        "motion_points": "\(rawPoints.count)",
+                                        "streak_count": "\(lines.count)",
+                                        "max_streak_length": String(format: "%.1f", lines.map { $0.length }.max() ?? 0)
+                                    ],
+                                    artifactId: artifactId
+                                )
+                            } catch {
+                                print("⚙️ [HoughMethod] ⚠️ Failed to save debug artifact: \(error.localizedDescription)")
+                            }
+                        }
                     }
                 }
 
