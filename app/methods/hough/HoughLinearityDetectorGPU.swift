@@ -30,13 +30,17 @@ final class HoughLinearityDetectorGPU: @unchecked Sendable {
     ///   - config: Detection configuration
     ///   - imageWidth: Width of source image
     ///   - imageHeight: Height of source image
-    /// - Returns: Array of detected line segments
+    /// - Returns: Detection result with lines and linearity score
     func detect(
         points: [MotionPoint],
         config: HoughMethodConfig,
         imageWidth: Int,
         imageHeight: Int
-    ) throws -> [LineSegment] {
+    ) throws -> LineDetectionResult {
+        guard !points.isEmpty else {
+            return LineDetectionResult(lines: [], linearityScore: 0)
+        }
+
         // Calculate vote threshold based on minimum streak length
         // A line of minStreakLength pixels should have roughly that many votes
         let voteThreshold = max(Int(config.minStreakLength / 2), 10)
@@ -52,7 +56,7 @@ final class HoughLinearityDetectorGPU: @unchecked Sendable {
 
         // Convert Hough lines to LineSegments
         let convertStart = CFAbsoluteTimeGetCurrent()
-        let result = gpuLines.compactMap { gpuLine in
+        let lines = gpuLines.compactMap { gpuLine in
             convertToLineSegment(
                 gpuLine: gpuLine,
                 points: points,
@@ -68,7 +72,11 @@ final class HoughLinearityDetectorGPU: @unchecked Sendable {
             print("⚙️ [GPUDetector] Avg over \(detectCallCount) calls: gpuHough=\(String(format: "%.2f", avgGpu))ms, inlierConvert=\(String(format: "%.2f", avgConvert))ms, linesFound=\(gpuLines.count)")
         }
 
-        return result
+        // Calculate linearity score
+        let totalPointsOnLines = lines.reduce(0) { $0 + $1.points.count }
+        let linearityScore = Double(totalPointsOnLines) / Double(points.count)
+
+        return LineDetectionResult(lines: lines, linearityScore: linearityScore)
     }
 
     // MARK: - Private Helpers
