@@ -17,6 +17,7 @@ struct HoughTennisConfig {
         lineTolerance: 3.0,
         minDensity: 0.5,
         rallyMaxGap: 4.0,
-        rallyMinDuration: 2.0
+        rallyMinDuration: 2.0,
+        groupingMode: .rally
     )
 }

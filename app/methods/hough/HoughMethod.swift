@@ -301,7 +301,7 @@ final class HoughMethod: SegmentationMethod {
 
         print("⚙️ [HoughMethod] Grouping \(allDetections.count) detections into rallies...")
 
-        let rallies = tracker.groupRallies(detections: allDetections, config: config)
+        let rallies = await tracker.groupRallies(detections: allDetections, config: config, observation: observation)
 
         guard !rallies.isEmpty else {
             print("⚙️ [HoughMethod] ❌ No rallies grouped from detections")

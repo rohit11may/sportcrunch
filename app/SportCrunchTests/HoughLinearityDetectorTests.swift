@@ -17,7 +17,8 @@ final class HoughLinearityDetectorTests: XCTestCase {
             maxStreakGap: 5,
             lineTolerance: 2,
             minDensity: 0.5,
-            rallyMaxGap: 0, rallyMinDuration: 0
+            rallyMaxGap: 0, rallyMinDuration: 0,
+            groupingMode: .rally
         )
 
         // Create points for a horizontal line: (0, 10) -> (20, 10)
@@ -26,7 +27,8 @@ final class HoughLinearityDetectorTests: XCTestCase {
             points.append(MotionPoint(x: Double(x), y: 10))
         }
 
-        let lines = detector.detect(points: points, config: config)
+        let result = detector.detect(points: points, config: config)
+        let lines = result.lines
 
         XCTAssertEqual(lines.count, 1)
         let line = lines.first!
@@ -43,7 +45,8 @@ final class HoughLinearityDetectorTests: XCTestCase {
             maxStreakGap: 20,
             lineTolerance: 5,
             minDensity: 0.3,
-            rallyMaxGap: 0, rallyMinDuration: 0
+            rallyMaxGap: 0, rallyMinDuration: 0,
+            groupingMode: .rally
         )
 
         // Generate 5000 random points simulating a large motion cloud
@@ -83,23 +86,26 @@ final class HoughLinearityDetectorTests: XCTestCase {
             lineTolerance: 5.0,
             minDensity: 0.5,
             rallyMaxGap: 4.0,
-            rallyMinDuration: 2.0
+            rallyMinDuration: 2.0,
+            groupingMode: .rally
         )
 
         // CPU detection
         let cpuDetector = HoughLinearityDetector()
-        let cpuLines = cpuDetector.detect(points: points, config: config)
+        let cpuResult = cpuDetector.detect(points: points, config: config)
+        let cpuLines = cpuResult.lines
 
         // GPU detection
         guard let gpuDetector = try? HoughLinearityDetectorGPU() else {
             throw XCTSkip("Metal not available")
         }
-        let gpuLines = try gpuDetector.detect(
+        let gpuResult = try gpuDetector.detect(
             points: points,
             config: config,
             imageWidth: 300,
             imageHeight: 200
         )
+        let gpuLines = gpuResult.lines
 
         // Both should detect at least one line
         XCTAssertFalse(cpuLines.isEmpty, "CPU should detect lines")

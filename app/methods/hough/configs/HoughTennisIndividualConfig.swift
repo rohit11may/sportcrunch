@@ -19,6 +19,7 @@ struct HoughTennisIndividualConfig {
         minDensity: 0.5,
         // Individual shot settings - don't group shots together
         rallyMaxGap: 0.5,        // Short gap tolerance (shots more than 0.5s apart are separate)
-        rallyMinDuration: 0.3    // Capture short individual shots
+        rallyMinDuration: 0.3,   // Capture short individual shots
+        groupingMode: .individual
     )
 }

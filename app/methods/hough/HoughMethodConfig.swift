@@ -7,6 +7,14 @@
 
 import Foundation
 
+/// How to group detections into segments.
+enum GroupingMode: Sendable {
+    /// Group detections into rallies (continuous activity within rallyMaxGap).
+    case rally
+    /// Treat each detection burst as an individual shot/segment.
+    case individual
+}
+
 struct HoughMethodConfig: Sendable {
     // MARK: - Motion Processing
     /// Threshold for pixel intensity difference (0-255)
@@ -33,4 +41,8 @@ struct HoughMethodConfig: Sendable {
     let rallyMaxGap: TimeInterval
     /// Min duration of a rally
     let rallyMinDuration: TimeInterval
+
+    // MARK: - Grouping
+    /// How to group detections into segments.
+    let groupingMode: GroupingMode
 }
