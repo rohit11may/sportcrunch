@@ -38,7 +38,9 @@ final class HoughMethod: SegmentationMethod {
     let name = "Hough"
     private let config: HoughMethodConfig
     private let processor = HoughMotionProcessor()
-    private let detector = HoughLinearityDetector()
+    private var gpuDetector: HoughLinearityDetectorGPU?
+    private let cpuDetector = HoughLinearityDetector()
+    private var useGPU: Bool = true
     private let tracker = HoughTracker()
 
     /// Frame stride: process every Nth frame to reduce overhead.
@@ -47,9 +49,19 @@ final class HoughMethod: SegmentationMethod {
 
     init(config: HoughMethodConfig) {
         self.config = config
+        // Try to initialize GPU detector
+        do {
+            self.gpuDetector = try HoughLinearityDetectorGPU()
+            print("⚙️ [HoughMethod] GPU acceleration enabled")
+        } catch {
+            print("⚙️ [HoughMethod] ⚠️ GPU init failed: \(error.localizedDescription), using CPU fallback")
+            self.useGPU = false
+        }
     }
 
     func detectSegments(videoURL: URL, observation: RunObservation?) async throws -> [ActionSegment] {
+        print("⚙️ [HoughMethod] Starting detection for \(videoURL.lastPathComponent)")
+
         let asset = AVURLAsset(url: videoURL)
         let generator = AVAssetImageGenerator(asset: asset)
         generator.appliesPreferredTrackTransform = true
@@ -58,6 +70,7 @@ final class HoughMethod: SegmentationMethod {
 
         // Properly handle missing video track
         guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
+            print("⚙️ [HoughMethod] ❌ No video track found")
             throw HoughMethodError.noVideoTrack
         }
 
@@ -65,8 +78,9 @@ final class HoughMethod: SegmentationMethod {
         let fps = try await videoTrack.load(.nominalFrameRate)
         let timescale = try await videoTrack.load(.naturalTimeScale)
 
-        print("🎯 [HoughMethod] Processing \(videoURL.lastPathComponent)")
-        print("🎯 [HoughMethod] Duration: \(String(format: "%.2f", duration))s, FPS: \(fps), Stride: \(frameStride)")
+        print("⚙️ [HoughMethod] ✓ Video loaded: \(videoURL.lastPathComponent)")
+        print("⚙️ [HoughMethod]   Duration: \(String(format: "%.2f", duration))s")
+        print("⚙️ [HoughMethod]   FPS: \(fps), Stride: \(frameStride) (effective: \(String(format: "%.1f", Double(fps) / Double(frameStride))) fps)")
 
         // Reset processor for new video
         await processor.reset()
@@ -74,6 +88,11 @@ final class HoughMethod: SegmentationMethod {
         var allDetections: [TimestampedLine] = []
         var frameIndex = 0
         var processedFrames = 0
+        var frameErrors = 0
+        var totalMotionPoints = 0
+        var totalLines = 0
+
+        print("⚙️ [HoughMethod] Starting frame processing...")
 
         // Processing loop with frame stride to reduce actor hops
         while Double(frameIndex) / Double(fps) < duration {
@@ -86,9 +105,27 @@ final class HoughMethod: SegmentationMethod {
 
                 // 1. Process Motion (actor call)
                 let points = try await processor.process(frame: image, config: config)
+                totalMotionPoints += points.count
 
-                // 2. Detect Lines (synchronous, no actor)
-                let lines = detector.detect(points: points, config: config)
+                // 2. Detect Lines (GPU with CPU fallback)
+                let lines: [LineSegment]
+                if useGPU, let gpuDetector = gpuDetector {
+                    do {
+                        lines = try gpuDetector.detect(
+                            points: points,
+                            config: config,
+                            imageWidth: image.width,
+                            imageHeight: image.height
+                        )
+                    } catch {
+                        // GPU failed, fall back to CPU
+                        print("⚙️ [HoughMethod] ⚠️ GPU detection failed, using CPU: \(error.localizedDescription)")
+                        lines = cpuDetector.detect(points: points, config: config)
+                    }
+                } else {
+                    lines = cpuDetector.detect(points: points, config: config)
+                }
+                totalLines += lines.count
 
                 // 3. Record detections for tracking
                 for line in lines {
@@ -120,21 +157,46 @@ final class HoughMethod: SegmentationMethod {
 
                 processedFrames += 1
 
+                // Log progress every 30 frames
+                if processedFrames % 30 == 0 {
+                    print("⚙️ [HoughMethod] Processing: \(String(format: "%.1f", timeSec))s / \(String(format: "%.2f", duration))s (\(processedFrames) frames)")
+                }
+
             } catch {
                 // Log but continue processing
-                print("🎯 [HoughMethod] Frame \(frameIndex) error: \(error.localizedDescription)")
+                frameErrors += 1
+                print("⚙️ [HoughMethod] ⚠️ Frame \(frameIndex) error: \(error.localizedDescription)")
             }
 
             frameIndex += frameStride
         }
 
-        print("🎯 [HoughMethod] Processed \(processedFrames) frames, found \(allDetections.count) streak detections")
+        print("⚙️ [HoughMethod] ✓ Frame processing complete")
+        print("⚙️ [HoughMethod]   Processed: \(processedFrames) frames")
+        if frameErrors > 0 {
+            print("⚙️ [HoughMethod]   Errors: \(frameErrors) frames")
+        }
+        print("⚙️ [HoughMethod]   Motion points detected: \(totalMotionPoints)")
+        print("⚙️ [HoughMethod]   Line streaks detected: \(totalLines)")
+
+        guard totalLines > 0 else {
+            print("⚙️ [HoughMethod] ❌ No line streaks detected")
+            throw HoughMethodError.processingFailed("No motion linearity detected in video")
+        }
+
+        print("⚙️ [HoughMethod] Grouping \(allDetections.count) detections into rallies...")
 
         let rallies = tracker.groupRallies(detections: allDetections, config: config)
 
-        print("🎯 [HoughMethod] Grouped into \(rallies.count) rallies")
+        guard !rallies.isEmpty else {
+            print("⚙️ [HoughMethod] ❌ No rallies grouped from detections")
+            throw HoughMethodError.processingFailed("Failed to group detections into rallies")
+        }
+
+        print("⚙️ [HoughMethod] ✓ Grouped into \(rallies.count) rallies")
         for (i, rally) in rallies.enumerated() {
-            print("🎯 [HoughMethod]   Rally \(i + 1): \(String(format: "%.2f", rally.startTime))s - \(String(format: "%.2f", rally.endTime))s (\(String(format: "%.2f", rally.duration))s)")
+            let duration = rally.duration
+            print("⚙️ [HoughMethod]   Rally \(i + 1): \(String(format: "%.2f", rally.startTime))s - \(String(format: "%.2f", rally.endTime))s (\(String(format: "%.2f", duration))s)")
         }
 
         return rallies
