@@ -26,6 +26,13 @@ struct LineSegment: Sendable {
     let points: [MotionPoint]
 }
 
+/// Result of line detection including quality metrics.
+struct LineDetectionResult: Sendable {
+    let lines: [LineSegment]
+    /// Ratio of points that fall on detected lines vs total points (0.0-1.0).
+    let linearityScore: Double
+}
+
 /// Spatial hash grid for O(1) average-case neighbor lookups.
 /// Cell size is set to maxStreakGap so neighbors are always in adjacent cells.
 private struct SpatialHashGrid {
@@ -116,10 +123,15 @@ private struct SpatialHashGrid {
 
 struct HoughLinearityDetector: Sendable {
 
-    func detect(points: [MotionPoint], config: HoughMethodConfig) -> [LineSegment] {
+    func detect(points: [MotionPoint], config: HoughMethodConfig) -> LineDetectionResult {
+        guard !points.isEmpty else {
+            return LineDetectionResult(lines: [], linearityScore: 0)
+        }
+
         // Build spatial hash grid for O(1) neighbor lookups
         var grid = SpatialHashGrid(points: points, cellSize: config.maxStreakGap)
         var segments: [LineSegment] = []
+        var totalPointsOnLines = 0
 
         // Pre-compute squared thresholds to avoid sqrt in hot paths
         let maxStreakGapSquared = config.maxStreakGap * config.maxStreakGap
@@ -172,6 +184,7 @@ struct HoughLinearityDetector: Sendable {
 
             if let found = bestLine {
                 segments.append(found)
+                totalPointsOnLines += found.points.count
                 // Remove used points from spatial grid
                 for p in found.points {
                     grid.remove(p)
@@ -182,7 +195,8 @@ struct HoughLinearityDetector: Sendable {
             }
         }
 
-        return segments
+        let linearityScore = points.isEmpty ? 0 : Double(totalPointsOnLines) / Double(points.count)
+        return LineDetectionResult(lines: segments, linearityScore: linearityScore)
     }
 
     // Helpers
