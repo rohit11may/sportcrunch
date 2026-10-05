@@ -8,6 +8,7 @@ SportCrunch takes videos of your tennis sessions (shot from any angle) and extra
 
 Built for self-analysis: instead of scrubbing through hours of side-on footage to review technique, I get a short reel of my actual rallies. The approach generalizes to other racket sports (e.g. badminton).
 
-## Screenshot
+## Screenshots
 
-![SportCrunch home screen — recent highlights](docs/screenshots/app-home.jpg)
+![SportCrunch home screen — create highlight and recent sessions](docs/screenshots/app-home.jpg)
+![SportCrunch highlight card — original vs highlight duration](docs/screenshots/app-highlights.jpg)
