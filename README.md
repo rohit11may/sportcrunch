@@ -20,5 +20,14 @@ Built for self-analysis: instead of scrubbing through hours of side-on footage t
 
 ## Screenshots
 
-![SportCrunch home screen — create highlight and recent sessions](docs/screenshots/app-home.jpg)
-![SportCrunch highlight card — original vs highlight duration](docs/screenshots/app-highlights.jpg)
+![SportCrunch home — create highlight and recent reels](docs/screenshots/home.jpg)
+*Home — start a new highlight or browse past reels with original vs highlight stats.*
+
+![Highlight playback — kept/removed summary and segment strip](docs/screenshots/playback.jpg)
+*Playback — the reel auto-advances shot by shot; the summary bar shows what was kept.*
+
+![Choose detection mode — rally or shot](docs/screenshots/choose-mode.jpg)
+*Detection modes — group shots into rallies, or cut every individual shot.*
+
+![Export — starred segments, save or share](docs/screenshots/export.jpg)
+*Export — star the segments you want, then save to camera roll or share.*
