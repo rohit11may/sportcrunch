@@ -8,6 +8,16 @@ SportCrunch takes videos of your tennis sessions (shot from any angle) and extra
 
 Built for self-analysis: instead of scrubbing through hours of side-on footage to review technique, I get a short reel of my actual rallies. The approach generalizes to other racket sports (e.g. badminton).
 
+## Demo
+
+<video src="docs/videos/sportcrunch-highlight-playback.mp4" width="270" controls></video>
+
+*Highlight playback — the reel auto-advances shot by shot, with the kept/removed summary and starring.*
+
+<video src="docs/videos/sportcrunch-create-highlight.mp4" width="270" controls></video>
+
+*Creating a highlight from an existing video — pick a video, choose the sport and detection mode, crunch it down, star segments and export.*
+
 ## Screenshots
 
 ![SportCrunch home screen — create highlight and recent sessions](docs/screenshots/app-home.jpg)
