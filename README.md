@@ -10,11 +10,11 @@ Built for self-analysis: instead of scrubbing through hours of side-on footage t
 
 ## Demo
 
-<video src="https://github.com/rohit11may/sportcrunch/releases/download/demo-assets-v1/sportcrunch-highlight-playback.mp4" width="270" controls></video>
+https://github.com/user-attachments/assets/643e8985-6143-4d9d-a869-6dea1b99327d
 
 *Highlight playback — the reel auto-advances shot by shot, with the kept/removed summary and starring.*
 
-<video src="https://github.com/rohit11may/sportcrunch/releases/download/demo-assets-v1/sportcrunch-create-highlight.mp4" width="270" controls></video>
+https://github.com/user-attachments/assets/60054aef-545a-4287-9216-e7264ac46e0a
 
 *Creating a highlight from an existing video — pick a video, choose the sport and detection mode, crunch it down, star segments and export.*
 
